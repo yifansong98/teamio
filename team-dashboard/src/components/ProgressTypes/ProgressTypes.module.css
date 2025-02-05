@@ -1,0 +1,26 @@
+/* src/components/ProgressTypes/ProgressTypes.module.css */
+.dashboardContainer {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    font-family: system-ui, sans-serif;
+  }
+  
+  .dashboardHeader {
+    margin-bottom: 2rem;
+    text-align: center;
+  }
+  
+  .dashboardTitle {
+    font-size: 2.5rem;
+    color: #2d3748;
+    margin-bottom: 1rem;
+  }
+  
+  .dashboardGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 2rem;
+    padding: 1rem;
+  }
+  

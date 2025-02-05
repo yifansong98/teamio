@@ -1,0 +1,61 @@
+// src/components/ProgressTypes/ProgressTypes.js
+import React from 'react';
+import { Check, AlertTriangle } from 'lucide-react';
+import BehaviorCard from '../BehaviorCard/BehaviorCard';
+import styles from './ProgressTypes.module.css';
+
+export default function ProgressTypes() {
+  const sections = [
+    {
+      title: 'Work Distribution',
+      description: 'The team demonstrated fair distribution of work.',
+      icon: <Check size={24} color="white" />,
+      status: 'success',
+      route: '/workDistribution',
+    },
+    {
+      title: 'Progression',
+      description: "Some team members didn't start early or provide steady progress",
+      icon: <AlertTriangle size={24} color="white" />,
+      status: 'warning',
+      route: '/progression', // Not yet implemented
+    },
+    {
+      title: 'Interaction',
+      description: "The team commented and revised each other's work",
+      icon: <Check size={24} color="white" />,
+      status: 'success',
+      route: '/interaction', // Not yet implemented
+    },
+    {
+      title: 'Communication',
+      description: 'Some team members were not responsive or productive in communication',
+      icon: <AlertTriangle size={24} color="white" />,
+      status: 'warning',
+      route: '/communication', // Not yet implemented
+    },
+  ];
+
+  return (
+    <div className={styles.dashboardContainer}>
+      <header className={styles.dashboardHeader}>
+        <h1 className={styles.dashboardTitle}>
+          Incredibles — Revised Functional Prototype
+        </h1>
+      </header>
+
+      <div className={styles.dashboardGrid}>
+        {sections.map((section) => (
+          <BehaviorCard
+            key={section.title}
+            title={section.title}
+            description={section.description}
+            icon={section.icon}
+            status={section.status}
+            route={section.route}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
