@@ -1,11 +1,10 @@
-/* src/pages/WorkDistribution/TeamContractModal.module.css */
+/* TeamContractModal.module.css */
 
+/* Make the modal large enough */
 .modalOverlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
     background-color: rgba(0,0,0,0.4);
     display: flex;
     align-items: center;
@@ -15,25 +14,80 @@
   
   .modalContent {
     background: white;
-    width: 600px;
-    max-width: 90%;
-    padding: 1.5rem;
+    width: 1200px; /* Enough space for chart + columns */
+    max-width: 95%;
+    padding: 1.5rem 2rem;
     border-radius: 0.5rem;
     box-shadow: 0 8px 16px rgba(0,0,0,0.2);
   }
   
-  .inputGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-    margin-top: 1rem;
+  .toolDropdown {
+    margin-bottom: 1rem;
   }
   
-  .inputRow {
+  /* The row that holds all members side by side */
+  .membersRow {
     display: flex;
-    align-items: center;
-    gap: 1rem;
+    justify-content: space-evenly;
+    align-items: flex-start;
+    gap: 0rem;
+    margin: 2rem;
   }
+  
+  /* One column per member: name up top, slider+inputs below */
+  .memberColumn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  /* Member name above the row */
+  .memberName {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+  }
+  
+  /* The row containing the vertical slider on the left, input fields on the right */
+  .sliderRow {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem; /* space between slider and inputs */
+  }
+  
+  /* Rotated vertical slider */
+  .verticalSlider {
+    width: 50px; /* effectively height after rotation */
+    -webkit-appearance: slider-vertical; /* helps on some browsers */
+  }
+  
+  /* The container for value + range inputs on the right side */
+  .valueInputs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  /* Label + input for the numeric value */
+  .valueLabel {
+    font-size: 1rem;
+  }
+  .valueInput {
+    width: 40px;
+    text-align: center;
+    margin-left: 0.25rem;
+  }
+  
+  /* Range (±) label + select */
+  .rangeLabel {
+    font-size: 1rem;
+  }
+  .rangeSelect {
+    width: 90px;
+  }
+  
+  /* The chart will appear below everything in the same modal */
   
   .buttonsRow {
     display: flex;
@@ -48,6 +102,7 @@
     border-radius: 0.25rem;
     background-color: #3182ce;
     color: white;
+    font-size: 0.95rem;
     cursor: pointer;
   }
   .buttonsRow button:hover {

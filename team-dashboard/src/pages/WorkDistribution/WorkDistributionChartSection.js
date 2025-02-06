@@ -9,10 +9,12 @@ import {
   Tooltip,
   ErrorBar,
 } from 'recharts';
-
 import styles from './WorkDistribution.module.css';
 
-// Actual data from your existing code
+/**
+ * Full data set for each tool and its metrics.
+ * We provide an empty array if tool/metric not found.
+ */
 const chartDataMap = {
   '': {
     '': [],
@@ -59,7 +61,10 @@ const chartDataMap = {
   },
 };
 
-// Helper for available metrics
+/**
+ * Returns the list of metric keys (e.g. ["edits","words","comments"]).
+ * If the tool doesn't exist, we return an empty array to avoid crashes.
+ */
 function getMetricsForTool(tool) {
   if (!tool || !chartDataMap[tool]) {
     return [];
@@ -70,9 +75,9 @@ function getMetricsForTool(tool) {
 export default function WorkDistributionChartSection({ contractDataMap }) {
   const [selectedTool, setSelectedTool] = useState('');
   const [selectedMetric, setSelectedMetric] = useState('');
-  const [showPercentage, setShowPercentage] = useState(false);
+  const [showActualValue, setShowActualValue] = useState(false);
 
-  // Update the metric dropdown if tool changes
+  // Whenever the tool changes, pick its first metric (if any)
   useEffect(() => {
     if (!selectedTool) {
       setSelectedMetric('');
@@ -86,15 +91,27 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     }
   }, [selectedTool]);
 
-  // Actual data
+  /**
+   * Safely retrieve the base data array for the current tool+metric.
+   * If anything is missing, we return an empty array to avoid .map() errors.
+   */
   const baseData = (() => {
-    const dataForTool = chartDataMap[selectedTool] || {};
-    return dataForTool[selectedMetric] || [];
+    if (!selectedTool) return [];
+    const dataForTool = chartDataMap[selectedTool];
+    if (!dataForTool) return [];
+    const dataForMetric = dataForTool[selectedMetric];
+    if (!Array.isArray(dataForMetric)) return [];
+    return dataForMetric;
   })();
 
-  // Possibly convert actual data to percentage if showPercentage is on
+  /**
+   * If showActualValue is false, we convert actual data to a % of the total.
+   * Otherwise, we leave them as raw values.
+   */
   const actualData = (() => {
-    if (!showPercentage || baseData.length === 0) return baseData;
+    if (showActualValue || baseData.length === 0) {
+      return baseData;
+    }
     const total = baseData.reduce((sum, item) => sum + item.value, 0);
     if (!total) return baseData;
     return baseData.map((item) => ({
@@ -103,23 +120,28 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     }));
   })();
 
-  // Contract data for the selected tool (if any)
+  // The user's planned/contract distribution for the selected tool
   const plannedData = contractDataMap[selectedTool] || [];
 
-  // Possibly also convert planned data to percentage
-  const plannedDataPercent = (() => {
-    if (!showPercentage || plannedData.length === 0) return plannedData;
-    const total = plannedData.reduce((sum, item) => sum + item.value, 0);
+  // Also convert planned data to % if showActualValue is false
+  const plannedDataConverted = (() => {
+    if (showActualValue || plannedData.length === 0) {
+      return plannedData;
+    }
+    const total = plannedData.reduce((sum, i) => sum + i.value, 0);
     if (!total) return plannedData;
-    return plannedData.map((item) => ({
-      ...item,
-      value: Math.round((item.value / total) * 100),
+    return plannedData.map((i) => ({
+      ...i,
+      value: Math.round((i.value / total) * 100),
     }));
   })();
 
-  // Merge actual + planned for side-by-side bars
+  /**
+   * Merge actualData + plannedData for side-by-side bars, matching by "name".
+   * If planned is missing a name, default to 0/0.
+   */
   const mergedData = actualData.map((act) => {
-    const plan = plannedDataPercent.find((p) => p.name === act.name) || {
+    const plan = plannedDataConverted.find((p) => p.name === act.name) || {
       value: 0,
       errorVal: 0,
     };
@@ -131,7 +153,9 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     };
   });
 
-  // Check if team meets contract: actualVal in [plannedVal - errorVal, plannedVal + errorVal]
+  /**
+   * Determine if the actualVal is within [plannedVal ± errorVal] for all members
+   */
   const meetsContract = mergedData.every((item) => {
     const lower = Math.max(0, item.plannedVal - item.errorVal);
     const upper = item.plannedVal + item.errorVal;
@@ -142,20 +166,22 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     ? 'The team meets their contract.'
     : 'The team does NOT meet their contract.';
 
+  // Y-axis domain depends on whether we are showing raw values or percentages
+  const yDomain = showActualValue ? ['auto', 'auto'] : [0, 100];
+  const yLabel = showActualValue ? 'Value' : '%';
+
   return (
     <div className={styles.mainContent}>
-      {/* Left side: Gini or other explanation */}
+      {/* Left (1/3) */}
       <div className={styles.leftSection}>
         <p className={styles.paragraph}>
           <b>Your Team Gini: 0.302</b> <br />
           Class Average Team Gini: 0.5
         </p>
-        <p className={styles.paragraph}>
-          {subscriptionText}
-        </p>
+        <p className={styles.paragraph}>{subscriptionText}</p>
       </div>
 
-      {/* Right side: controls + chart */}
+      {/* Right (2/3) */}
       <div className={styles.rightSection}>
         <div className={styles.controls}>
           <select
@@ -186,44 +212,33 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
             </select>
           )}
 
-          <button
-            className={styles.button}
-            onClick={() => {
-              /* just a no-op placeholder */
-            }}
-          >
+          <button className={styles.button}>
             Annotate
           </button>
 
           <div className={styles.checkboxContainer}>
             <input
               type="checkbox"
-              id="percentage"
-              checked={showPercentage}
-              onChange={(e) => setShowPercentage(e.target.checked)}
+              id="showActualValue"
+              checked={showActualValue}
+              onChange={(e) => setShowActualValue(e.target.checked)}
             />
-            <label htmlFor="percentage">Percentage</label>
+            <label htmlFor="showActualValue">Show actual value</label>
           </div>
         </div>
 
-        {/* Side-by-side bar chart with error bar on planned distribution */}
-        <BarChart width={600} height={300} data={mergedData}>
-          <CartesianGrid strokeDasharray="3 3" />
-          <XAxis dataKey="name" />
-          <YAxis domain={showPercentage ? [0, 100] : ['auto', 'auto']} />
-          <Tooltip />
-          {/* Actual bar */}
-          <Bar dataKey="actualVal" fill="#3182ce" name="Actual" radius={[4, 4, 0, 0]} />
-          {/* Planned bar + error range */}
-          <Bar dataKey="plannedVal" fill="#48bb78" name="Contract" radius={[4, 4, 0, 0]}>
-            <ErrorBar
-              dataKey="errorVal"
-              stroke="red"
-              strokeWidth={2}
-              width={4}
-            />
-          </Bar>
-        </BarChart>
+        <div className={styles.chartContainer}>
+          <BarChart width={600} height={350} data={mergedData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis domain={yDomain} label={{ value: yLabel, angle: -90, position: 'insideLeft' }} />
+            <Tooltip />
+            <Bar dataKey="actualVal" fill="#3182ce" name="Actual" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="plannedVal" fill="#48bb78" name="Contract" radius={[4, 4, 0, 0]}>
+              <ErrorBar dataKey="errorVal" stroke="red" strokeWidth={2} width={4} />
+            </Bar>
+          </BarChart>
+        </div>
       </div>
     </div>
   );
