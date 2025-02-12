@@ -6,12 +6,14 @@ import { Routes, Route } from 'react-router-dom';
 import ProgressTypes from '../components/ProgressTypes/ProgressTypes';
 // Import the Work Distribution “page”
 import WorkDistribution from './WorkDistribution/WorkDistribution';
+import WorkProgression from './WorkProgression/WorkProgression';
 
 function DashboardRoutes() {
   return (
     <Routes>
       <Route path="/" element={<ProgressTypes />} />
       <Route path="/workDistribution" element={<WorkDistribution />} />
+      <Route path="/workProgression" element={<WorkProgression />} />
     </Routes>
   );
 }

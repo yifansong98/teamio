@@ -14,11 +14,11 @@ export default function ProgressTypes() {
       route: '/workDistribution',
     },
     {
-      title: 'Progression',
+      title: 'Work Progression',
       description: "Some team members didn't start early or provide steady progress",
       icon: <AlertTriangle size={24} color="white" />,
       status: 'warning',
-      route: '/progression', // Not yet implemented
+      route: '/WorkProgression',
     },
     {
       title: 'Interaction',

@@ -1,111 +1,211 @@
 /* TeamContractModal.module.css */
 
-/* Make the modal large enough */
+/* A semi-transparent overlay covering the entire screen */
 .modalOverlay {
-    position: fixed;
-    top: 0; left: 0;
-    width: 100vw; height: 100vh;
-    background-color: rgba(0,0,0,0.4);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 999;
-  }
-  
-  .modalContent {
-    background: white;
-    width: 1200px; /* Enough space for chart + columns */
-    max-width: 95%;
-    padding: 1.5rem 2rem;
-    border-radius: 0.5rem;
-    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-  }
-  
-  .toolDropdown {
-    margin-bottom: 1rem;
-  }
-  
-  /* The row that holds all members side by side */
-  .membersRow {
-    display: flex;
-    justify-content: space-evenly;
-    align-items: flex-start;
-    gap: 0rem;
-    margin: 2rem;
-  }
-  
-  /* One column per member: name up top, slider+inputs below */
-  .memberColumn {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  /* Member name above the row */
-  .memberName {
-    font-weight: 600;
-    margin-bottom: 0.5rem;
-    color: #2d3748;
-  }
-  
-  /* The row containing the vertical slider on the left, input fields on the right */
-  .sliderRow {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem; /* space between slider and inputs */
-  }
-  
-  /* Rotated vertical slider */
-  .verticalSlider {
-    width: 50px; /* effectively height after rotation */
-    -webkit-appearance: slider-vertical; /* helps on some browsers */
-  }
-  
-  /* The container for value + range inputs on the right side */
-  .valueInputs {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-  
-  /* Label + input for the numeric value */
-  .valueLabel {
-    font-size: 1rem;
-  }
-  .valueInput {
-    width: 40px;
-    text-align: center;
-    margin-left: 0.25rem;
-  }
-  
-  /* Range (±) label + select */
-  .rangeLabel {
-    font-size: 1rem;
-  }
-  .rangeSelect {
-    width: 100px;
-  }
-  
-  /* The chart will appear below everything in the same modal */
-  
-  .buttonsRow {
-    display: flex;
-    gap: 1rem;
-    justify-content: flex-end;
-    margin-top: 1.5rem;
-  }
-  
-  .buttonsRow button {
-    padding: 0.5rem 1.25rem;
-    border: none;
-    border-radius: 0.25rem;
-    background-color: #3182ce;
-    color: white;
-    font-size: 0.95rem;
-    cursor: pointer;
-  }
-  .buttonsRow button:hover {
-    background-color: #2c5282;
-  }
-  
+  position: fixed;
+  top: 0; 
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  font-family: system-ui, sans-serif; /* match main interface font */
+}
+
+/* The main modal container: large enough for the chart + columns */
+.modalContent {
+  background: white;
+  width: 1100px; /* slightly narrower so elements don't stretch too far */
+  max-width: 95%;
+  padding: 2rem;  /* more padding for a polished feel */
+  border-radius: 0.75rem; /* match main’s subtle roundness */
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* A typical heading style for consistency */
+.modalContent h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  color: #2d3748;
+  font-weight: 600;
+}
+
+/* Sub-text/paragraph for instructions */
+.modalContent p {
+  font-size: 1rem;
+  color: #4a5568;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+/* Tool dropdown row */
+.toolDropdown {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* center horizontally */
+  gap: 0.5rem;
+}
+
+.toolDropdown select {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  font-size: 0.95rem;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+/* Distribution approach select (equal/role-based) */
+.distributionOption {
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* center horizontally */
+  gap: 0.5rem;
+}
+
+.distributionOption select {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  font-size: 0.95rem;
+  background-color: white;
+  cursor: pointer;
+}
+
+/* The row that holds all members side by side */
+.membersRow {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: flex-start;
+  gap: 2rem;
+  margin: 1.5rem 0;
+}
+
+/* One column per member: name up top, slider + inputs below */
+.memberColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #f8fafc; /* subtle panel background for each column */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  width: 210px; /* fixed width so columns align neatly */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.memberName {
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #2d3748;
+  font-size: 1.05rem;
+}
+
+/* The row containing the vertical slider + numeric inputs */
+.sliderRow {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+/* Vertical slider styled to match the main theme */
+.verticalSlider {
+  width: 60px;  /* effectively becomes the 'height' after rotation */
+  height: 120px; /* becomes the 'width' after rotation */
+  -webkit-appearance: slider-vertical;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Container for value + range inputs on the right side */
+.valueInputs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+/* Label + input for the numeric value */
+.valueLabel,
+.rangeLabel {
+  font-size: 0.9rem;
+  color: #2d3748;
+  margin-bottom: 0.25rem;
+}
+
+.valueInput {
+  width: 50px;
+  text-align: center;
+  margin-left: 0.25rem;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  border: 1px solid #e2e8f0;
+  font-size: 0.9rem;
+  background-color: white;
+}
+
+/* Range (±) select */
+.rangeSelect {
+  width: 120px;
+  padding: 0.3rem;
+  border-radius: 0.25rem;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+/* For the optional role-based row */
+.roleRow {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.25rem;
+}
+
+.roleRow label {
+  font-size: 0.9rem;
+  color: #2d3748;
+}
+
+/* The chart area is centered below the inputs.  */
+.chartContainer {
+  display: flex;
+  justify-content: center;
+  margin-top: 1rem;
+}
+
+/* Save/Cancel row at bottom-right */
+.buttonsRow {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+}
+
+/* Buttons follow main style (like your main interface) */
+.buttonsRow button {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 0.5rem;
+  background-color: #3182ce;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 4px rgba(49, 130, 206, 0.2);
+}
+
+.buttonsRow button:hover {
+  background-color: #2c5282;
+  transform: translateY(-1px);
+}
