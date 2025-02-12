@@ -33,7 +33,7 @@ export default function WorkDistribution() {
         onTeamContractClick={() => setShowTeamContract(true)}
       />
 
-      <h1 className={styles.subTitle}>Incredibles - Revised Functional Prototype</h1>
+      <h1 className={styles.subTitle}>Team Name - Assignment X</h1>
       <p className={styles.subDescription}>
         The team demonstrated fair distribution of work.
       </p>

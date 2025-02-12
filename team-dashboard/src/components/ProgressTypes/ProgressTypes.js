@@ -40,7 +40,7 @@ export default function ProgressTypes() {
     <div className={styles.dashboardContainer}>
       <header className={styles.dashboardHeader}>
         <h1 className={styles.dashboardTitle}>
-          Incredibles — Revised Functional Prototype
+          Team I/O
         </h1>
       </header>
 
