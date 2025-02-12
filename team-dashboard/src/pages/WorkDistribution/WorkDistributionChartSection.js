@@ -228,7 +228,7 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
         </div>
 
         <div className={styles.chartContainer}>
-          <BarChart width={600} height={350} data={mergedData}>
+          <BarChart width={800} height={400} data={mergedData}>
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis domain={yDomain} label={{ value: yLabel, angle: -90, position: 'insideLeft' }} />
