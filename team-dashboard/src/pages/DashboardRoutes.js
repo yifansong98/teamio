@@ -1,24 +1,20 @@
-// src/pages/DashboardRoutes.js
+// src/pages/DashboardRoutes.js (example)
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-
-// Import the landing or home page:
 import ProgressTypes from '../components/ProgressTypes/ProgressTypes';
-// Import the WorkDistribution page
 import WorkDistribution from './WorkDistribution/WorkDistribution';
-import Communication from './Communication/Communication';
 import WorkProgression from './WorkProgression/WorkProgression';
+import Communication from './Communication/Communication';
+import TeamContract from './TeamContract/TeamContract'; // import new page
 
-//defining paths and associated components
-function DashboardRoutes() {
+export default function DashboardRoutes() {
   return (
     <Routes>
       <Route path="/" element={<ProgressTypes />} />
       <Route path="/workDistribution" element={<WorkDistribution />} />
-      <Route path="/communication" element={<Communication/>} />
       <Route path="/workProgression" element={<WorkProgression />} />
+      <Route path="/communication" element={<Communication />} />
+      <Route path="/teamContract" element={<TeamContract />} /> {/* new route */}
     </Routes>
   );
 }
-
-export default DashboardRoutes;
