@@ -8,17 +8,19 @@ import {
   CartesianGrid,
   Tooltip,
   ErrorBar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
 } from 'recharts';
 import styles from './WorkDistribution.module.css';
 
-/**
- * Full data set for each tool and its metrics.
- * We provide an empty array if tool/metric not found.
+/** 
+ * Full data for each tool & metric. 
+ * Provide empty array if not found.
  */
 const chartDataMap = {
-  '': {
-    '': [],
-  },
+  '': { '': [] },
   GoogleDocs: {
     edits: [
       { name: 'Anna', value: 18 },
@@ -61,10 +63,7 @@ const chartDataMap = {
   },
 };
 
-/**
- * Returns the list of metric keys (e.g. ["edits","words","comments"]).
- * If the tool doesn't exist, we return an empty array to avoid crashes.
- */
+/** Return metrics list for a given tool. */
 function getMetricsForTool(tool) {
   if (!tool || !chartDataMap[tool]) {
     return [];
@@ -72,12 +71,19 @@ function getMetricsForTool(tool) {
   return Object.keys(chartDataMap[tool]);
 }
 
-export default function WorkDistributionChartSection({ contractDataMap }) {
+/**
+ * Displays either Bar or Pie charts depending on chartType prop.
+ * The parent sets chartType = 'bar' or 'pie'.
+ */
+export default function WorkDistributionChartSection({
+  contractDataMap,
+  chartType,         // 'bar' or 'pie' from parent
+}) {
   const [selectedTool, setSelectedTool] = useState('');
   const [selectedMetric, setSelectedMetric] = useState('');
   const [showActualValue, setShowActualValue] = useState(false);
 
-  // Whenever the tool changes, pick its first metric (if any)
+  // Pick first metric if tool changes
   useEffect(() => {
     if (!selectedTool) {
       setSelectedMetric('');
@@ -91,10 +97,7 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     }
   }, [selectedTool]);
 
-  /**
-   * Safely retrieve the base data array for the current tool+metric.
-   * If anything is missing, we return an empty array to avoid .map() errors.
-   */
+  // Get base data for the chosen tool & metric
   const baseData = (() => {
     if (!selectedTool) return [];
     const dataForTool = chartDataMap[selectedTool];
@@ -104,10 +107,7 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     return dataForMetric;
   })();
 
-  /**
-   * If showActualValue is false, we convert actual data to a % of the total.
-   * Otherwise, we leave them as raw values.
-   */
+  // Convert actual data to % if showActualValue is off
   const actualData = (() => {
     if (showActualValue || baseData.length === 0) {
       return baseData;
@@ -120,14 +120,10 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     }));
   })();
 
-  // The user's planned/contract distribution for the selected tool
+  // Convert planned data to % similarly
   const plannedData = contractDataMap[selectedTool] || [];
-
-  // Also convert planned data to % if showActualValue is false
   const plannedDataConverted = (() => {
-    if (showActualValue || plannedData.length === 0) {
-      return plannedData;
-    }
+    if (showActualValue || plannedData.length === 0) return plannedData;
     const total = plannedData.reduce((sum, i) => sum + i.value, 0);
     if (!total) return plannedData;
     return plannedData.map((i) => ({
@@ -136,10 +132,7 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     }));
   })();
 
-  /**
-   * Merge actualData + plannedData for side-by-side bars, matching by "name".
-   * If planned is missing a name, default to 0/0.
-   */
+  // Merge for side-by-side bar chart
   const mergedData = actualData.map((act) => {
     const plan = plannedDataConverted.find((p) => p.name === act.name) || {
       value: 0,
@@ -153,9 +146,17 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     };
   });
 
-  /**
-   * Determine if the actualVal is within [plannedVal ± errorVal] for all members
-   */
+  // For Pie usage
+  const actualPieData = actualData.map((d) => ({
+    name: d.name,
+    value: d.value,
+  }));
+  const plannedPieData = plannedDataConverted.map((d) => ({
+    name: d.name,
+    value: d.value,
+  }));
+
+  // Are actualVals within [planned ± errorVal] for all members?
   const meetsContract = mergedData.every((item) => {
     const lower = Math.max(0, item.plannedVal - item.errorVal);
     const upper = item.plannedVal + item.errorVal;
@@ -166,13 +167,16 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
     ? 'The team meets their contract.'
     : 'The team does NOT meet their contract.';
 
-  // Y-axis domain depends on whether we are showing raw values or percentages
+  // Y-axis domain for bar chart
   const yDomain = showActualValue ? ['auto', 'auto'] : [0, 100];
   const yLabel = showActualValue ? 'Value' : '%';
 
+  // Colors for each slice in Pie
+  const colors = ['#3182ce', '#48bb78', '#e53e3e', '#d53f8c'];
+
   return (
     <div className={styles.mainContent}>
-      {/* Left (1/3) */}
+      {/* Left section => 1/3 width */}
       <div className={styles.leftSection}>
         <p className={styles.paragraph}>
           <b>Your Team Gini: 0.302</b> <br />
@@ -181,9 +185,11 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
         <p className={styles.paragraph}>{subscriptionText}</p>
       </div>
 
-      {/* Right (2/3) */}
+      {/* Right => 2/3 width */}
       <div className={styles.rightSection}>
+        {/* Controls row => tool + metric + annotate + showActualValue */}
         <div className={styles.controls}>
+          {/* Tool select */}
           <select
             className={styles.select}
             value={selectedTool}
@@ -194,6 +200,7 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
             <option value="GitHub">GitHub</option>
           </select>
 
+          {/* Metric select */}
           {selectedTool ? (
             <select
               className={styles.select}
@@ -212,9 +219,7 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
             </select>
           )}
 
-          <button className={styles.button}>
-            Annotate
-          </button>
+          <button className={styles.button}>Annotate</button>
 
           <div className={styles.checkboxContainer}>
             <input
@@ -227,17 +232,66 @@ export default function WorkDistributionChartSection({ contractDataMap }) {
           </div>
         </div>
 
+        {/* The chart display => bar or pie, depending on chartType prop */}
         <div className={styles.chartContainer}>
-          <BarChart width={600} height={350} data={mergedData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis domain={yDomain} label={{ value: yLabel, angle: -90, position: 'insideLeft' }} />
-            <Tooltip />
-            <Bar dataKey="actualVal" fill="#3182ce" name="Actual" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="plannedVal" fill="#48bb78" name="Contract" radius={[4, 4, 0, 0]}>
-              <ErrorBar dataKey="errorVal" stroke="red" strokeWidth={2} width={4} />
-            </Bar>
-          </BarChart>
+          {chartType === 'bar' ? (
+            <BarChart width={800} height={400} data={mergedData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis
+                domain={yDomain}
+                label={{ value: yLabel, angle: -90, position: 'insideLeft' }}
+              />
+              <Tooltip />
+              <Bar dataKey="actualVal" fill="#3182ce" name="Actual" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="plannedVal" fill="#48bb78" name="Contract" radius={[4, 4, 0, 0]}>
+                <ErrorBar dataKey="errorVal" stroke="red" strokeWidth={2} width={4} />
+              </Bar>
+            </BarChart>
+          ) : (
+            // If chartType === 'pie'
+            <div style={{ display: 'flex', gap: '2rem' }}>
+              {/* Actual Pie */}
+              <PieChart width={300} height={300}>
+                <Tooltip />
+                <Legend />
+                <Pie
+                  data={actualPieData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={90}
+                  label
+                >
+                  {actualPieData.map((entry, index) => (
+                    <Cell
+                      key={`cell-actual-${index}`}
+                      fill={colors[index % colors.length]}
+                    />
+                  ))}
+                </Pie>
+              </PieChart>
+
+              {/* Planned Pie */}
+              <PieChart width={300} height={300}>
+                <Tooltip />
+                <Legend />
+                <Pie
+                  data={plannedPieData}
+                  dataKey="value"
+                  nameKey="name"
+                  outerRadius={90}
+                  label
+                >
+                  {plannedPieData.map((entry, index) => (
+                    <Cell
+                      key={`cell-plan-${index}`}
+                      fill={colors[index % colors.length]}
+                    />
+                  ))}
+                </Pie>
+              </PieChart>
+            </div>
+          )}
         </div>
       </div>
     </div>

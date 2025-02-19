@@ -6,16 +6,17 @@ import { Routes, Route } from 'react-router-dom';
 import ProgressTypes from '../components/ProgressTypes/ProgressTypes';
 // Import the WorkDistribution page
 import WorkDistribution from './WorkDistribution/WorkDistribution';
-// Import the Communication page
 import Communication from './Communication/Communication';
+import WorkProgression from './WorkProgression/WorkProgression';
 
 //defining paths and associated components
 function DashboardRoutes() {
   return (
     <Routes>
       <Route path="/" element={<ProgressTypes />} />
-      <Route path="/workDistribution" element={<WorkDistribution/>} />
+      <Route path="/workDistribution" element={<WorkDistribution />} />
       <Route path="/communication" element={<Communication/>} />
+      <Route path="/workProgression" element={<WorkProgression />} />
     </Routes>
   );
 }

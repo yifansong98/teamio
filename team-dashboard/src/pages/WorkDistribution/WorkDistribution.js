@@ -15,6 +15,9 @@ export default function WorkDistribution() {
   // Holds planned data
   const [contractDataMap, setContractDataMap] = useState({});
 
+  // 'bar' or 'pie'
+  const [chartType, setChartType] = useState('bar');
+
   const handleReturnClick = () => {
     navigate('/');
   };
@@ -28,12 +31,9 @@ export default function WorkDistribution() {
 
   return (
     <div className={styles.container}>
-      {/* Pass a callback so the header's button can open the modal */}
-      <WorkDistributionHeader
-        onTeamContractClick={() => setShowTeamContract(true)}
-      />
+      <WorkDistributionHeader onTeamContractClick={() => setShowTeamContract(true)} />
 
-      <h1 className={styles.subTitle}>Incredibles - Revised Functional Prototype</h1>
+      <h1 className={styles.subTitle}>Team Name - Assignment X</h1>
       <p className={styles.subDescription}>
         The team demonstrated fair distribution of work.
       </p>
@@ -46,8 +46,25 @@ export default function WorkDistribution() {
         </p>
       </div>
 
-      <WorkDistributionChartSection contractDataMap={contractDataMap} />
 
+      <WorkDistributionChartSection
+        contractDataMap={contractDataMap}
+        chartType={chartType}
+      />
+
+      <div className={styles.chartTypeRow}>
+        <label htmlFor="chartType" style={{ marginRight: '0.5rem' }}>Chart Type:</label>
+        <select
+          id="chartType"
+          className={styles.select}
+          value={chartType}
+          onChange={(e) => setChartType(e.target.value)}
+        >
+          <option value="bar">Bar</option>
+          <option value="pie">Pie</option>
+        </select>
+      </div>
+      
       <div className={styles.returnButtonContainer}>
         <button className={styles.backButton} onClick={handleReturnClick}>
           <ArrowLeft size={16} /> Return
