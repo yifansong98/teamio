@@ -24,7 +24,6 @@ export default function Communication() {
 
   return (
     <div className={styles.container}>
-      {/* Pass a callback so the header's button can open the modal */}
       <CommunicationHeader/>
       <div className={styles.deliverableBehavior}>
       <h1 className={styles.subTitle}>Revised Functional Prototype</h1>

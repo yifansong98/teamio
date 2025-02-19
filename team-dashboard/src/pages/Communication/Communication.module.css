@@ -13,8 +13,6 @@
     align-items: center;
     justify-content: space-between;
     padding: 10px 20px;
-    /*background-color: #f4f4f4;
-    border-bottom: 2px solid #ddd*/
   }
   
   .leftHeading {
@@ -116,7 +114,6 @@
   }
 
   
-  /* The right side for chart + controls */
   .rightSection {
     background-color: #fff;
     padding: 1rem 1.5rem;
@@ -199,5 +196,19 @@
   .backButton:hover {
     background-color: #2c5282;
     transform: translateY(-1px);
+  }
+
+  .team_button {
+    padding: 10px;
+    margin-left: 60px;
+    margin-bottom: 30px;
+    background-color: #e5107a;
+    border: none;
+    color: white;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(66, 153, 225, 0.2);
   }
   
