@@ -1,26 +1,45 @@
 /* src/components/ProgressTypes/ProgressTypes.module.css */
+
 .dashboardContainer {
-    padding: 2rem;
-    max-width: 1200px;
-    margin: 0 auto;
-    font-family: system-ui, sans-serif;
-  }
-  
-  .dashboardHeader {
-    margin-bottom: 2rem;
-    text-align: center;
-  }
-  
-  .dashboardTitle {
-    font-size: 2.5rem;
-    color: #2d3748;
-    margin-bottom: 1rem;
-  }
-  
-  .dashboardGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 2rem;
-    padding: 1rem;
-  }
-  
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: system-ui, sans-serif;
+}
+
+.dashboardHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+  position: relative;
+}
+
+.dashboardTitle {
+  font-size: 2.5rem;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 1rem;
+}
+
+/* Position the "Team Contract" button in the top-right */
+.teamContractButton {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: #2d3748;
+  color: #fff;
+  text-decoration: none;
+  padding: 0.6rem 1rem;
+  border-radius: 4px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  margin: 0.8rem;
+}
+.teamContractButton:hover {
+  background: #4a5568;
+}

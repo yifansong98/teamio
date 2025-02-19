@@ -1,6 +1,7 @@
 // src/components/ProgressTypes/ProgressTypes.js
 import React from 'react';
 import { Check, AlertTriangle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import BehaviorCard from '../BehaviorCard/BehaviorCard';
 import styles from './ProgressTypes.module.css';
 
@@ -39,9 +40,12 @@ export default function ProgressTypes() {
   return (
     <div className={styles.dashboardContainer}>
       <header className={styles.dashboardHeader}>
-        <h1 className={styles.dashboardTitle}>
-          Team I/O
-        </h1>
+        <h1 className={styles.dashboardTitle}>Team I/O</h1>
+        
+        {/* New "Team Contract" button (top-right) */}
+        <Link to="/teamContract" className={styles.teamContractButton}>
+          Team Contract
+        </Link>
       </header>
 
       <div className={styles.dashboardGrid}>
