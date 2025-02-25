@@ -1,5 +1,4 @@
 /* src/pages/TeamContract/TeamContract.module.css */
-
 .contractContainer {
   max-width: 800px;
   margin: 0 auto;
@@ -28,7 +27,7 @@
   background: #fff;
   padding: 2rem;
   border-radius: 8px;
-  margin-top: 3rem; /* space so the Return button doesn't overlap */
+  margin-top: 3rem;
 }
 
 .contractContent h1 {
@@ -59,7 +58,15 @@
   margin: 0 5px;
   padding: 3px 5px;
   font-size: 0.95rem;
-  display: inline-block;
+}
+
+.textAreaInput {
+  width: 100%;
+  height: 80px;
+  margin: 0 5px;
+  padding: 8px;
+  font-size: 0.95rem;
+  resize: vertical;
 }
 
 .signatureTable {
@@ -93,6 +100,8 @@
   border-radius: 4px;
   cursor: pointer;
 }
+
 .buttonRow button:hover {
   background: #2b6cb0;
 }
+ 

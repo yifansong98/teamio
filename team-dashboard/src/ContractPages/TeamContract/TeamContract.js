@@ -8,55 +8,51 @@ import styles from './TeamContract.module.css';
 function TeamContract() {
   const navigate = useNavigate();
 
-  // State to track whether the contract is editable
-  const [editMode, setEditMode] = useState(true);
-
-  // Contract data stored in one object
-  const [contractData, setContractData] = useState({
+  // Default contract data (note: commTool and decisionMethod removed)
+  const defaultData = {
     teamName: '',
-    goals: ['', '', ''],
+    goals: '',
     dayOfWeek: '',
     startTime: '',
     endTime: '',
     place: '',
-    commTool: '',
-    decisionMethod: 'Full Consensus',
     signatures: [
-      { fullName: '', netId: '' }, // Member 1
-      { fullName: '', netId: '' }, // Member 2
-      { fullName: '', netId: '' }, // Member 3
-      { fullName: '', netId: '' }, // Member 4
-      { fullName: '', netId: '' }, // Member 5
-      { fullName: '', netId: '' }, // Member 6
+      { fullName: '', netId: '' },
+      { fullName: '', netId: '' },
+      { fullName: '', netId: '' },
+      { fullName: '', netId: '' },
+      { fullName: '', netId: '' },
+      { fullName: '', netId: '' },
     ],
-  });
+  };
 
-  // Load any saved contract from localStorage on mount
+  // State to track whether the contract is editable
+  const [editMode, setEditMode] = useState(true);
+  const [contractData, setContractData] = useState(defaultData);
+
+  // Load any saved contract from localStorage and merge with defaults
   useEffect(() => {
     const saved = localStorage.getItem('teamContractData');
     if (saved) {
-      setContractData(JSON.parse(saved));
-      // If we have saved data, show it in read-only mode
+      const parsed = JSON.parse(saved);
+      setContractData((prev) => ({
+        ...prev,
+        ...parsed,
+        signatures: parsed.signatures || prev.signatures,
+      }));
       setEditMode(false);
     }
   }, []);
 
-  // Refs for capturing the contract as an image for PDF
+  // Ref for capturing the contract for PDF export
   const contractRef = useRef(null);
 
-  // Update contract data in state for scalar fields
+  // Generic change handler for scalar fields
   const handleChange = (field, value) => {
     setContractData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // For array fields like "goals"
-  const handleGoalChange = (index, value) => {
-    const updatedGoals = [...contractData.goals];
-    updatedGoals[index] = value;
-    setContractData((prev) => ({ ...prev, goals: updatedGoals }));
-  };
-
-  // For the signatures table
+  // Handler for the signatures table
   const handleSignatureChange = (index, field, value) => {
     setContractData((prev) => {
       const updatedSignatures = [...prev.signatures];
@@ -68,13 +64,13 @@ function TeamContract() {
     });
   };
 
-  // Save contract to localStorage and switch to read-only
+  // Save the contract to localStorage and lock editing
   const handleSave = () => {
     localStorage.setItem('teamContractData', JSON.stringify(contractData));
     setEditMode(false);
   };
 
-  // Let user re-edit the contract
+  // Enable edit mode to allow changes
   const handleRequestEditAccess = () => {
     setEditMode(true);
   };
@@ -84,19 +80,16 @@ function TeamContract() {
     navigate('/');
   };
 
-  // Export to PDF using jsPDF + html2canvas
+  // Export to PDF using jsPDF and html2canvas
   const handleExportPDF = async () => {
     if (!contractRef.current) return;
     try {
       const canvas = await html2canvas(contractRef.current);
       const imgData = canvas.toDataURL('image/png');
-
       const pdf = new jsPDF('p', 'pt', 'a4');
-      // Calculate image width/height to fit the PDF page
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const imgProps = pdf.getImageProperties(imgData);
       const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save('team_contract.pdf');
     } catch (err) {
@@ -104,32 +97,15 @@ function TeamContract() {
     }
   };
 
-  // Render bullet point lines differently if read-only vs. editable
-  const bulletGoals = contractData.goals.map((g, i) => (
-    <li key={i}>
-      {editMode ? (
-        <input
-          type="text"
-          placeholder={`Goal ${i + 1}`}
-          value={g}
-          onChange={(e) => handleGoalChange(i, e.target.value)}
-        />
-      ) : (
-        <span>{g || `Goal ${i + 1}`}</span>
-      )}
-    </li>
-  ));
-
   return (
     <div className={styles.contractContainer}>
-      {/* Return button at the top */}
+      {/* Return Button */}
       <button className={styles.returnButton} onClick={handleReturn}>
         Return
       </button>
 
-      {/* Contract content */}
       <div className={styles.contractContent} ref={contractRef}>
-        {/* Title: Team Name */}
+        {/* Title */}
         <h1>
           CS 465 Team Contract for{' '}
           {editMode ? (
@@ -145,11 +121,30 @@ function TeamContract() {
           )}
         </h1>
 
-        {/* 1. Goals */}
+        {/* Section 1: Goals */}
         <h2>1. Goals</h2>
-        <ul>{bulletGoals}</ul>
+        <ul>
+          <li>
+            {editMode ? (
+              <textarea
+                className={styles.textAreaInput}
+                placeholder="Write down 1-3 goals that the team wants to accomplish through the course project. Examples can include the desired project grade, learning specific tools or methods, and disseminating the project outcome to specific external audiences."
+                value={contractData.goals}
+                onChange={(e) => handleChange('goals', e.target.value)}
+              />
+            ) : (
+              <span>
+                {contractData.goals ||
+                  'Write down 1-3 goals that the team wants to accomplish through the course project. Examples can include the desired project grade, learning specific tools or methods, and disseminating the project outcome to specific external audiences.'}
+              </span>
+            )}
+          </li>
+          <li>
+            We agree to reflect together on our teamwork behaviors and data relevant to this contract.
+          </li>
+        </ul>
 
-        {/* 2. Meetings */}
+        {/* Section 2: Meetings */}
         <h2>2. Meetings</h2>
         <ul>
           <li>
@@ -158,14 +153,14 @@ function TeamContract() {
               <input
                 className={styles.inlineInput}
                 type="text"
-                placeholder="(day of week)"
+                placeholder="(days of the week)"
                 value={contractData.dayOfWeek}
                 onChange={(e) => handleChange('dayOfWeek', e.target.value)}
               />
             ) : (
               <span>{contractData.dayOfWeek || '_____'}</span>
-            )}
-            {' '}from{' '}
+            )}{' '}
+            from{' '}
             {editMode ? (
               <input
                 className={styles.inlineInput}
@@ -176,8 +171,8 @@ function TeamContract() {
               />
             ) : (
               <span>{contractData.startTime || '_____'}</span>
-            )}
-            {' '}to{' '}
+            )}{' '}
+            to{' '}
             {editMode ? (
               <input
                 className={styles.inlineInput}
@@ -188,8 +183,8 @@ function TeamContract() {
               />
             ) : (
               <span>{contractData.endTime || '_____'}</span>
-            )}
-            {' '}at{' '}
+            )}{' '}
+            at{' '}
             {editMode ? (
               <input
                 className={styles.inlineInput}
@@ -204,70 +199,27 @@ function TeamContract() {
             .
           </li>
           <li>
-            We agree to arrive on time for all team meetings and notify team
-            members in advance if running late or unable to attend.
+            We agree to arrive on time for all team meetings and notify team members in advance when running late or unable to attend.
           </li>
         </ul>
 
-        {/* 3. Interaction Norms */}
+        {/* Section 3: Interaction Norms */}
         <h2>3. Interaction Norms</h2>
         <ul>
-          <li>
-            We agree to communicate with each other in a timely, inclusive, and
-            professional manner.
-          </li>
-          <li>
-            We agree to use{' '}
-            {editMode ? (
-              <input
-                className={styles.inlineInput}
-                type="text"
-                placeholder="(communication tool)"
-                value={contractData.commTool}
-                onChange={(e) => handleChange('commTool', e.target.value)}
-              />
-            ) : (
-              <span>{contractData.commTool || '_____'}</span>
-            )}
-            {' '}as the main communication channel.
-          </li>
-          <li>We agree to support each other and ask for help when needed.</li>
-          <li>
-            We agree to inform team members in advance if assigned tasks cannot
-            be completed on time.
-          </li>
+          <li>We agree to communicate in a timely, respectful, and professional manner.</li>
+          <li>We agree to be inclusive so that everyone can participate in discussions and decision-making.</li>
+          <li>We agree to review each other’s work and provide constructive feedback.</li>
         </ul>
 
-        {/* 4. Work Norms */}
+        {/* Section 4: Work Norms */}
         <h2>4. Work Norms</h2>
         <ul>
-          <li>
-            We agree to divide work equitably across all project deliverables
-            and catch up on missing work if a significant imbalance arises.
-          </li>
-          <li>
-            We agree to maintain good work quality and review each other’s work
-            with constructive feedback and/or direct revisions.
-          </li>
-          <li>
-            We agree to make important decisions by{' '}
-            {editMode ? (
-              <select
-                className={styles.inlineInput}
-                value={contractData.decisionMethod}
-                onChange={(e) => handleChange('decisionMethod', e.target.value)}
-              >
-                <option value="Full Consensus">Full Consensus</option>
-                <option value="Majority Vote">Majority Vote</option>
-              </select>
-            ) : (
-              <span>{contractData.decisionMethod}</span>
-            )}
-            .
-          </li>
+          <li>We agree to divide work equitably across all project deliverables and catch up on missing work if a significant imbalance arises.</li>
+          <li>We agree to make plans for every project deliverable and inform team members in advance if assigned tasks cannot be completed on time.</li>
+          <li>We agree to maintain good work quality and revise based on each other’s feedback.</li>
         </ul>
 
-        {/* 5. Signature Section */}
+        {/* Section 5: Signatures */}
         <h2>5. Signature (Type down your full name and NetID)</h2>
         <table className={styles.signatureTable}>
           <thead>
@@ -313,16 +265,14 @@ function TeamContract() {
         </table>
       </div>
 
-      {/* Button row */}
+      {/* Button Row */}
       <div className={styles.buttonRow}>
         {editMode ? (
-          // If editing, show "Save" and "Export"
           <>
             <button onClick={handleSave}>Save</button>
             <button onClick={handleExportPDF}>Export as PDF</button>
           </>
         ) : (
-          // If read-only, show "Request Edit Access" and "Export"
           <>
             <button onClick={handleRequestEditAccess}>Request Edit Access</button>
             <button onClick={handleExportPDF}>Export as PDF</button>

@@ -42,7 +42,7 @@ export default function ProgressTypes() {
       <header className={styles.dashboardHeader}>
         <h1 className={styles.dashboardTitle}>Team I/O</h1>
         
-        {/* New "Team Contract" button (top-right) */}
+        {/* Existing "Team Contract" button */}
         <Link to="/teamContract" className={styles.teamContractButton}>
           Team Contract
         </Link>
@@ -59,6 +59,13 @@ export default function ProgressTypes() {
             route={section.route}
           />
         ))}
+      </div>
+      
+      {/* New "Reflect on Your Data" button */}
+      <div className={styles.reflectButtonContainer}>
+        <Link to="/contractReflection" className={styles.reflectButton}>
+          Reflect on Your Data
+        </Link>
       </div>
     </div>
   );
