@@ -3,9 +3,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Menu as MenuIcon, CornerUpLeft } from 'lucide-react';
 
-// Updated: Import our new communication panel component
-import CommunicationPanel from '../Visualizations/CommunicationPanel';
-import WorkViz from '../Visualizations/WorkViz';
+// Import the visualization components
+import CommunicationPanel from '../Visualizations/CommunicationNorms/CommunicationPanel';
+import WorkViz from '../Visualizations/WorkNorms/WorkViz';
+
+// Import the ReflectionEditor component
+import ReflectionEditor from '../Components/ReflectionEditor';
 
 import styles from './ContractReflection.module.css';
 
@@ -126,13 +129,10 @@ export default function ContractReflection() {
               </ul>
             </div>
             <div className={styles.rightColumn}>
-              {/* No visualization for Meetings, just a placeholder */}
               <div className={styles.noVisualization}>No visualization for Meetings</div>
             </div>
           </div>
-          <div className={styles.reflectionArea}>
-            <textarea placeholder="Reflect on your meetings performance here..."></textarea>
-          </div>
+          <ReflectionEditor sectionName="Meetings" />
         </section>
 
         {/* Section: Communication Norms */}
@@ -150,13 +150,10 @@ export default function ContractReflection() {
               </ul>
             </div>
             <div className={styles.rightColumn}>
-              {/* Updated: Render the new CommunicationPanel which includes both bar chart and network graph */}
               <CommunicationPanel />
             </div>
           </div>
-          <div className={styles.reflectionArea}>
-            <textarea placeholder="Reflect on your communication performance here..."></textarea>
-          </div>
+          <ReflectionEditor sectionName="Communication" />
         </section>
 
         {/* Section: Work Norms */}
@@ -174,13 +171,10 @@ export default function ContractReflection() {
               </ul>
             </div>
             <div className={styles.rightColumn}>
-              {/* Inline chart (centered) */}
               <WorkViz />
             </div>
           </div>
-          <div className={styles.reflectionArea}>
-            <textarea placeholder="Reflect on your work norms performance here..."></textarea>
-          </div>
+          <ReflectionEditor sectionName="Work" />
         </section>
       </div>
     </div>
