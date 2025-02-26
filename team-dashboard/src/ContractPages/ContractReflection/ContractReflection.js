@@ -1,15 +1,20 @@
-// src/pages/TeamReflection/TeamReflection.js
+// src/ContractPages/ContractReflection/ContractReflection.js
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import CommunicationChart from '../../BehaviorPages/Communication/CommunicationChart';
+import { Menu as MenuIcon, CornerUpLeft } from 'lucide-react';
+
+// Updated: Import our new communication panel component
+import CommunicationPanel from '../Visualizations/CommunicationPanel';
+import WorkViz from '../Visualizations/WorkViz';
+
 import styles from './ContractReflection.module.css';
 
-export default function TeamReflection() {
+export default function ContractReflection() {
   const navigate = useNavigate();
+
   // Load saved contract data from localStorage
   const [contractData, setContractData] = useState({
     teamName: '',
-    goals: '',
     dayOfWeek: '',
     startTime: '',
     endTime: '',
@@ -22,7 +27,6 @@ export default function TeamReflection() {
       const parsed = JSON.parse(saved);
       setContractData({
         teamName: parsed.teamName || '',
-        goals: parsed.goals || '',
         dayOfWeek: parsed.dayOfWeek || '',
         startTime: parsed.startTime || '',
         endTime: parsed.endTime || '',
@@ -32,7 +36,6 @@ export default function TeamReflection() {
   }, []);
 
   // Refs for each section (for menu navigation)
-  const goalsRef = useRef(null);
   const meetingsRef = useRef(null);
   const communicationRef = useRef(null);
   const workNormsRef = useRef(null);
@@ -46,6 +49,7 @@ export default function TeamReflection() {
   // Menu state
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Return to home
   const handleReturn = () => {
     navigate('/');
   };
@@ -54,66 +58,76 @@ export default function TeamReflection() {
     <div className={styles.pageContainer}>
       {/* Fixed Header */}
       <header className={styles.fixedHeader}>
+        {/* Return button with curved arrow icon */}
         <button className={styles.headerButton} onClick={handleReturn}>
-          Return
+          <CornerUpLeft size={18} />
         </button>
+
+        {/* Menu button with hamburger icon */}
         <button
           className={styles.headerButton}
           onClick={() => setMenuOpen(!menuOpen)}
         >
-          Menu
+          <MenuIcon size={18} />
         </button>
+
         {menuOpen && (
           <div className={styles.menuDropdown}>
-            <button onClick={() => { scrollToSection(goalsRef); setMenuOpen(false); }}>Goals</button>
-            <button onClick={() => { scrollToSection(meetingsRef); setMenuOpen(false); }}>Meetings</button>
-            <button onClick={() => { scrollToSection(communicationRef); setMenuOpen(false); }}>Communication Norms</button>
-            <button onClick={() => { scrollToSection(workNormsRef); setMenuOpen(false); }}>Work Norms</button>
+            <button
+              onClick={() => {
+                scrollToSection(meetingsRef);
+                setMenuOpen(false);
+              }}
+            >
+              Meetings
+            </button>
+            <button
+              onClick={() => {
+                scrollToSection(communicationRef);
+                setMenuOpen(false);
+              }}
+            >
+              Communication Norms
+            </button>
+            <button
+              onClick={() => {
+                scrollToSection(workNormsRef);
+                setMenuOpen(false);
+              }}
+            >
+              Work Norms
+            </button>
           </div>
         )}
       </header>
 
       {/* Scrollable Main Content */}
       <div className={styles.mainContent}>
-        {/* Section 1: Goals */}
-        <section ref={goalsRef} className={styles.section}>
-          <div className={styles.sectionHeader}>
-            <h2>Goals</h2>
-          </div>
-          <div className={styles.sectionContent}>
-            <div className={styles.leftColumn}>
-              <h3>Team Contract Details</h3>
-              <p>{contractData.goals || 'No goals specified.'}</p>
-              <p>
-                We agree to reflect together on our teamwork behaviors and data relevant to this contract.
-              </p>
-            </div>
-            <div className={styles.rightColumn}>
-              {/* No visualization for goals */}
-            </div>
-          </div>
-          <div className={styles.reflectionArea}>
-            <textarea placeholder="Reflect on your goals performance here..."></textarea>
-          </div>
-        </section>
-
-        {/* Section 2: Meetings */}
+        {/* Section: Meetings */}
         <section ref={meetingsRef} className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Meetings</h2>
           </div>
           <div className={styles.sectionContent}>
             <div className={styles.leftColumn}>
-              <h3>Team Contract Details</h3>
-              <p>
-                We agree to meet every week on {contractData.dayOfWeek || '_____'} from {contractData.startTime || '_____'} to {contractData.endTime || '_____'} at {contractData.place || '_____'}.
-              </p>
-              <p>
-                We agree to arrive on time for all team meetings and notify team members in advance when running late or unable to attend.
-              </p>
+              <h3 className={styles.contractSubheader}>On your team contract:</h3>
+              <ul className={styles.sectionPoints}>
+                <li>
+                  We agree to meet every week on{' '}
+                  {contractData.dayOfWeek || '_____'} from{' '}
+                  {contractData.startTime || '_____'} to{' '}
+                  {contractData.endTime || '_____'} at{' '}
+                  {contractData.place || '_____'}.
+                </li>
+                <li>
+                  We agree to arrive on time for all team meetings and notify team
+                  members in advance when running late or unable to attend.
+                </li>
+              </ul>
             </div>
             <div className={styles.rightColumn}>
-              {/* No visualization for meetings */}
+              {/* No visualization for Meetings, just a placeholder */}
+              <div className={styles.noVisualization}>No visualization for Meetings</div>
             </div>
           </div>
           <div className={styles.reflectionArea}>
@@ -121,23 +135,23 @@ export default function TeamReflection() {
           </div>
         </section>
 
-        {/* Section 3: Communication Norms */}
+        {/* Section: Communication Norms */}
         <section ref={communicationRef} className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Communication Norms</h2>
           </div>
           <div className={styles.sectionContent}>
             <div className={styles.leftColumn}>
-              <h3>Team Contract Details</h3>
-              <ul>
+              <h3 className={styles.contractSubheader}>On your team contract:</h3>
+              <ul className={styles.sectionPoints}>
                 <li>We agree to communicate in a timely, respectful, and professional manner.</li>
                 <li>We agree to be inclusive so that everyone can participate in discussions and decision-making.</li>
                 <li>We agree to review each other’s work and provide constructive feedback.</li>
               </ul>
             </div>
             <div className={styles.rightColumn}>
-              {/* Reuse the CommunicationChart as a placeholder */}
-              <CommunicationChart />
+              {/* Updated: Render the new CommunicationPanel which includes both bar chart and network graph */}
+              <CommunicationPanel />
             </div>
           </div>
           <div className={styles.reflectionArea}>
@@ -145,25 +159,23 @@ export default function TeamReflection() {
           </div>
         </section>
 
-        {/* Section 4: Work Norms */}
+        {/* Section: Work Norms */}
         <section ref={workNormsRef} className={styles.section}>
           <div className={styles.sectionHeader}>
             <h2>Work Norms</h2>
           </div>
           <div className={styles.sectionContent}>
             <div className={styles.leftColumn}>
-              <h3>Team Contract Details</h3>
-              <ul>
+              <h3 className={styles.contractSubheader}>On your team contract:</h3>
+              <ul className={styles.sectionPoints}>
                 <li>We agree to divide work equitably across all project deliverables and catch up on missing work if a significant imbalance arises.</li>
                 <li>We agree to make plans for every project deliverable and inform team members in advance if assigned tasks cannot be completed on time.</li>
                 <li>We agree to maintain good work quality and revise based on each other’s feedback.</li>
               </ul>
             </div>
             <div className={styles.rightColumn}>
-              {/* Placeholder for Work Norms Visualization */}
-              <div className={styles.visualizationPlaceholder}>
-                Placeholder for Work Norms Visualization
-              </div>
+              {/* Inline chart (centered) */}
+              <WorkViz />
             </div>
           </div>
           <div className={styles.reflectionArea}>
