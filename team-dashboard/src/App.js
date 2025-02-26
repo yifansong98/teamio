@@ -1,7 +1,7 @@
 // src/App.js
 import React from 'react';
 import { BrowserRouter as Router } from 'react-router-dom';
-import DashboardRoutes from './HomePage/DashboardRoutes';
+import DashboardRoutes from './HomePages/DashboardRoutes';
 import './App.css'; // Optional global styles
 
 function App() {
