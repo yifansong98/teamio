@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import WorkPieCharts from '../Visualizations/WorkNorms/WorkPieCharts';
 import WorkTimelineCharts from '../Visualizations/WorkNorms/WorkTimelineCharts';
-import WorkViz from '../Visualizations/WorkNorms/WorkViz';
+import DoubleCommentSankey from '../Visualizations/WorkNorms/DoubleCommentSankey';
 import ReflectionEditor from '../Components/ReflectionEditor';
 import styles from './ContractReflection.module.css';
 
@@ -10,28 +10,28 @@ const workStatements = [
   {
     id: 'work1',
     text: 'We agree to divide work equitably across all project deliverables and catch up on missing work if a significant imbalance arises.',
-    behavior: 'Desired Behavior - Every member of the team should make a sufficient and balanced contribution to the project.',
-    caption: 'An edit in Google Docs is a change to a document, such as adding text, changing the font, or inserting an image. You can review them from the "Version History".\nA Commit in GitHub records changes to one or more files in your branch, for more information: [link].',
-    vizType: 'pie',
+    caption:
+      'An edit in Google Docs is a change to a document, such as adding text, changing the font, or inserting an image. You can review them from the "Version History".\nA Commit in GitHub records changes to one or more files in your branch, for more information: [link].\nUpload your own data',
+    vizType: 'pie', // Renders WorkPieCharts
   },
   {
     id: 'work2',
-    text: 'We agree to make plans for every project deliverable and inform team members in advance if assigned tasks cannot be completed on time.',
-    behavior: 'Desired Behavior - Every teammebr should work in a timely manner such as starting early and finishing their own task on time.',
-    caption: 'Timeline visualization showing the percentage of contributions for the deliverable planning across days, with actual numbers on hover.',
-    vizType: 'timeline',
+    text: 'We agree to work in a timely manner such as starting early or making steady progress throughout the project.',
+    caption:
+      'Timeline visualization showing the cumulative percentage of contributions, where the final day represents 100% of the total contributions.\nIt will display the actual contribution count based on the metric you selected when hovering.',
+    vizType: 'timeline', // Renders WorkTimelineCharts
   },
   {
     id: 'work3',
-    text: 'We agree to maintain good work quality and revise based on each other’s feedback.',
-    behavior: 'Desired Behavior - ',
-    caption: 'Some visualization explanation...',
-    vizType: 'placeholder',
+    text: 'We agree to review each other\'s work and provide constructive feedback.',
+    caption:
+      'Sankey diagram showing the flow of comments: which member left how many comments on another member’s work. When hovering, the link displays "Member X leaves N comments to Member Y."\nThe data',
+    vizType: 'comment', // Renders CommentSankey
   },
 ];
 
 export default function WorkReflection({ onPrevPage }) {
-  // Track reflection checkboxes for each statement.
+  // Track which statements are checked for reflection.
   const [reflectFlags, setReflectFlags] = useState(
     workStatements.reduce((acc, st) => ({ ...acc, [st.id]: false }), {})
   );
@@ -40,28 +40,38 @@ export default function WorkReflection({ onPrevPage }) {
     setReflectFlags((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const selectedDims = workStatements
-    .filter((st) => reflectFlags[st.id])
-    .map((st, i) => `${i + 1}. ${st.text}`)
-    .join('\n');
-
-  const reflectionPrompt = selectedDims
-    ? `You have chosen to reflect on the following work dimensions:\n${selectedDims}\n\nPlease provide your overall reflection below:`
-    : 'Please provide your overall reflection for Work:';
+  // Gather selected statements for the reflection prompt.
+  const selectedStatements = workStatements.filter((st) => reflectFlags[st.id]);
+  const reflectionPrompt =
+    selectedStatements.length > 0
+      ? `You have chosen to reflect on the following work dimensions:\n${selectedStatements
+          .map((st, i) => `${i + 1}. ${st.text}`)
+          .join('\n')}\n\nPlease provide your overall reflection below:`
+      : 'Please provide your overall reflection for Work:';
 
   return (
     <div>
+      {/* Top instruction */}
+      <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
+        Please select at least one dimension you would like to reflect about your team's work.
+        We are collecting data only from your Google Drive folder and GitHub repo from startDate to endDate. There will be more work that may not be fully represented in this data visualization, such as paper prototyping or brainstorming.
+      </div>
+      <hr style={{ marginBottom: '1rem' }} />
+
       {workStatements.map((st) => (
         <div key={st.id} className={styles.subSection}>
           <div className={styles.leftSubSection}>
             <div className={styles.subSectionTitle}>On your contract:</div>
-            <div className={styles.subSectionStatement} style={{ whiteSpace: 'pre-line' }}>
+            <div
+              className={styles.subSectionStatement}
+              style={{ whiteSpace: 'pre-line' }}
+            >
               {st.text}
             </div>
-            <div className={styles.subSectionDesired} style={{ whiteSpace: 'pre-line' }}>
-              {st.behavior}
-            </div>
-            <div className={styles.subSectionCaption} style={{ whiteSpace: 'pre-line' }}>
+            <div
+              className={styles.subSectionCaption}
+              style={{ whiteSpace: 'pre-line' }}
+            >
               {st.caption}
             </div>
             <label className={styles.checkboxLabel}>
@@ -78,12 +88,31 @@ export default function WorkReflection({ onPrevPage }) {
               <WorkPieCharts />
             ) : st.vizType === 'timeline' ? (
               <WorkTimelineCharts />
-            ) : (
-              <WorkViz />
-            )}
+            ) : st.vizType === 'comment' ? (
+              <DoubleCommentSankey />
+            ) : null}
           </div>
         </div>
       ))}
+
+      <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
+        {selectedStatements.length === 0 ? (
+          <div style={{ color: 'red' }}>
+            You need to at least reflect on one dimension of your work.
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontWeight: 'bold' }}>
+              You have chosen to reflect on the following dimensions:
+            </p>
+            <ul style={{ marginLeft: '1.5rem' }}>
+              {selectedStatements.map((st) => (
+                <li key={st.id}>{st.text}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
 
       <div className={styles.finalReflectionSection}>
         <ReflectionEditor sectionName="Work" prompt={reflectionPrompt} />

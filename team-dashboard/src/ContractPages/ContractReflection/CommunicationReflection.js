@@ -1,34 +1,37 @@
 // src/ContractPages/ContractReflection/CommunicationReflection.js
 import React, { useState } from 'react';
 import ReflectionEditor from '../Components/ReflectionEditor';
+import CommunicationBarChart from '../Visualizations/CommunicationNorms/CommunicationBarChart'
+import CommunicationHeatmap from '../Visualizations/CommunicationNorms/CommunicationHeatmap';
 import styles from './ContractReflection.module.css';
 
-// We'll define minimal "VizWrapper" components for each bullet
-import BarVizWrapper from '../Visualizations/CommunicationNorms/BarVizWrapper';
-import HeatmapVizWrapper from '../Visualizations/CommunicationNorms/HeatmapVizWrapper';
-import TimeVizWrapper from '../Visualizations/CommunicationNorms/TimeVizWrapper';
-
-// Example communication contract statements
+// We now have only three statements:
 const commStatements = [
   {
     id: 'comm1',
-    text: 'We agree to communicate in a timely, respectful, and professional manner.',
-    VizComponent: BarVizWrapper,
+    text: 'We agree to communicate actively and treat each other with respect.',
+    caption: 'The current "polite message classification" is based on the algorithm proposed in [link], and may not be perfect.\nWhile politeness may not be exactly the same as respectfulness, using more "polite strategies [link]" in your conversation will help pay more respect',
+    VizComponent: CommunicationBarChart, // 1) Bar Chart
   },
   {
     id: 'comm2',
-    text: 'We agree to be inclusive so that everyone can participate in discussions and decision-making.',
-    VizComponent: HeatmapVizWrapper,
+    text: 'We agree to be responsive and inclusive so that everyone can participate in discussions and decision-making.',
+    caption: 'The heatmap shows all how many team members are involved in each of your conversation.\nA conversation is defined as a chunk of messages segmented by a 6-hour gap.',
+    VizComponent: CommunicationHeatmap, // 2) Heatmap
   },
   {
     id: 'comm3',
-    text: 'We agree to review each other’s work and provide constructive feedback.',
-    VizComponent: TimeVizWrapper,
+    text: 'We agree to arrive on time for all team meetings and notify team members in advance when running late or unable to attend.',
+    caption: 'While your meeting data is not collected, you are still welcome to reflect on how your team could improve regarding meeting participation.', // 3) No data
+    VizComponent: null,
   },
 ];
 
 export default function CommunicationReflection({ onNextPage }) {
-  // Track which statements the user wants to reflect on
+  const instruction =
+    "Please select at least one dimension you would like to reflect about your team's communication.";
+
+  // Track which statements are checked for reflection.
   const [reflectFlags, setReflectFlags] = useState(
     commStatements.reduce((acc, st) => ({ ...acc, [st.id]: false }), {})
   );
@@ -37,24 +40,29 @@ export default function CommunicationReflection({ onNextPage }) {
     setReflectFlags((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Build reflection prompt
-  const selectedDims = commStatements
-    .filter((st) => reflectFlags[st.id])
-    .map((st, i) => `${i + 1}. ${st.text}`)
-    .join('\n');
-
-  const reflectionPrompt = selectedDims
-    ? `You have chosen to reflect on the following communication dimensions:\n${selectedDims}\n\nPlease provide your overall reflection below:`
-    : 'Please provide your overall reflection for Communication:';
+  // Gather selected statements
+  const selectedStatements = commStatements.filter((st) => reflectFlags[st.id]);
 
   return (
     <div>
+      {/* Top instruction + divider */}
+      <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
+        {instruction}
+      </div>
+      <hr style={{ marginBottom: '1rem' }} />
+
       {commStatements.map((st) => {
         const VizWrapper = st.VizComponent;
         return (
           <div key={st.id} className={styles.subSection}>
             <div className={styles.leftSubSection}>
-              <h3 className={styles.subSectionHeader}>{st.text}</h3>
+              <div className={styles.subSectionTitle}>On your contract:</div>
+              <div className={styles.subSectionStatement} style={{ whiteSpace: 'pre-line' }}>
+                {st.text}
+              </div>
+              <div className={styles.subSectionCaption} style={{ whiteSpace: 'pre-line' }}>
+                {st.caption}
+              </div>
               <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
@@ -65,21 +73,40 @@ export default function CommunicationReflection({ onNextPage }) {
               </label>
             </div>
             <div className={styles.rightSubSection}>
-              <VizWrapper />
+              {/* If VizComponent is null => "No data to visualize for now." */}
+              {VizWrapper ? <VizWrapper /> : <p>No data to visualize for now.</p>}
             </div>
           </div>
         );
       })}
 
-      {/* Reflection Editor */}
+      {/* Display selected statements or warning */}
+      <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
+        {selectedStatements.length === 0 ? (
+          <div style={{ color: 'red' }}>
+            You need to at least reflect on one dimension of your communication.
+          </div>
+        ) : (
+          <div>
+            <p style={{ fontWeight: 'bold' }}>
+              You have chosen to reflect on the following dimensions:
+            </p>
+            <ul style={{ marginLeft: '1.5rem' }}>
+              {selectedStatements.map((st) => (
+                <li key={st.id}>{st.text}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
       <div className={styles.finalReflectionSection}>
         <ReflectionEditor
           sectionName="Communication"
-          prompt={reflectionPrompt}
+          prompt="Please provide your overall reflection below:"
         />
       </div>
 
-      {/* Next Page button at bottom-right */}
       <div className={styles.pageNavButtons}>
         <button className={styles.nextPageButton} onClick={onNextPage}>
           Next Page &raquo;
