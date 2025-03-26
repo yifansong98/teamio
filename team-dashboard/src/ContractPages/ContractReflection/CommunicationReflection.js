@@ -1,29 +1,32 @@
 // src/ContractPages/ContractReflection/CommunicationReflection.js
 import React, { useState } from 'react';
 import ReflectionEditor from '../Components/ReflectionEditor';
-import CommunicationBarChart from '../Visualizations/CommunicationNorms/CommunicationBarChart'
+import CommunicationBarChart from '../Visualizations/CommunicationNorms/CommunicationBarChart';
 import CommunicationHeatmap from '../Visualizations/CommunicationNorms/CommunicationHeatmap';
+import MeetingDataModal from '../Components/MeetingDataModal';
 import styles from './ContractReflection.module.css';
 
-// We now have only three statements:
 const commStatements = [
   {
     id: 'comm1',
     text: 'We agree to communicate actively and treat each other with respect.',
-    caption: 'The current "polite message classification" is based on the algorithm proposed in [link], and may not be perfect.\nWhile politeness may not be exactly the same as respectfulness, using more "polite strategies [link]" in your conversation will help pay more respect',
-    VizComponent: CommunicationBarChart, // 1) Bar Chart
+    caption:
+      'The current "polite message classification" is based on the algorithm proposed in [link], and may not be perfect.\nWhile politeness may not be exactly the same as respectfulness, using more "polite strategies [link]" in your conversation will help pay more respect.',
+    VizComponent: CommunicationBarChart, // Bar Chart
   },
   {
     id: 'comm2',
     text: 'We agree to be responsive and inclusive so that everyone can participate in discussions and decision-making.',
-    caption: 'The heatmap shows all how many team members are involved in each of your conversation.\nA conversation is defined as a chunk of messages segmented by a 6-hour gap.',
-    VizComponent: CommunicationHeatmap, // 2) Heatmap
+    caption:
+      'The heatmap shows how many team members are involved in each of your conversations.\nA conversation is defined as a chunk of messages segmented by a 6-hour gap.',
+    VizComponent: CommunicationHeatmap, // Heatmap
   },
   {
     id: 'comm3',
     text: 'We agree to arrive on time for all team meetings and notify team members in advance when running late or unable to attend.',
-    caption: 'While your meeting data is not collected, you are still welcome to reflect on how your team could improve regarding meeting participation.', // 3) No data
-    VizComponent: null,
+    caption:
+      'Enter your meeting data to track attendance and punctuality. Use the "Enter Your Data" button below to add meeting records.',
+    VizComponent: null, // No visualization component for this dimension
   },
 ];
 
@@ -45,7 +48,7 @@ export default function CommunicationReflection({ onNextPage }) {
 
   return (
     <div>
-      {/* Top instruction + divider */}
+      {/* Top instruction and divider */}
       <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
         {instruction}
       </div>
@@ -63,6 +66,8 @@ export default function CommunicationReflection({ onNextPage }) {
               <div className={styles.subSectionCaption} style={{ whiteSpace: 'pre-line' }}>
                 {st.caption}
               </div>
+              {/* For meeting data (comm3), include the MeetingDataModal button */}
+              {st.id === 'comm3' && <MeetingDataModal />}
               <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
@@ -73,7 +78,6 @@ export default function CommunicationReflection({ onNextPage }) {
               </label>
             </div>
             <div className={styles.rightSubSection}>
-              {/* If VizComponent is null => "No data to visualize for now." */}
               {VizWrapper ? <VizWrapper /> : <p>No data to visualize for now.</p>}
             </div>
           </div>
