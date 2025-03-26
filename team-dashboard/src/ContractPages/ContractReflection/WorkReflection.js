@@ -4,6 +4,7 @@ import WorkPieCharts from '../Visualizations/WorkNorms/WorkPieCharts';
 import WorkTimelineCharts from '../Visualizations/WorkNorms/WorkTimelineCharts';
 import DoubleCommentSankey from '../Visualizations/WorkNorms/DoubleCommentSankey';
 import ReflectionEditor from '../Components/ReflectionEditor';
+import WorkDataModal from '../Components/WorkDataModal';
 import styles from './ContractReflection.module.css';
 
 const workStatements = [
@@ -11,7 +12,7 @@ const workStatements = [
     id: 'work1',
     text: 'We agree to divide work equitably across all project deliverables and catch up on missing work if a significant imbalance arises.',
     caption:
-      'An edit in Google Docs is a change to a document, such as adding text, changing the font, or inserting an image. You can review them from the "Version History".\nA Commit in GitHub records changes to one or more files in your branch, for more information: [link].\nUpload your own data',
+      'An edit in Google Docs is a change to a document, such as adding text, changing the font, or inserting an image. You can review them from the "Version History".\nA Commit in GitHub records changes to one or more files in your branch, for more information: [link].',
     vizType: 'pie', // Renders WorkPieCharts
   },
   {
@@ -23,15 +24,15 @@ const workStatements = [
   },
   {
     id: 'work3',
-    text: 'We agree to review each other\'s work and provide constructive feedback.',
+    text: "We agree to review each other's work and provide constructive feedback.",
     caption:
       'Sankey diagram showing the flow of comments: which member left how many comments on another member’s work. When hovering, the link displays "Member X leaves N comments to Member Y."\nThe data',
-    vizType: 'comment', // Renders CommentSankey
+    vizType: 'comment', // Renders DoubleCommentSankey
   },
 ];
 
 export default function WorkReflection({ onPrevPage }) {
-  // Track which statements are checked for reflection.
+  // Reflection checkboxes
   const [reflectFlags, setReflectFlags] = useState(
     workStatements.reduce((acc, st) => ({ ...acc, [st.id]: false }), {})
   );
@@ -40,7 +41,7 @@ export default function WorkReflection({ onPrevPage }) {
     setReflectFlags((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  // Gather selected statements for the reflection prompt.
+  // Gather selected statements for reflection prompt
   const selectedStatements = workStatements.filter((st) => reflectFlags[st.id]);
   const reflectionPrompt =
     selectedStatements.length > 0
@@ -53,9 +54,15 @@ export default function WorkReflection({ onPrevPage }) {
     <div>
       {/* Top instruction */}
       <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
-        Please select at least one dimension you would like to reflect about your team's work.
-        We are collecting data only from your Google Drive folder and GitHub repo from startDate to endDate. There will be more work that may not be fully represented in this data visualization, such as paper prototyping or brainstorming.
+        Please select at least one dimension you would like to reflect about your team's work. <br />
+        We are collecting data only from your Google Drive folder [link] and GitHub repo [link] from [startDate] to [endDate]. <br />
+        There will be more work that may not be fully represented in this data visualization, such as paper prototyping or brainstorming.
+        <br />
+        <br />
+        {/* The new "Enter your work" button, triggers the WorkDataModal */}
+        <WorkDataModal />
       </div>
+
       <hr style={{ marginBottom: '1rem' }} />
 
       {workStatements.map((st) => (
@@ -78,7 +85,7 @@ export default function WorkReflection({ onPrevPage }) {
               <input
                 type="checkbox"
                 checked={reflectFlags[st.id]}
-                onChange={() => handleCheckboxChange(st.id)}
+                onChange={() => setReflectFlags((prev) => ({ ...prev, [st.id]: !prev[st.id] }))}
               />
               I would like to reflect on this dimension
             </label>
@@ -95,6 +102,7 @@ export default function WorkReflection({ onPrevPage }) {
         </div>
       ))}
 
+      {/* Reflection prompt */}
       <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
         {selectedStatements.length === 0 ? (
           <div style={{ color: 'red' }}>
