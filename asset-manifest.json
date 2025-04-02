@@ -1,16 +1,16 @@
 {
   "files": {
-    "main.css": "/teamio/static/css/main.dc6d6f71.css",
-    "main.js": "/teamio/static/js/main.2dae516d.js",
+    "main.css": "/teamio/static/css/main.8f27d832.css",
+    "main.js": "/teamio/static/js/main.28a4f1c4.js",
     "static/js/977.2c7e5b76.chunk.js": "/teamio/static/js/977.2c7e5b76.chunk.js",
     "static/js/455.af66e489.chunk.js": "/teamio/static/js/455.af66e489.chunk.js",
     "index.html": "/teamio/index.html",
-    "main.dc6d6f71.css.map": "/teamio/static/css/main.dc6d6f71.css.map",
-    "main.2dae516d.js.map": "/teamio/static/js/main.2dae516d.js.map",
+    "main.8f27d832.css.map": "/teamio/static/css/main.8f27d832.css.map",
+    "main.28a4f1c4.js.map": "/teamio/static/js/main.28a4f1c4.js.map",
     "455.af66e489.chunk.js.map": "/teamio/static/js/455.af66e489.chunk.js.map"
   },
   "entrypoints": [
-    "static/css/main.dc6d6f71.css",
-    "static/js/main.2dae516d.js"
+    "static/css/main.8f27d832.css",
+    "static/js/main.28a4f1c4.js"
   ]
 }
