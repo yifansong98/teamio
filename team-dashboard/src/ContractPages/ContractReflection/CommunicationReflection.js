@@ -4,8 +4,10 @@ import ReflectionEditor from '../Components/ReflectionEditor';
 import CommunicationBarChart from '../Visualizations/CommunicationNorms/CommunicationBarChart';
 import CommunicationHeatmap from '../Visualizations/CommunicationNorms/CommunicationHeatmap';
 import MeetingAttendanceChart from '../Visualizations/CommunicationNorms/MeetingAttendanceChart'; 
-import MeetingDataModal from '../Components/MeetingDataModal';
 import styles from './ContractReflection.module.css';
+
+// CHANGED: removed import of MeetingDataModal, 
+// since the user enters meeting data on the homepage.
 
 const commStatements = [
   {
@@ -23,8 +25,10 @@ const commStatements = [
   {
     id: 'comm3',
     text: 'We agree to arrive on time for all team meetings and keep track of attendance/punctuality.',
-    caption: 'Use "Enter Your Data" below to add meeting records. Once your meeting data is saved, the right chart will show attendance & punctuality across your team.',
-    VizComponent: null, // We'll conditionally show MeetingAttendanceChart
+    // CHANGED: updated the caption to reference homepage data, 
+    // removing references to "Enter Your Data below"
+    caption: 'The chart on the right shows attendance & punctuality data from the homepage. If no data is found, it shows empty.',
+    VizComponent: null, 
   },
 ];
 
@@ -37,22 +41,11 @@ export default function CommunicationReflection({ onNextPage }) {
     commStatements.reduce((acc, st) => ({ ...acc, [st.id]: false }), {})
   );
 
-  // We'll store the meeting rows from the MeetingDataModal in state. 
-  // If any row is saved => we show MeetingAttendanceChart
-  const [meetingRows, setMeetingRows] = useState([]);
-
-  // A callback passed to MeetingDataModal so we can track row data
-  function handleMeetingDataUpdate(newRows) {
-    setMeetingRows(newRows);
-  }
-
   const handleCheckboxChange = (id) => {
     setReflectFlags((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
   const selectedStatements = commStatements.filter((st) => reflectFlags[st.id]);
-  // We'll check if any row has isSaved=true
-  const hasSavedMeeting = meetingRows.some((r) => r.isSaved);
 
   return (
     <div>
@@ -74,10 +67,8 @@ export default function CommunicationReflection({ onNextPage }) {
               <div className={styles.subSectionCaption} style={{ whiteSpace: 'pre-line' }}>
                 {st.caption}
               </div>
-              {/* For the meeting dimension => show MeetingDataModal */}
-              {isMeetingStatement && (
-                <MeetingDataModal onRowsUpdate={handleMeetingDataUpdate} />
-              )}
+
+              {/* Reflection checkbox */}
               <label className={styles.checkboxLabel}>
                 <input
                   type="checkbox"
@@ -89,16 +80,14 @@ export default function CommunicationReflection({ onNextPage }) {
             </div>
 
             <div className={styles.rightSubSection}>
-              {/* If st.VizComponent => render it. Otherwise, if st.id === 'comm3' => conditionally show the new chart. */}
+              {/* If there's a direct VizComponent, we render it. 
+                  If it's the meeting statement => show MeetingAttendanceChart. 
+              */}
               {st.VizComponent ? (
                 <st.VizComponent />
               ) : isMeetingStatement ? (
-                hasSavedMeeting ? (
-                  // Render the horizontal stacked bar chart
-                  <MeetingAttendanceChart />
-                ) : (
-                  <p>No data to visualize for now.</p>
-                )
+                // CHANGED: directly show MeetingAttendanceChart
+                <MeetingAttendanceChart />
               ) : (
                 <p>No data to visualize for now.</p>
               )}
@@ -107,7 +96,7 @@ export default function CommunicationReflection({ onNextPage }) {
         );
       })}
 
-      {/* Reflection Editor / next page */}
+      {/* reflection summary */}
       <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
         {selectedStatements.length === 0 ? (
           <div style={{ color: 'red' }}>
@@ -128,11 +117,12 @@ export default function CommunicationReflection({ onNextPage }) {
       </div>
 
       <div className={styles.finalReflectionSection}>
-        <ReflectionEditor 
-          sectionName="Communication" 
-          prompt="Please provide your overall reflection below:" 
+        <ReflectionEditor
+          sectionName="Communication"
+          prompt="Please provide your overall reflection below:"
         />
       </div>
+
       <div className={styles.pageNavButtons}>
         <button className={styles.nextPageButton} onClick={onNextPage}>
           Next Page &raquo;

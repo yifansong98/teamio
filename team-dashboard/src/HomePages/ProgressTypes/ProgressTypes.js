@@ -2,14 +2,13 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import styles from './ProgressTypes.module.css';
+import { Settings } from 'lucide-react';
+import MeetingDataModal from '../../HomePages/ProfileSetting/MeetingDataModal'; // new import
 
 export default function ProgressTypes() {
-  // We'll store selected file(s) in local state for Google, GitHub, Slack
   const [gdocsFile, setGdocsFile] = useState(null);
   const [githubFile, setGithubFile] = useState(null);
   const [slackFile, setSlackFile] = useState(null);
-
-  // For user-friendly status messages
   const [message, setMessage] = useState('');
 
   const navigate = useNavigate();
@@ -20,7 +19,6 @@ export default function ProgressTypes() {
       setMessage('No Google Docs file selected!');
       return;
     }
-
     const formData = new FormData();
     formData.append('file', gdocsFile);
     try {
@@ -45,7 +43,6 @@ export default function ProgressTypes() {
       setMessage('No GitHub file selected!');
       return;
     }
-
     const formData = new FormData();
     formData.append('file', githubFile);
     try {
@@ -70,11 +67,9 @@ export default function ProgressTypes() {
       setMessage('No Slack file selected!');
       return;
     }
-    // For now, let's just do a placeholder
     setMessage('Slack file selected, but no API call is currently implemented.');
   }
 
-  // We add a new function to fetch and store the processed data from the backend
   async function handleReflect() {
     setMessage('Fetching processed data from backend...');
     try {
@@ -85,20 +80,30 @@ export default function ProgressTypes() {
         return;
       }
       const jsonData = await res.json();
-      // Save to localStorage so the reflection pages can read it
       localStorage.setItem('TeamIO_ProcessedData', JSON.stringify(jsonData));
       setMessage('Data fetched successfully! Going to reflection page...');
-      // now navigate to reflection
       navigate('/contractReflection');
     } catch (error) {
       setMessage(`Failed to fetch data: ${error.toString()}`);
     }
   }
 
+  // Check current user
+  const storedId = localStorage.getItem('TeamIO_CurrentUserId') || '1';
+  const isTeamScribe = (storedId === '1'); // If user is 'Member 1', they're the scribe
+
   return (
     <div className={styles.dashboardContainer}>
+      {/* Top row with settings icon on left, "TeamContract" on right */}
       <header className={styles.dashboardHeader}>
+        <div className={styles.leftHeaderSection}>
+          <Link to="/profileSetting" className={styles.settingsIconLink}>
+            <Settings size={24} />
+          </Link>
+        </div>
+
         <h1 className={styles.dashboardTitle}>Team I/O</h1>
+
         <Link to="/teamContract" className={styles.teamContractButton}>
           Team Contract
         </Link>
@@ -107,7 +112,6 @@ export default function ProgressTypes() {
       <div className={styles.uploadSection}>
         <h2>Upload Your Data</h2>
         
-        {/* Google Docs Upload */}
         <form className={styles.uploadForm} onSubmit={handleGdocsUpload}>
           <label className={styles.uploadLabel}>
             Google Docs File:
@@ -122,7 +126,6 @@ export default function ProgressTypes() {
           </button>
         </form>
 
-        {/* GitHub Upload */}
         <form className={styles.uploadForm} onSubmit={handleGithubUpload}>
           <label className={styles.uploadLabel}>
             GitHub File:
@@ -137,7 +140,6 @@ export default function ProgressTypes() {
           </button>
         </form>
 
-        {/* Slack Upload */}
         <form className={styles.uploadForm} onSubmit={handleSlackUpload}>
           <label className={styles.uploadLabel}>
             Slack File:
@@ -153,15 +155,23 @@ export default function ProgressTypes() {
         </form>
       </div>
 
-      {/* Reflect on data button */}
+      <div className={styles.meetingSection}>
+        <p>Your current team scribe is Member 1.</p>
+        {isTeamScribe ? (
+          <MeetingDataModal />
+        ) : (
+          <p style={{ color: 'red' }}>
+            Only the team scribe can record meeting info. You&apos;re not the team scribe.
+          </p>
+        )}
+      </div>
+
       <div className={styles.reflectButtonContainer}>
-        {/* Instead of a direct link, we'll call handleReflect so we can fetch the data first */}
         <button onClick={handleReflect} className={styles.reflectButton}>
           Reflect on Your Data
         </button>
       </div>
 
-      {/* Status / message display */}
       {message && (
         <div className={styles.messageBox}>
           {message}

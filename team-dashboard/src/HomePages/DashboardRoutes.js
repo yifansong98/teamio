@@ -4,6 +4,7 @@ import { Routes, Route } from 'react-router-dom';
 
 // Home Page
 import ProgressTypes from './ProgressTypes/ProgressTypes';
+import ProfileSetting from './ProfileSetting/ProfileSetting';
 
 // Behavior Pages
 import Communication from '../BehaviorPages/Communication/Communication';
@@ -19,6 +20,7 @@ export default function DashboardRoutes() {
     <Routes>
       {/* Home Page */}
       <Route path="/teamio" element={<ProgressTypes />} />
+      <Route path="/profileSetting" element={<ProfileSetting/>} />
 
       {/* Behavior Pages */}
       <Route path="/communication" element={<Communication />} />
