@@ -4,12 +4,10 @@ import SankeyChart from './SankeyChart';
 
 /**
  * DoubleCommentSankey
- * Renders two two-column Sankey diagrams side by side:
- *   1) "Google Docs Comments"
- *   2) "GitHub Pull Requests"
- *
- * There's a global "Show my data" checkbox that highlights only the flows 
- * (NOT the node rectangles) if they involve the current user.
+ * Tab-based approach:
+ *  - "Google Docs Comments"
+ *  - "GitHub Pull Requests"
+ * "Show my data" highlights flows if they involve the current user.
  */
 export default function DoubleCommentSankey() {
   // The user to highlight => "Member 3" (left index=2, right index=6)
@@ -19,7 +17,10 @@ export default function DoubleCommentSankey() {
   // "Show my data" toggles link highlights
   const [showMyData, setShowMyData] = useState(false);
 
-  // Two sets of raw links: Google Docs, GitHub
+  // Tab state: 'google' or 'github'
+  const [activeTab, setActiveTab] = useState('google');
+
+  // Two sets of raw links
   const googleDocsRawLinks = [
     { i: 0, j: 1, value: 5 },
     { i: 0, j: 2, value: 2 },
@@ -42,41 +43,53 @@ export default function DoubleCommentSankey() {
     { i: 3, j: 2, value: 3 },
   ];
 
+  // pick the correct rawLinks based on tab
+  const rawLinks = (activeTab === 'google') ? googleDocsRawLinks : gitHubRawLinks;
+
   return (
     <div style={{ textAlign: 'center' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-evenly', gap: '2rem' }}>
-        <div>
-          {/* Title above the Sankey, centered */}
-          <h3 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
-            Google Docs Comments
-          </h3>
-          <SankeyChart
-            width={400}
-            height={350}
-            rawLinks={googleDocsRawLinks}
-            showMyData={showMyData}
-            currentUserLeftIndex={currentUserLeftIndex}
-            currentUserRightIndex={currentUserRightIndex}
-          />
-        </div>
-
-        <div>
-          {/* Title above the Sankey, centered */}
-          <h3 style={{ marginBottom: '0.5rem', textAlign: 'center' }}>
-            GitHub Pull Requests
-          </h3>
-          <SankeyChart
-            width={400}
-            height={350}
-            rawLinks={gitHubRawLinks}
-            showMyData={showMyData}
-            currentUserLeftIndex={currentUserLeftIndex}
-            currentUserRightIndex={currentUserRightIndex}
-          />
-        </div>
+      {/* Tabs for "Google Docs Comments" vs "GitHub Pull Requests" */}
+      <div style={{ marginBottom: '1rem' }}>
+        <button
+          onClick={() => setActiveTab('google')}
+          style={{
+            padding: '0.5rem 1rem',
+            marginRight: '1rem',
+            backgroundColor: activeTab === 'google' ? '#3182ce' : '#ccc',
+            color: activeTab === 'google' ? '#fff' : '#000',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Google Docs Comments
+        </button>
+        <button
+          onClick={() => setActiveTab('github')}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: activeTab === 'github' ? '#3182ce' : '#ccc',
+            color: activeTab === 'github' ? '#fff' : '#000',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          GitHub Reviews
+        </button>
       </div>
 
-      {/* Global "Show my data" checkbox below both Sankeys */}
+      {/* Single SankeyChart */}
+      <SankeyChart
+        width={400}
+        height={350}
+        rawLinks={rawLinks}
+        showMyData={showMyData}
+        currentUserLeftIndex={currentUserLeftIndex}
+        currentUserRightIndex={currentUserRightIndex}
+      />
+
+      {/* Global "Show my data" checkbox below */}
       <div style={{ marginTop: '1rem' }}>
         <label style={{ fontSize: '1rem', color: '#333' }}>
           <input

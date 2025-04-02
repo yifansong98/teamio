@@ -49,7 +49,7 @@ export default function SankeyChart({
     // Clear previous
     d3.select(svgRef.current).selectAll("*").remove();
 
-    // Create or select tooltip
+    // Create or select a tooltip
     let tooltip = d3.select(tooltipRef.current);
     if (tooltip.empty()) {
       tooltip = d3.select("body").append("div")
@@ -83,10 +83,9 @@ export default function SankeyChart({
       .attr("width", width)
       .attr("height", height);
 
-    // Colors for members, consistent with your pie chart
+    // Colors for members
     const memberColors = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
-    // We'll use one highlight color for flows. 
-    // Or define two if you want giving vs receiving to differ (light red, light blue).
+    // Link highlight colors
     const givingColor = "#FF9999";    // flows from current user
     const receivingColor = "#9999FF"; // flows to current user
     const defaultLinkColor = "#ccc";
@@ -127,7 +126,7 @@ export default function SankeyChart({
         const leftName = graph.nodes[d.source.id].name.replace(" (L)", "");
         const rightName = graph.nodes[d.target.id].name.replace(" (R)", "");
         tooltip.style("visibility", "visible")
-          .html(`<strong>${leftName} → ${rightName}</strong><br/>${d.value} comments`);
+          .html(`<strong>${leftName} → ${rightName}</strong><br/>${d.value} feedback`);
       })
       .on("mousemove", (event) => {
         tooltip.style("top", (event.pageY + 10) + "px")
@@ -138,7 +137,7 @@ export default function SankeyChart({
         tooltip.style("visibility", "hidden");
       });
 
-    // 5) Draw nodes (same color left & right for the same member)
+    // 5) Draw nodes (same color left & right for the same base index)
     const nodeGroup = svg.append("g")
       .selectAll("g")
       .data(graph.nodes)
@@ -151,8 +150,6 @@ export default function SankeyChart({
       .attr("width", d => d.x1 - d.x0)
       .attr("height", d => d.y1 - d.y0)
       .attr("fill", d => {
-        // left side => baseIndex = d.id
-        // right side => baseIndex = d.id - 4
         let baseIndex = d.id < 4 ? d.id : d.id - 4;
         return memberColors[baseIndex];
       })
@@ -165,8 +162,7 @@ export default function SankeyChart({
       .attr("dy", "0.35em")
       .attr("text-anchor", "end")
       .text(d => d.name.replace(" (L)", "").replace(" (R)", ""))
-      .style("font-weight", "normal") // no highlight on nodes
-      // If node is on the right side, place label to the right
+      .style("font-weight", "normal")
       .filter(d => d.x0 > width / 2)
       .attr("x", d => d.x1 + 6)
       .attr("text-anchor", "start");

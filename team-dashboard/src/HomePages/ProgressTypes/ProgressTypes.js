@@ -1,41 +1,77 @@
 // src/components/ProgressTypes/ProgressTypes.js
-import React from 'react';
-import { Check, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import BehaviorCard from '../BehaviorCard/BehaviorCard';
 import styles from './ProgressTypes.module.css';
 
 export default function ProgressTypes() {
-  const sections = [
-    {
-      title: 'Work Distribution',
-      description: 'The team demonstrated fair distribution of work.',
-      icon: <Check size={24} color="white" />,
-      status: 'success',
-      route: '/workDistribution',
-    },
-    {
-      title: 'Work Progression',
-      description: "Some team members didn't start early or provide steady progress",
-      icon: <AlertTriangle size={24} color="white" />,
-      status: 'warning',
-      route: '/WorkProgression',
-    },
-    {
-      title: 'Interaction',
-      description: "The team commented and revised each other's work",
-      icon: <Check size={24} color="white" />,
-      status: 'success',
-      route: '/interaction', // Not yet implemented
-    },
-    {
-      title: 'Communication',
-      description: 'Some team members were not responsive or productive in communication',
-      icon: <AlertTriangle size={24} color="white" />,
-      status: 'warning',
-      route: '/communication', // Not yet implemented
-    },
-  ];
+  // We'll store selected file(s) in local state for Google, GitHub, Slack
+  const [gdocsFile, setGdocsFile] = useState(null);
+  const [githubFile, setGithubFile] = useState(null);
+  const [slackFile, setSlackFile] = useState(null);
+
+  // For user-friendly status messages
+  const [message, setMessage] = useState('');
+
+  async function handleGdocsUpload(e) {
+    e.preventDefault();
+    if (!gdocsFile) {
+      setMessage('No Google Docs file selected!');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', gdocsFile);
+    try {
+      const res = await fetch('https://teamio-backend-c5aefe033171.herokuapp.com/upload_gdocs', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`Google Docs upload success: ${data.message}`);
+      } else {
+        setMessage(`Google Docs upload failed: ${data.error || JSON.stringify(data)}`);
+      }
+    } catch (error) {
+      setMessage(`Google Docs upload failed: ${error.toString()}`);
+    }
+  }
+
+  async function handleGithubUpload(e) {
+    e.preventDefault();
+    if (!githubFile) {
+      setMessage('No GitHub file selected!');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', githubFile);
+    try {
+      const res = await fetch('https://teamio-backend-c5aefe033171.herokuapp.com/upload_github', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage(`GitHub upload success: ${data.message}`);
+      } else {
+        setMessage(`GitHub upload failed: ${data.error || JSON.stringify(data)}`);
+      }
+    } catch (error) {
+      setMessage(`GitHub upload failed: ${error.toString()}`);
+    }
+  }
+
+  async function handleSlackUpload(e) {
+    e.preventDefault();
+    if (!slackFile) {
+      setMessage('No Slack file selected!');
+      return;
+    }
+    // For now, let's just do a placeholder
+    // If you have an endpoint: fetch('https://your-backend-url.herokuapp.com/upload_slack', ...)
+    setMessage('Slack file selected, but no API call is currently implemented.');
+  }
 
   return (
     <div className={styles.dashboardContainer}>
@@ -48,25 +84,68 @@ export default function ProgressTypes() {
         </Link>
       </header>
 
-      <div className={styles.dashboardGrid}>
-        {sections.map((section) => (
-          <BehaviorCard
-            key={section.title}
-            title={section.title}
-            description={section.description}
-            icon={section.icon}
-            status={section.status}
-            route={section.route}
-          />
-        ))}
+      <div className={styles.uploadSection}>
+        <h2>Upload Your Data</h2>
+        
+        {/* Google Docs Upload */}
+        <form className={styles.uploadForm} onSubmit={handleGdocsUpload}>
+          <label className={styles.uploadLabel}>
+            Google Docs File:
+            <input
+              type="file"
+              accept=".json"
+              onChange={(e) => setGdocsFile(e.target.files[0])}
+            />
+          </label>
+          <button type="submit" className={styles.uploadButton}>
+            Upload Google Docs Data
+          </button>
+        </form>
+
+        {/* GitHub Upload */}
+        <form className={styles.uploadForm} onSubmit={handleGithubUpload}>
+          <label className={styles.uploadLabel}>
+            GitHub File:
+            <input
+              type="file"
+              accept=".json"
+              onChange={(e) => setGithubFile(e.target.files[0])}
+            />
+          </label>
+          <button type="submit" className={styles.uploadButton}>
+            Upload GitHub Data
+          </button>
+        </form>
+
+        {/* Slack Upload */}
+        <form className={styles.uploadForm} onSubmit={handleSlackUpload}>
+          <label className={styles.uploadLabel}>
+            Slack File:
+            <input
+              type="file"
+              accept=".json"
+              onChange={(e) => setSlackFile(e.target.files[0])}
+            />
+          </label>
+          <button type="submit" className={styles.uploadButton}>
+            Upload Slack Data
+          </button>
+        </form>
       </div>
-      
-      {/* New "Reflect on Your Data" button */}
+
+      {/* Reflect on data button */}
       <div className={styles.reflectButtonContainer}>
         <Link to="/contractReflection" className={styles.reflectButton}>
           Reflect on Your Data
         </Link>
       </div>
+
+      {/* Status / message display */}
+      {message && (
+        <div className={styles.messageBox}>
+          {message}
+        </div>
+      )}
     </div>
   );
 }
