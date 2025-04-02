@@ -64,3 +64,51 @@
 .reflectButton:hover {
   background: #4a5568;
 }
+
+/* Container for the new upload area */
+.uploadSection {
+  margin-top: 2rem;
+  text-align: left; /* or center, as you prefer */
+}
+
+/* Each upload row (form) can be displayed flex or block */
+.uploadForm {
+  margin-bottom: 1.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.uploadLabel {
+  font-size: 1rem;
+  margin-right: 1rem;
+}
+
+/* The upload button style */
+.uploadButton {
+  background: #2d3748;
+  color: #fff;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+
+.uploadButton:hover {
+  background: #4a5568;
+}
+
+/* A box to display success/error messages from uploads */
+.messageBox {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  background: #f9f9f9;
+  font-size: 1rem;
+  color: #333;
+  border-radius: 4px;
+}

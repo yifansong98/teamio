@@ -4,39 +4,28 @@ import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 
 const currentUser = "Member 3";
 
-// Dummy data for Google Docs
+// Dummy data for Google Docs (Edits only)
 const googleDocsEditsData = [
   { name: 'Member 1', value: 40 },
   { name: 'Member 2', value: 35 },
   { name: 'Member 3', value: 25 },
   { name: 'Member 4', value: 15 },
 ];
-const googleDocsWordsData = [
-  { name: 'Member 1', value: 420 },
-  { name: 'Member 2', value: 320 },
-  { name: 'Member 3', value: 280 },
-  { name: 'Member 4', value: 180 },
-];
 
-// Dummy data for GitHub
+// Dummy data for GitHub (Commits only)
 const githubCommitsData = [
   { name: 'Member 1', value: 20 },
   { name: 'Member 2', value: 30 },
   { name: 'Member 3', value: 15 },
   { name: 'Member 4', value: 25 },
 ];
-const githubLOCData = [
-  { name: 'Member 1', value: 210 },
-  { name: 'Member 2', value: 340 },
-  { name: 'Member 3', value: 170 },
-  { name: 'Member 4', value: 260 },
-];
 
+// Colors and highlighting
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 const HIGHLIGHT_STROKE = '#000'; // black stroke for current user
 
 // A label function to show percentages on each slice
-const renderPercentageLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }) => {
+function renderPercentageLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent }) {
   const RADIAN = Math.PI / 180;
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
   const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -54,30 +43,28 @@ const renderPercentageLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, per
       {`${(percent * 100).toFixed(0)}%`}
     </text>
   );
-};
+}
 
-// A custom legend to bold the current user's label if "Show my data" is checked
-// and display the items horizontally with wrapping.
+// A custom legend that bolds the current user's label if "Show my data" is checked
 function CustomLegend({ payload, showMyData }) {
   return (
     <div
       style={{
         display: 'flex',
-        flexWrap: 'wrap',       // allow items to wrap to a new line if needed
+        flexWrap: 'wrap',
         gap: '1rem',
         justifyContent: 'center',
-        margin: '0 auto',
       }}
     >
       {payload.map((entry, index) => {
-        const isCurrent = showMyData && entry.value === currentUser;
+        const isUser = showMyData && entry.value === currentUser;
         return (
           <div
-            key={`item-${index}`}
+            key={`legend-${index}`}
             style={{
               display: 'flex',
               alignItems: 'center',
-              fontWeight: isCurrent ? 'bold' : 'normal',
+              fontWeight: isUser ? 'bold' : 'normal',
             }}
           >
             <span
@@ -97,18 +84,16 @@ function CustomLegend({ payload, showMyData }) {
 }
 
 export default function WorkPieCharts() {
-  // Local dropdown states for each chart
-  const [googleOption, setGoogleOption] = useState('edits');  // 'edits' or 'words'
-  const [githubOption, setGithubOption] = useState('commits'); // 'commits' or 'loc'
-  // "Show my data" for highlighting current user
+  // Tab state: 'googleDocs' or 'github'
+  const [activeTab, setActiveTab] = useState('googleDocs');
+  // "Show my data" => highlight current user
   const [showMyData, setShowMyData] = useState(false);
 
-  // Choose data based on dropdown
-  const googleData = googleOption === 'edits' ? googleDocsEditsData : googleDocsWordsData;
-  const githubData = githubOption === 'commits' ? githubCommitsData : githubLOCData;
+  // pick data for the current tab
+  const data = activeTab === 'googleDocs' ? googleDocsEditsData : githubCommitsData;
 
-  // Render each slice with a thicker black border if it's the current user and showMyData is true
-  const renderCell = (entry, index) => {
+  // Render each slice with a thick black border if it's the current user and showMyData = true
+  function renderCell(entry, index) {
     const isCurrent = showMyData && entry.name === currentUser;
     return (
       <Cell
@@ -118,81 +103,58 @@ export default function WorkPieCharts() {
         strokeWidth={isCurrent ? 3 : 1}
       />
     );
-  };
+  }
 
   return (
     <div style={{ textAlign: 'center' }}>
-      {/* Container for the two charts side by side */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-evenly',
-          alignItems: 'flex-start',
-          marginBottom: '1rem',
-        }}
-      >
-        {/* Left Column: Google Docs */}
-        <div>
-          <h3 style={{ marginBottom: '0.5rem' }}>Google Docs</h3>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ marginRight: '0.5rem', fontSize: '1rem' }}>View:</label>
-            <select
-              value={googleOption}
-              onChange={(e) => setGoogleOption(e.target.value)}
-              style={{ fontSize: '1rem', padding: '0.3rem' }}
-            >
-              <option value="edits">Edits</option>
-              <option value="words">Words</option>
-            </select>
-          </div>
-          <PieChart width={320} height={320}>
-            <Pie
-              data={googleData}
-              cx="50%"
-              cy="50%"
-              outerRadius={90}
-              dataKey="value"
-              label={renderPercentageLabel}
-            >
-              {googleData.map((entry, index) => renderCell(entry, index))}
-            </Pie>
-            <Tooltip formatter={(value) => `${value}`} />
-            <Legend content={<CustomLegend showMyData={showMyData} />} />
-          </PieChart>
-        </div>
-
-        {/* Right Column: GitHub */}
-        <div>
-          <h3 style={{ marginBottom: '0.5rem' }}>GitHub</h3>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ marginRight: '0.5rem', fontSize: '1rem' }}>View:</label>
-            <select
-              value={githubOption}
-              onChange={(e) => setGithubOption(e.target.value)}
-              style={{ fontSize: '1rem', padding: '0.3rem' }}
-            >
-              <option value="commits">Commits</option>
-              <option value="loc">Lines of Code</option>
-            </select>
-          </div>
-          <PieChart width={320} height={320}>
-            <Pie
-              data={githubData}
-              cx="50%"
-              cy="50%"
-              outerRadius={90}
-              dataKey="value"
-              label={renderPercentageLabel}
-            >
-              {githubData.map((entry, index) => renderCell(entry, index))}
-            </Pie>
-            <Tooltip formatter={(value) => `${value}`} />
-            <Legend content={<CustomLegend showMyData={showMyData} />} />
-          </PieChart>
-        </div>
+      {/* Tabs for Google Docs vs GitHub */}
+      <div style={{ marginBottom: '1rem' }}>
+        <button
+          onClick={() => setActiveTab('googleDocs')}
+          style={{
+            padding: '0.5rem 1rem',
+            marginRight: '1rem',
+            backgroundColor: activeTab === 'googleDocs' ? '#3182ce' : '#ccc',
+            color: activeTab === 'googleDocs' ? '#fff' : '#000',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Google Docs
+        </button>
+        <button
+          onClick={() => setActiveTab('github')}
+          style={{
+            padding: '0.5rem 1rem',
+            backgroundColor: activeTab === 'github' ? '#3182ce' : '#ccc',
+            color: activeTab === 'github' ? '#fff' : '#000',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          GitHub
+        </button>
       </div>
 
-      {/* Show my data checkbox below the charts */}
+      {/* Single PieChart for the active tab */}
+      <PieChart width={320} height={320}>
+        <Pie
+          data={data}
+          cx="50%"
+          cy="50%"
+          outerRadius={90}
+          dataKey="value"
+          label={renderPercentageLabel}
+        >
+          {data.map((entry, index) => renderCell(entry, index))}
+        </Pie>
+        <Tooltip formatter={(value) => activeTab === 'googleDocs' ? `${value} edits` : `${value} commits`} />
+        <Legend content={<CustomLegend showMyData={showMyData} />} />
+      </PieChart>
+
+      {/* "Show my data" below chart */}
       <div style={{ marginTop: '1rem' }}>
         <label style={{ fontSize: '1rem', color: '#333' }}>
           <input
