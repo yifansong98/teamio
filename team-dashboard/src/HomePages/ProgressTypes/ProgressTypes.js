@@ -1,6 +1,6 @@
 // src/components/ProgressTypes/ProgressTypes.js
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import styles from './ProgressTypes.module.css';
 
 export default function ProgressTypes() {
@@ -11,6 +11,8 @@ export default function ProgressTypes() {
 
   // For user-friendly status messages
   const [message, setMessage] = useState('');
+
+  const navigate = useNavigate();
 
   async function handleGdocsUpload(e) {
     e.preventDefault();
@@ -69,16 +71,34 @@ export default function ProgressTypes() {
       return;
     }
     // For now, let's just do a placeholder
-    // If you have an endpoint: fetch('https://your-backend-url.herokuapp.com/upload_slack', ...)
     setMessage('Slack file selected, but no API call is currently implemented.');
+  }
+
+  // We add a new function to fetch and store the processed data from the backend
+  async function handleReflect() {
+    setMessage('Fetching processed data from backend...');
+    try {
+      const res = await fetch('https://teamio-backend-c5aefe033171.herokuapp.com/process_data');
+      if (!res.ok) {
+        const errData = await res.json();
+        setMessage(`Failed to fetch data: ${errData.error || JSON.stringify(errData)}`);
+        return;
+      }
+      const jsonData = await res.json();
+      // Save to localStorage so the reflection pages can read it
+      localStorage.setItem('TeamIO_ProcessedData', JSON.stringify(jsonData));
+      setMessage('Data fetched successfully! Going to reflection page...');
+      // now navigate to reflection
+      navigate('/contractReflection');
+    } catch (error) {
+      setMessage(`Failed to fetch data: ${error.toString()}`);
+    }
   }
 
   return (
     <div className={styles.dashboardContainer}>
       <header className={styles.dashboardHeader}>
         <h1 className={styles.dashboardTitle}>Team I/O</h1>
-        
-        {/* Existing "Team Contract" button */}
         <Link to="/teamContract" className={styles.teamContractButton}>
           Team Contract
         </Link>
@@ -135,9 +155,10 @@ export default function ProgressTypes() {
 
       {/* Reflect on data button */}
       <div className={styles.reflectButtonContainer}>
-        <Link to="/contractReflection" className={styles.reflectButton}>
+        {/* Instead of a direct link, we'll call handleReflect so we can fetch the data first */}
+        <button onClick={handleReflect} className={styles.reflectButton}>
           Reflect on Your Data
-        </Link>
+        </button>
       </div>
 
       {/* Status / message display */}

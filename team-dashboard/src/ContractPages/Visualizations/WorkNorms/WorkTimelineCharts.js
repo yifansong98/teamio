@@ -10,63 +10,58 @@ import {
   Legend,
 } from 'recharts';
 
-// Google Docs "Edits" (Team & User)
-const GD_EDITS_TEAM_RAW = [10, 20, 15, 30, 25, 20, 10]; // sum=130
-const GD_EDITS_USER_RAW = [2, 5, 3, 8, 6, 4, 1];        // sum=29
+const currentUser = "Member 1";
 
-// GitHub "Commits" (Team & User)
-const GH_COMMITS_TEAM_RAW = [5, 10, 8, 12, 10, 15, 10]; // sum=70
-const GH_COMMITS_USER_RAW = [1, 2, 2, 3, 2, 4, 1];      // sum=15
+// We build a function that given an array of {day, count} for the team
+// and an array of {day, count} for the user, we produce a list of
+// objects like: { day: "2025-03-01", teamProgress, userProgress, teamCount, userCount }
+function buildUnifiedLineData(teamArray, userArray) {
+  // Sort both arrays by day, just in case
+  const sortedTeam = [...teamArray].sort((a, b) => (a.day > b.day ? 1 : -1));
+  const sortedUser = [...userArray].sort((a, b) => (a.day > b.day ? 1 : -1));
 
-// We unify the scale so 100% always = team's final total.
-// For day i, the "Team progress" = (teamCumulative / teamTotal) * 100
-// The "User progress" = (userCumulative / teamTotal) * 100
+  // We need a dictionary for user by day
+  const userMap = {};
+  sortedUser.forEach(item => {
+    userMap[item.day] = item.count;
+  });
 
-function buildUnifiedLineData(teamDaily, userDaily) {
-  // 1) Calculate team total
-  const teamTotal = teamDaily.reduce((sum, val) => sum + val, 0);
-
-  // 2) Build an array of length N for each day
+  // We'll accumulate day by day
   let teamCumulative = 0;
   let userCumulative = 0;
+  let totalTeam = sortedTeam.reduce((sum, x) => sum + x.count, 0);
 
-  return teamDaily.map((teamVal, i) => {
-    // for each day i
-    teamCumulative += teamVal;
-    userCumulative += userDaily[i];
+  const result = [];
+  for (let i = 0; i < sortedTeam.length; i++) {
+    const tItem = sortedTeam[i];
+    const day = tItem.day;
+    teamCumulative += tItem.count;
+    const userVal = userMap[day] ? userMap[day] : 0;
+    userCumulative += userVal;
 
-    const teamPct = (teamCumulative / teamTotal) * 100;
-    const userPct = (userCumulative / teamTotal) * 100; 
-    // userPct might be less or equal to teamPct 
-    // if user's total is a subset of the team's total
+    let teamPct = 0;
+    let userPct = 0;
+    if (totalTeam > 0) {
+      teamPct = (teamCumulative / totalTeam) * 100;
+      userPct = (userCumulative / totalTeam) * 100;
+    }
 
-    return {
-      day: `Day ${i + 1}`,
+    result.push({
+      day, // e.g. "2025-03-01"
       teamProgress: +teamPct.toFixed(2),
       userProgress: +userPct.toFixed(2),
       teamCount: teamCumulative,
       userCount: userCumulative,
-    };
-  });
+    });
+  }
+  return result;
 }
 
-// Build the "Google Docs" unified data
-const googleEditsLineData = buildUnifiedLineData(GD_EDITS_TEAM_RAW, GD_EDITS_USER_RAW);
-
-// Build the "GitHub" unified data
-const githubCommitsLineData = buildUnifiedLineData(GH_COMMITS_TEAM_RAW, GH_COMMITS_USER_RAW);
-
-// For the tooltip, we can show the day, team’s cumulative, user’s cumulative, etc.
 function customTooltipFormatter(value, name, props) {
-  // We'll rely on the data itself to figure out if it's teamProgress or userProgress
-  // e.g. props.dataKey = "teamProgress" or "userProgress"
-  // The data object is in props.payload
   const dayObj = props.payload;
   if (name === 'Team progress') {
-    // dayObj.teamCount => the team cumulative at that day
     return [`${dayObj.teamCount} contributions`, name];
   } else {
-    // dayObj.userCount => the user cumulative
     return [`${dayObj.userCount} contributions`, name];
   }
 }
@@ -77,8 +72,44 @@ export default function WorkTimelineCharts() {
   // Show my data => user line
   const [showMyData, setShowMyData] = useState(false);
 
-  // pick the correct line data
-  const lineData = (activeTab === 'google') ? googleEditsLineData : githubCommitsLineData;
+  // We'll read from localStorage => timeline.google_docs / timeline.github
+  let googleTeam = [];
+  let googleUser = [];
+  let githubTeam = [];
+  let githubUser = [];
+
+  const raw = localStorage.getItem('TeamIO_ProcessedData');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.timeline) {
+        // google docs
+        if (parsed.timeline.google_docs && parsed.timeline.google_docs.team) {
+          // e.g. [ {day, count}, ... ]
+          googleTeam = parsed.timeline.google_docs.team;
+        }
+        if (parsed.timeline.google_docs && parsed.timeline.google_docs.userMap) {
+          // we assume currentUser = "Member 1"
+          googleUser = parsed.timeline.google_docs.userMap[currentUser] || [];
+        }
+        // github
+        if (parsed.timeline.github && parsed.timeline.github.team) {
+          githubTeam = parsed.timeline.github.team;
+        }
+        if (parsed.timeline.github && parsed.timeline.github.userMap) {
+          githubUser = parsed.timeline.github.userMap[currentUser] || [];
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to parse timeline data from localStorage', err);
+    }
+  }
+
+  // Build line data for google & github
+  const googleLineData = buildUnifiedLineData(googleTeam, googleUser);
+  const githubLineData = buildUnifiedLineData(githubTeam, githubUser);
+
+  const lineData = (activeTab === 'google') ? googleLineData : githubLineData;
 
   return (
     <div style={{ textAlign: 'center' }}>
@@ -113,7 +144,6 @@ export default function WorkTimelineCharts() {
         </button>
       </div>
 
-      {/* Single line chart for whichever tab is active */}
       <LineChart
         width={500}
         height={300}
@@ -121,12 +151,13 @@ export default function WorkTimelineCharts() {
         margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
       >
         <CartesianGrid strokeDasharray="3 3" />
+        {/* X-axis with actual date strings from "day" */}
         <XAxis dataKey="day" />
-        {/* Domain 0..100% */}
+        {/* Y-axis domain 0..100% */}
         <YAxis domain={[0, 100]} tickFormatter={(val) => `${val}%`} />
         <Tooltip formatter={customTooltipFormatter} />
         <Legend />
-        {/* Team line => "teamProgress" */}
+        {/* Team progress line */}
         <Line
           type="monotone"
           dataKey="teamProgress"
@@ -134,7 +165,6 @@ export default function WorkTimelineCharts() {
           stroke="#8884d8"
           strokeWidth={2}
         />
-        {/* user line => "userProgress", only if showMyData */}
         {showMyData && (
           <Line
             type="monotone"
@@ -146,7 +176,6 @@ export default function WorkTimelineCharts() {
         )}
       </LineChart>
 
-      {/* "Show my data" below the chart */}
       <div style={{ marginTop: '1rem' }}>
         <label style={{ fontSize: '1rem', color: '#333' }}>
           <input
