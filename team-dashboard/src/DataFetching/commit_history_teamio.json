@@ -1,0 +1,719 @@
+{
+    "teamio_commit_history": [
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "6dac01ea771504dd333e1c2c23524753ae1ac6f9",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/6dac01ea771504dd333e1c2c23524753ae1ac6f9",
+            "timestamp": "2025-04-02T17:06:33Z",
+            "branch": "gh-pages",
+            "message": "Updates",
+            "files": [
+                "asset-manifest.json",
+                "index.html",
+                "static/js/main.2dae516d.js",
+                "static/js/main.2dae516d.js.LICENSE.txt",
+                "static/js/main.2dae516d.js.map",
+                "static/js/main.969ecb63.js",
+                "static/js/main.969ecb63.js.map"
+            ],
+            "additions": 8,
+            "deletions": 8
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "173de925a851c32ed3f1962b33b530ad0e7fa1b3",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/173de925a851c32ed3f1962b33b530ad0e7fa1b3",
+            "timestamp": "2025-04-02T16:03:21Z",
+            "branch": "gh-pages",
+            "message": "Updates",
+            "files": [
+                ".DS_Store",
+                "asset-manifest.json",
+                "favicon.ico",
+                "index.html",
+                "logo192.png",
+                "logo512.png",
+                "manifest.json",
+                "robots.txt",
+                "static/css/main.dc6d6f71.css",
+                "static/css/main.dc6d6f71.css.map",
+                "static/js/455.af66e489.chunk.js",
+                "static/js/455.af66e489.chunk.js.map",
+                "static/js/977.2c7e5b76.chunk.js",
+                "static/js/977.2c7e5b76.chunk.js.LICENSE.txt",
+                "static/js/main.969ecb63.js",
+                "static/js/main.969ecb63.js.LICENSE.txt",
+                "static/js/main.969ecb63.js.map",
+                "team-dashboard/.gitignore"
+            ],
+            "additions": 481,
+            "deletions": 0
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "95302a3d907f676da43b328821c722719bfafa3e",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/95302a3d907f676da43b328821c722719bfafa3e",
+            "timestamp": "2025-04-02T17:06:08Z",
+            "branch": "main",
+            "message": "add process data logic",
+            "files": [
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/WorkPieCharts.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/WorkTimelineCharts.js",
+                "team-dashboard/src/HomePages/ProgressTypes/ProgressTypes.js"
+            ],
+            "additions": 158,
+            "deletions": 77
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "4f5e19479b16bea5e628087311a86c5db45a271a",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/4f5e19479b16bea5e628087311a86c5db45a271a",
+            "timestamp": "2025-04-02T16:02:46Z",
+            "branch": "main",
+            "message": "update routes for deployment",
+            "files": [
+                "team-dashboard/package-lock.json",
+                "team-dashboard/package.json",
+                "team-dashboard/src/ContractPages/ContractReflection/ContractReflection.js",
+                "team-dashboard/src/ContractPages/TeamContract/TeamContract.js",
+                "team-dashboard/src/HomePages/DashboardRoutes.js"
+            ],
+            "additions": 127,
+            "deletions": 3
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "37c7c571bcc39736b29e6431add7dd1524214ea2",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/37c7c571bcc39736b29e6431add7dd1524214ea2",
+            "timestamp": "2025-04-02T15:56:12Z",
+            "branch": "main",
+            "message": "Merge branch 'main' of https://github.com/yifansong98/TeamworkDashboard",
+            "files": [
+                "README.md"
+            ],
+            "additions": 1,
+            "deletions": 1
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "fc195b112063990601563efce330eb7859bf770e",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/fc195b112063990601563efce330eb7859bf770e",
+            "timestamp": "2025-04-02T15:55:49Z",
+            "branch": "main",
+            "message": "readu for deployment",
+            "files": [
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/CommentBarChart.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/DoubleCommentSankey.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/SankeyChart.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/WorkPieCharts.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/WorkTimelineCharts.js",
+                "team-dashboard/src/HomePages/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/HomePages/ProgressTypes/ProgressTypes.module.css"
+            ],
+            "additions": 408,
+            "deletions": 576
+        },
+        {
+            "login": "70982485+yifansong98@users.noreply.github.com",
+            "sha": "4477c332c01ff051ab3d7309378a561639a1786f",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/4477c332c01ff051ab3d7309378a561639a1786f",
+            "timestamp": "2025-04-02T15:46:49Z",
+            "branch": "main",
+            "message": "Update README.md",
+            "files": [
+                "README.md"
+            ],
+            "additions": 1,
+            "deletions": 1
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "574d7f733ccd5358433f54b7b36addbfc6af3e0f",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/574d7f733ccd5358433f54b7b36addbfc6af3e0f",
+            "timestamp": "2025-03-26T17:53:05Z",
+            "branch": "main",
+            "message": "enter your data implemented",
+            "files": [
+                "team-dashboard/src/ContractPages/Components/MeetingDataModal.css",
+                "team-dashboard/src/ContractPages/Components/MeetingDataModal.js",
+                "team-dashboard/src/ContractPages/Components/MeetingDataModal.jsx",
+                "team-dashboard/src/ContractPages/Components/WorkDataModal.css",
+                "team-dashboard/src/ContractPages/Components/WorkDataModal.js",
+                "team-dashboard/src/ContractPages/ContractReflection/CommunicationReflection.js",
+                "team-dashboard/src/ContractPages/ContractReflection/WorkReflection.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/MeetingAttendanceChart.js"
+            ],
+            "additions": 962,
+            "deletions": 246
+        },
+        {
+            "login": "mbp-song@MBP-Song.local",
+            "sha": "be48ce148d23cda72044f53b9fdd868c01478923",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/be48ce148d23cda72044f53b9fdd868c01478923",
+            "timestamp": "2025-03-26T04:35:11Z",
+            "branch": "main",
+            "message": "upload data",
+            "files": [
+                "team-dashboard/src/ContractPages/Components/MeetingDataModal.css",
+                "team-dashboard/src/ContractPages/Components/MeetingDataModal.jsx",
+                "team-dashboard/src/ContractPages/ContractReflection/CommunicationReflection.js"
+            ],
+            "additions": 233,
+            "deletions": 10
+        },
+        {
+            "login": "mbp-song@MBP-Song.local",
+            "sha": "488efab2aa17cfdf974fdeecf1e544e9d6ee52bf",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/488efab2aa17cfdf974fdeecf1e544e9d6ee52bf",
+            "timestamp": "2025-03-14T18:14:41Z",
+            "branch": "main",
+            "message": "complete initial full contract reflection",
+            "files": [
+                "team-dashboard/package-lock.json",
+                "team-dashboard/package.json",
+                "team-dashboard/src/ContractPages/ContractReflection/CommunicationReflection.js",
+                "team-dashboard/src/ContractPages/ContractReflection/WorkReflection.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/BarVizWrapper.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/CommunicationBar.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/CommunicationBarChart.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/CommunicationHeatmap.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/CommunicationPanel.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/CommunicationTimeChart.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/HeatmapVizWrapper.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/TimeVizWrapper.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/CommentBarChart.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/DoubleCommentSankey.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/SankeyChart.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/WorkViz.js"
+            ],
+            "additions": 1360,
+            "deletions": 832
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "b2fe8ab466d2442e7ea3466ce5932d6ca4e2bebf",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/b2fe8ab466d2442e7ea3466ce5932d6ca4e2bebf",
+            "timestamp": "2025-03-05T19:56:42Z",
+            "branch": "main",
+            "message": "new work interface",
+            "files": [
+                "team-dashboard/src/ContractPages/ContractReflection/CommunicationReflection.js",
+                "team-dashboard/src/ContractPages/ContractReflection/ContractReflection.js",
+                "team-dashboard/src/ContractPages/ContractReflection/ContractReflection.module.css",
+                "team-dashboard/src/ContractPages/ContractReflection/WorkReflection.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/BarVizWrapper.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/HeatmapVizWrapper.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/TimeVizWrapper.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/WorkPieCharts.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/WorkTimelineCharts.js"
+            ],
+            "additions": 902,
+            "deletions": 227
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "e215554169c0ccf0fe14a7e45c51eb0a111f73f9",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/e215554169c0ccf0fe14a7e45c51eb0a111f73f9",
+            "timestamp": "2025-02-26T16:21:37Z",
+            "branch": "main",
+            "message": " implemented communication time chart and reflection editor",
+            "files": [
+                "team-dashboard/src/ContractPages/Components/ReflectionEditor.js",
+                "team-dashboard/src/ContractPages/ContractReflection/ContractReflection.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/CommunicationBar.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/CommunicationHeatmap.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/CommunicationPanel.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationNorms/CommunicationTimeChart.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkNorms/WorkViz.js"
+            ],
+            "additions": 227,
+            "deletions": 30
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "f68bd04b879f59337f56384c1ff3a77a88810218",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/f68bd04b879f59337f56384c1ff3a77a88810218",
+            "timestamp": "2025-02-26T06:15:04Z",
+            "branch": "main",
+            "message": "implemented communication bar charts and heatmaps for contract reflection",
+            "files": [
+                "package-lock.json",
+                "team-dashboard/package-lock.json",
+                "team-dashboard/package.json",
+                "team-dashboard/src/App.js",
+                "team-dashboard/src/ContractPages/ContractReflection/ContractReflection.js",
+                "team-dashboard/src/ContractPages/ContractReflection/ContractReflection.module.css",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationBar.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationHeatmap.js",
+                "team-dashboard/src/ContractPages/Visualizations/CommunicationPanel.js",
+                "team-dashboard/src/ContractPages/Visualizations/WorkViz.js",
+                "team-dashboard/src/HomePages/BehaviorCard/BehaviorCard.js",
+                "team-dashboard/src/HomePages/BehaviorCard/BehaviorCard.module.css",
+                "team-dashboard/src/HomePages/DashboardRoutes.js",
+                "team-dashboard/src/HomePages/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/HomePages/ProgressTypes/ProgressTypes.module.css"
+            ],
+            "additions": 1512,
+            "deletions": 201
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "7a70c512f8572f709c5576641005019f184a92fd",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/7a70c512f8572f709c5576641005019f184a92fd",
+            "timestamp": "2025-02-25T23:54:48Z",
+            "branch": "main",
+            "message": "add contractReflection and updated project structure",
+            "files": [
+                "team-dashboard/src/App.js",
+                "team-dashboard/src/BehaviorPages/Communication/Communication.js",
+                "team-dashboard/src/BehaviorPages/Communication/Communication.module.css",
+                "team-dashboard/src/BehaviorPages/Communication/CommunicationChart.js",
+                "team-dashboard/src/BehaviorPages/Communication/CommunicationHeader.js",
+                "team-dashboard/src/BehaviorPages/WorkDistribution/TeamContractModal.js",
+                "team-dashboard/src/BehaviorPages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/BehaviorPages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/BehaviorPages/WorkDistribution/WorkDistribution.module.css",
+                "team-dashboard/src/BehaviorPages/WorkDistribution/WorkDistributionChartSection.js",
+                "team-dashboard/src/BehaviorPages/WorkDistribution/WorkDistributionHeader.js",
+                "team-dashboard/src/BehaviorPages/WorkProgression/CustomBoxPlot.js",
+                "team-dashboard/src/BehaviorPages/WorkProgression/WorkProgression.js",
+                "team-dashboard/src/BehaviorPages/WorkProgression/WorkProgression.module.css",
+                "team-dashboard/src/BehaviorPages/WorkProgression/WorkProgressionChartSection.js",
+                "team-dashboard/src/BehaviorPages/WorkProgression/WorkProgressionHeader.js",
+                "team-dashboard/src/ContractPages/ContractReflection/ContractReflection.js",
+                "team-dashboard/src/ContractPages/ContractReflection/ContractReflection.module.css",
+                "team-dashboard/src/ContractPages/TeamContract/TeamContract.js",
+                "team-dashboard/src/ContractPages/TeamContract/TeamContract.module.css",
+                "team-dashboard/src/HomePage/BehaviorCard/BehaviorCard.js",
+                "team-dashboard/src/HomePage/BehaviorCard/BehaviorCard.module.css",
+                "team-dashboard/src/HomePage/DashboardRoutes.js",
+                "team-dashboard/src/HomePage/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/HomePage/ProgressTypes/ProgressTypes.module.css",
+                "team-dashboard/src/pages/DashboardRoutes.js"
+            ],
+            "additions": 437,
+            "deletions": 145
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "fdfa04ff401727316e2c8e884fd2731759c93ed1",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/fdfa04ff401727316e2c8e884fd2731759c93ed1",
+            "timestamp": "2025-02-19T19:26:51Z",
+            "branch": "main",
+            "message": "implemented team contract",
+            "files": [
+                "team-dashboard/package-lock.json",
+                "team-dashboard/package.json",
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.module.css",
+                "team-dashboard/src/pages/DashboardRoutes.js",
+                "team-dashboard/src/pages/TeamContract/TeamContract.js",
+                "team-dashboard/src/pages/TeamContract/TeamContract.module.css"
+            ],
+            "additions": 665,
+            "deletions": 37
+        },
+        {
+            "login": "70982485+yifansong98@users.noreply.github.com",
+            "sha": "1620aea0f2485f59b664e874e5224cfa56e254de",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/1620aea0f2485f59b664e874e5224cfa56e254de",
+            "timestamp": "2025-02-19T01:05:39Z",
+            "branch": "main",
+            "message": "Merge pull request #1 from yifansong98/ritikav2\n\nAdd Communication Page to Dashboard",
+            "files": [
+                ".DS_Store",
+                "package-lock.json",
+                "team-dashboard/src/pages/Communication/Communication.js",
+                "team-dashboard/src/pages/Communication/Communication.module.css",
+                "team-dashboard/src/pages/Communication/CommunicationChart.js",
+                "team-dashboard/src/pages/Communication/CommunicationHeader.js",
+                "team-dashboard/src/pages/DashboardRoutes.js"
+            ],
+            "additions": 408,
+            "deletions": 2
+        },
+        {
+            "login": "ritikav2@illinois.edu",
+            "sha": "33e3c652b23de4b73c24a22bf0e55f4274a371aa",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/33e3c652b23de4b73c24a22bf0e55f4274a371aa",
+            "timestamp": "2025-02-19T00:49:41Z",
+            "branch": "main",
+            "message": "removed .Rhistory file",
+            "files": [
+                "team-dashboard/src/pages/Communication/.Rhistory"
+            ],
+            "additions": 0,
+            "deletions": 0
+        },
+        {
+            "login": "ritikav2@illinois.edu",
+            "sha": "331dd60f03d5508a9d3b462612bdab530b67a27b",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/331dd60f03d5508a9d3b462612bdab530b67a27b",
+            "timestamp": "2025-02-19T00:46:13Z",
+            "branch": "main",
+            "message": "merged with main",
+            "files": [
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/pages/DashboardRoutes.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js",
+                "team-dashboard/src/pages/WorkProgression/CustomBoxPlot.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgression.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgression.module.css",
+                "team-dashboard/src/pages/WorkProgression/WorkProgressionChartSection.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgressionHeader.js"
+            ],
+            "additions": 1018,
+            "deletions": 207
+        },
+        {
+            "login": "ritikav2@illinois.edu",
+            "sha": "49dcb8a59ce4536064bd04b6f767272c72fcae75",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/49dcb8a59ce4536064bd04b6f767272c72fcae75",
+            "timestamp": "2025-02-19T00:35:15Z",
+            "branch": "main",
+            "message": "added team member button",
+            "files": [
+                ".DS_Store",
+                "package-lock.json",
+                "team-dashboard/src/pages/Communication/Communication.js",
+                "team-dashboard/src/pages/Communication/Communication.module.css",
+                "team-dashboard/src/pages/Communication/CommunicationChart.js"
+            ],
+            "additions": 73,
+            "deletions": 40
+        },
+        {
+            "login": "ritikav2@illinois.edu",
+            "sha": "7eea04076c4c9063063b93a2ffa595cc0c4b481b",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/7eea04076c4c9063063b93a2ffa595cc0c4b481b",
+            "timestamp": "2025-02-12T20:46:59Z",
+            "branch": "main",
+            "message": "added communication header and basic chart",
+            "files": [
+                "team-dashboard/src/pages/Communication/.Rhistory",
+                "team-dashboard/src/pages/Communication/Communication.js",
+                "team-dashboard/src/pages/Communication/Communication.module.css",
+                "team-dashboard/src/pages/Communication/CommunicationChart.js",
+                "team-dashboard/src/pages/Communication/CommunicationHeader.js",
+                "team-dashboard/src/pages/DashboardRoutes.js"
+            ],
+            "additions": 377,
+            "deletions": 3
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "fb0b1d5e90ed6d84b99f28a546df18635b6aa4f9",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/fb0b1d5e90ed6d84b99f28a546df18635b6aa4f9",
+            "timestamp": "2025-02-12T18:58:21Z",
+            "branch": "main",
+            "message": "add pie chart in distribution, start implementing progression",
+            "files": [
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/pages/DashboardRoutes.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js",
+                "team-dashboard/src/pages/WorkProgression/CustomBoxPlot.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgression.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgression.module.css",
+                "team-dashboard/src/pages/WorkProgression/WorkProgressionChartSection.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgressionHeader.js"
+            ],
+            "additions": 1015,
+            "deletions": 203
+        },
+        {
+            "login": "mbp-song@MBP-Song.local",
+            "sha": "70dbd202042c1d736feed4802fc0a5ab61a925f9",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/70dbd202042c1d736feed4802fc0a5ab61a925f9",
+            "timestamp": "2025-02-12T16:52:17Z",
+            "branch": "main",
+            "message": "text changes",
+            "files": [
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js"
+            ],
+            "additions": 4,
+            "deletions": 4
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "de967697f707bde7aa79d021672eb7ecd2839311",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/de967697f707bde7aa79d021672eb7ecd2839311",
+            "timestamp": "2025-02-06T18:23:53Z",
+            "branch": "main",
+            "message": "changes on work distribution",
+            "files": [
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionHeader.js"
+            ],
+            "additions": 271,
+            "deletions": 171
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "f6d3d94de51bdfba524c051c9f66435d6136f91e",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/f6d3d94de51bdfba524c051c9f66435d6136f91e",
+            "timestamp": "2025-02-05T19:43:35Z",
+            "branch": "main",
+            "message": "main page, work distribution interface with team contract",
+            "files": [
+                "team-dashboard/.gitignore",
+                "team-dashboard/README.md",
+                "team-dashboard/package-lock.json",
+                "team-dashboard/package.json",
+                "team-dashboard/public/favicon.ico",
+                "team-dashboard/public/index.html",
+                "team-dashboard/public/logo192.png",
+                "team-dashboard/public/logo512.png",
+                "team-dashboard/public/manifest.json",
+                "team-dashboard/public/robots.txt",
+                "team-dashboard/src/App.css",
+                "team-dashboard/src/App.js",
+                "team-dashboard/src/App.test.js",
+                "team-dashboard/src/components/BehaviorCard/BehaviorCard.js",
+                "team-dashboard/src/components/BehaviorCard/BehaviorCard.module.css",
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.module.css",
+                "team-dashboard/src/index.css",
+                "team-dashboard/src/index.js",
+                "team-dashboard/src/logo.svg",
+                "team-dashboard/src/pages/DashboardRoutes.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionHeader.js",
+                "team-dashboard/src/reportWebVitals.js",
+                "team-dashboard/src/setupTests.js"
+            ],
+            "additions": 19475,
+            "deletions": 0
+        },
+        {
+            "login": "70982485+yifansong98@users.noreply.github.com",
+            "sha": "ebeea05f1183b98abd78004cbdfb56eb058112cf",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/ebeea05f1183b98abd78004cbdfb56eb058112cf",
+            "timestamp": "2024-12-18T18:01:43Z",
+            "branch": "main",
+            "message": "Initial commit",
+            "files": [
+                "README.md"
+            ],
+            "additions": 1,
+            "deletions": 0
+        },
+        {
+            "login": "ritikav2@illinois.edu",
+            "sha": "33e3c652b23de4b73c24a22bf0e55f4274a371aa",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/33e3c652b23de4b73c24a22bf0e55f4274a371aa",
+            "timestamp": "2025-02-19T00:49:41Z",
+            "branch": "ritikav2",
+            "message": "removed .Rhistory file",
+            "files": [
+                "team-dashboard/src/pages/Communication/.Rhistory"
+            ],
+            "additions": 0,
+            "deletions": 0
+        },
+        {
+            "login": "ritikav2@illinois.edu",
+            "sha": "331dd60f03d5508a9d3b462612bdab530b67a27b",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/331dd60f03d5508a9d3b462612bdab530b67a27b",
+            "timestamp": "2025-02-19T00:46:13Z",
+            "branch": "ritikav2",
+            "message": "merged with main",
+            "files": [
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/pages/DashboardRoutes.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js",
+                "team-dashboard/src/pages/WorkProgression/CustomBoxPlot.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgression.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgression.module.css",
+                "team-dashboard/src/pages/WorkProgression/WorkProgressionChartSection.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgressionHeader.js"
+            ],
+            "additions": 1018,
+            "deletions": 207
+        },
+        {
+            "login": "ritikav2@illinois.edu",
+            "sha": "49dcb8a59ce4536064bd04b6f767272c72fcae75",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/49dcb8a59ce4536064bd04b6f767272c72fcae75",
+            "timestamp": "2025-02-19T00:35:15Z",
+            "branch": "ritikav2",
+            "message": "added team member button",
+            "files": [
+                ".DS_Store",
+                "package-lock.json",
+                "team-dashboard/src/pages/Communication/Communication.js",
+                "team-dashboard/src/pages/Communication/Communication.module.css",
+                "team-dashboard/src/pages/Communication/CommunicationChart.js"
+            ],
+            "additions": 73,
+            "deletions": 40
+        },
+        {
+            "login": "ritikav2@illinois.edu",
+            "sha": "7eea04076c4c9063063b93a2ffa595cc0c4b481b",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/7eea04076c4c9063063b93a2ffa595cc0c4b481b",
+            "timestamp": "2025-02-12T20:46:59Z",
+            "branch": "ritikav2",
+            "message": "added communication header and basic chart",
+            "files": [
+                "team-dashboard/src/pages/Communication/.Rhistory",
+                "team-dashboard/src/pages/Communication/Communication.js",
+                "team-dashboard/src/pages/Communication/Communication.module.css",
+                "team-dashboard/src/pages/Communication/CommunicationChart.js",
+                "team-dashboard/src/pages/Communication/CommunicationHeader.js",
+                "team-dashboard/src/pages/DashboardRoutes.js"
+            ],
+            "additions": 377,
+            "deletions": 3
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "fb0b1d5e90ed6d84b99f28a546df18635b6aa4f9",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/fb0b1d5e90ed6d84b99f28a546df18635b6aa4f9",
+            "timestamp": "2025-02-12T18:58:21Z",
+            "branch": "ritikav2",
+            "message": "add pie chart in distribution, start implementing progression",
+            "files": [
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/pages/DashboardRoutes.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js",
+                "team-dashboard/src/pages/WorkProgression/CustomBoxPlot.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgression.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgression.module.css",
+                "team-dashboard/src/pages/WorkProgression/WorkProgressionChartSection.js",
+                "team-dashboard/src/pages/WorkProgression/WorkProgressionHeader.js"
+            ],
+            "additions": 1015,
+            "deletions": 203
+        },
+        {
+            "login": "mbp-song@MBP-Song.local",
+            "sha": "70dbd202042c1d736feed4802fc0a5ab61a925f9",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/70dbd202042c1d736feed4802fc0a5ab61a925f9",
+            "timestamp": "2025-02-12T16:52:17Z",
+            "branch": "ritikav2",
+            "message": "text changes",
+            "files": [
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js"
+            ],
+            "additions": 4,
+            "deletions": 4
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "de967697f707bde7aa79d021672eb7ecd2839311",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/de967697f707bde7aa79d021672eb7ecd2839311",
+            "timestamp": "2025-02-06T18:23:53Z",
+            "branch": "ritikav2",
+            "message": "changes on work distribution",
+            "files": [
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionHeader.js"
+            ],
+            "additions": 271,
+            "deletions": 171
+        },
+        {
+            "login": "yifan33@illinois.edu",
+            "sha": "f6d3d94de51bdfba524c051c9f66435d6136f91e",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/f6d3d94de51bdfba524c051c9f66435d6136f91e",
+            "timestamp": "2025-02-05T19:43:35Z",
+            "branch": "ritikav2",
+            "message": "main page, work distribution interface with team contract",
+            "files": [
+                "team-dashboard/.gitignore",
+                "team-dashboard/README.md",
+                "team-dashboard/package-lock.json",
+                "team-dashboard/package.json",
+                "team-dashboard/public/favicon.ico",
+                "team-dashboard/public/index.html",
+                "team-dashboard/public/logo192.png",
+                "team-dashboard/public/logo512.png",
+                "team-dashboard/public/manifest.json",
+                "team-dashboard/public/robots.txt",
+                "team-dashboard/src/App.css",
+                "team-dashboard/src/App.js",
+                "team-dashboard/src/App.test.js",
+                "team-dashboard/src/components/BehaviorCard/BehaviorCard.js",
+                "team-dashboard/src/components/BehaviorCard/BehaviorCard.module.css",
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.js",
+                "team-dashboard/src/components/ProgressTypes/ProgressTypes.module.css",
+                "team-dashboard/src/index.css",
+                "team-dashboard/src/index.js",
+                "team-dashboard/src/logo.svg",
+                "team-dashboard/src/pages/DashboardRoutes.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.js",
+                "team-dashboard/src/pages/WorkDistribution/TeamContractModal.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistribution.module.css",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionChartSection.js",
+                "team-dashboard/src/pages/WorkDistribution/WorkDistributionHeader.js",
+                "team-dashboard/src/reportWebVitals.js",
+                "team-dashboard/src/setupTests.js"
+            ],
+            "additions": 19475,
+            "deletions": 0
+        },
+        {
+            "login": "70982485+yifansong98@users.noreply.github.com",
+            "sha": "ebeea05f1183b98abd78004cbdfb56eb058112cf",
+            "url": "https://api.github.com/repos/yifansong98/teamio/commits/ebeea05f1183b98abd78004cbdfb56eb058112cf",
+            "timestamp": "2024-12-18T18:01:43Z",
+            "branch": "ritikav2",
+            "message": "Initial commit",
+            "files": [
+                "README.md"
+            ],
+            "additions": 1,
+            "deletions": 0
+        }
+    ],
+    "teamio_pull_requests": [
+        {
+            "pr_number": 1,
+            "title": "Add Communication Page to Dashboard",
+            "url": "https://github.com/yifansong98/teamio/pull/1",
+            "author": "ritikav2",
+            "state": "closed",
+            "description": "This PR is for adding the Communication section (frontend) to the dashboard - allows users to view Slack metrics such as message counts, sentiment, and response time.",
+            "created_at": "2025-02-19T01:00:09Z",
+            "merged_at": "2025-02-19T01:05:39Z",
+            "merged_by": null,
+            "closed_by": null,
+            "reviewers": []
+        }
+    ]
+}

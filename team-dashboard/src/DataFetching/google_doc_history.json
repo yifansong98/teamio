@@ -1,0 +1,947 @@
+{
+    "revision_history": [
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "1",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-14T00:26:40.003Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "761",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-14T01:09:43.399Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "1704",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-14T17:49:08.691Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "1719",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-14T18:54:45.976Z",
+            "last_modifying_user": "Brian Bailey",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "1850",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-14T23:11:33.027Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "1880",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-15T01:05:59.581Z",
+            "last_modifying_user": "Ritika Vithani",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "1939",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-15T18:36:04.852Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "2014",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-16T01:17:55.122Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "2736",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-17T20:25:56.914Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "2758",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-17T22:03:51.711Z",
+            "last_modifying_user": "Brian Bailey",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "2777",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-19T15:25:30.360Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "3107",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-20T02:27:25.861Z",
+            "last_modifying_user": "Brian Bailey",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "3165",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-20T03:33:05.087Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "3239",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-20T19:36:56.162Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "3332",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-21T23:34:37.567Z",
+            "last_modifying_user": "Brian Bailey",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "3335",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-24T16:45:44.873Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "3367",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-02-25T18:47:57.141Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "3452",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-03-12T01:00:34.265Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        },
+        {
+            "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+            "revision_id": "3467",
+            "mime_type": "application/vnd.google-apps.document",
+            "modified_time": "2025-03-14T17:11:30.261Z",
+            "last_modifying_user": "Yifan Song",
+            "published": false
+        }
+    ],
+    "comments": [
+        [
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwfc",
+                "content": "rely on student input in an attendance sheet;\u00a0?check if there're any excuses in chat when unable to attend on time",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:40:05.584Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwfk",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:42:41.685Z",
+                        "modifiedTime": "2025-02-20T02:42:41.685Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "if they only meet once per week may not be necessary to track this? But I think they must meet more often than that? Why does the language impose once per week?",
+                        "content": "if they only meet once per week may not be necessary to track this? But I think they must meet more often than that? Why does the language impose once per week?"
+                    },
+                    {
+                        "id": "AAABdgjBwfw",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:44:09.929Z",
+                        "modifiedTime": "2025-02-20T02:44:09.929Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "good point, I don&#39;t have a good answer and think this depends on team working style",
+                        "content": "good point, I don't have a good answer and think this depends on team working style"
+                    },
+                    {
+                        "id": "AAABdgjBwf0",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:44:51.257Z",
+                        "modifiedTime": "2025-02-20T02:44:51.257Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "but being absent and late for team meetings is one of the most critiques I heard during user research",
+                        "content": "but being absent and late for team meetings is one of the most critiques I heard during user research"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwfQ",
+                "content": "revision history with/without other's feedback, ?quality may be hard to directly measure but can take student input (comment/annotation)",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:38:06.552Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwgY",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:55:32.596Z",
+                        "modifiedTime": "2025-02-20T02:55:32.596Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Could we should amount of content / code edited that was not their own?",
+                        "content": "Could we should amount of content / code edited that was not their own?"
+                    },
+                    {
+                        "id": "AAABdgjBwgc",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:57:42.844Z",
+                        "modifiedTime": "2025-02-20T02:57:42.844Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Or just show the total number of revisions performed.",
+                        "content": "Or just show the total number of revisions performed."
+                    },
+                    {
+                        "id": "AAABdgjBwrw",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T05:21:15.572Z",
+                        "modifiedTime": "2025-02-20T05:21:15.572Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "yes, showing how different team members have edited on their own or other&#39;s parts is possible",
+                        "content": "yes, showing how different team members have edited on their own or other's parts is possible"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwfM",
+                "content": "student input in a planning sheet at the start of each deliverable compared to the work log timeline, ?check if there're any excuses\u00a0in chat when unable to complete on time",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:36:57.449Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwgg",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:59:27.116Z",
+                        "modifiedTime": "2025-02-20T02:59:27.116Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "This one seems nearly impossible to quantify in a meaningful way. Do we have to do this? As I mentioned I worry about overwhelming with data. This might be an example where we are trying too hard to shove some data at the team.",
+                        "content": "This one seems nearly impossible to quantify in a meaningful way. Do we have to do this? As I mentioned I worry about overwhelming with data. This might be an example where we are trying too hard to shove some data at the team."
+                    },
+                    {
+                        "id": "AAABdgjBwgk",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T03:03:46.997Z",
+                        "modifiedTime": "2025-02-20T03:03:46.997Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Maybe for this entire section, we can show &quot;Total actions&quot; as defined in the tool or selected through interaction by the team and &quot;Total revisions&quot;. However, revisions is a subset of the total actions data so maybe its something that is selectable.",
+                        "content": "Maybe for this entire section, we can show \"Total actions\" as defined in the tool or selected through interaction by the team and \"Total revisions\". However, revisions is a subset of the total actions data so maybe its something that is selectable."
+                    },
+                    {
+                        "id": "AAABdgjBwr4",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T05:29:12.152Z",
+                        "modifiedTime": "2025-02-20T05:29:12.152Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Having the team contract is helpful in setting up an abstract goal/standard but we still lack a benchmark here; ideas we have so far include:<br>1) compare with class average (min/max)<br>2) ask the team to set up their own &quot;baseline&quot;, e.g. how they would want to divide the work and how they want to set up planning<br>Both are already in Figma or implemented.<br><br>Another idea I have is to simply not have any benchmark but just neutrally present the data, then ask the students to reflect according to the corresponding team contract points<br><br>However, this can not show a relatively conclusive result, especially in giving early warning signals to instructors or grading the process. So, maybe some low threshold should still be set?",
+                        "content": "Having the team contract is helpful in setting up an abstract goal/standard but we still lack a benchmark here; ideas we have so far include:\n1) compare with class average (min/max)\n2) ask the team to set up their own \"baseline\", e.g. how they would want to divide the work and how they want to set up planning\nBoth are already in Figma or implemented.\n\nAnother idea I have is to simply not have any benchmark but just neutrally present the data, then ask the students to reflect according to the corresponding team contract points\n\nHowever, this can not show a relatively conclusive result, especially in giving early warning signals to instructors or grading the process. So, maybe some low threshold should still be set?"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwek",
+                "content": "multiple metrics, e.g. edits, words, commits, codes -> choose one (per tool) as primary with others as alternatives, or find some aggregated metric to define one \"action/contribution\"",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:31:31.500Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwf8",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:45:44.090Z",
+                        "modifiedTime": "2025-02-20T02:45:44.090Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Right - this is why so much prior work uses a single tool because it avoids the problem of aggregation across tools. They still get the work published. Makes me worry we are trying to do\u00a0too much",
+                        "content": "Right - this is why so much prior work uses a single tool because it avoids the problem of aggregation across tools. They still get the work published. Makes me worry we are trying to do\u00a0too much"
+                    },
+                    {
+                        "id": "AAABdgjBwgQ",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:51:06.032Z",
+                        "modifiedTime": "2025-02-20T02:52:26.918Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "My initial thought is to define Total Actions, and count specific actions per tool. Such as Edits and comments in Docs, Commits in GitHub, substantive posts in Slack. I can imagine this as a simple timeline with different colors or shapes representing\u00a0types of actions and size indicating volume. Or even a series of charts showing actions by time or group member. I still struggle with showing group members because it pits team members\u00a0against each other.",
+                        "content": "My initial thought is to define Total Actions, and count specific actions per tool. Such as Edits and comments in Docs, Commits in GitHub, substantive posts in Slack. I can imagine this as a simple timeline with different colors or shapes representing\u00a0types of actions and size indicating volume. Or even a series of charts showing actions by time or group member. I still struggle with showing group members because it pits team members\u00a0against each other."
+                    },
+                    {
+                        "id": "AAABdgjBwr8",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T05:29:51.149Z",
+                        "modifiedTime": "2025-02-20T05:30:24.360Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Whether students want to see their teammates&#39; data and/or how they want their data to be presented may be a problem we need to find out through user study - maybe we can present multiple visual representations during the study",
+                        "content": "Whether students want to see their teammates' data and/or how they want their data to be presented may be a problem we need to find out through user study - maybe we can present multiple visual representations during the study"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBweg",
+                "content": "is respectful and professional different? Would they be measured in different ways?",
+                "author": "Brian Bailey",
+                "created_time": "2025-02-20T02:30:49.250Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBweo",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:31:43.805Z",
+                        "modifiedTime": "2025-02-20T02:31:43.805Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "I like having these words, just curious if they are substantially different in our intent as to what they capture.",
+                        "content": "I like having these words, just curious if they are substantially different in our intent as to what they capture."
+                    },
+                    {
+                        "id": "AAABdgjBwes",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:32:32.900Z",
+                        "modifiedTime": "2025-02-20T02:32:32.900Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "I think &quot;respectful&quot; is like a lower bound of &quot;professional&quot;, maybe we can only keep &quot;professional&quot; in the contract as it should include &quot;respectful&quot;",
+                        "content": "I think \"respectful\" is like a lower bound of \"professional\", maybe we can only keep \"professional\" in the contract as it should include \"respectful\""
+                    },
+                    {
+                        "id": "AAABdgjBwe4",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:34:57.498Z",
+                        "modifiedTime": "2025-02-20T02:34:57.498Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "though we can start by visualizing measures of respectfulness, which might be easier, then explore more complex professionalism measures such as ambiguity or helpfulness",
+                        "content": "though we can start by visualizing measures of respectfulness, which might be easier, then explore more complex professionalism measures such as ambiguity or helpfulness"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBweY",
+                "content": "Google Docs: comment, GitHub: code review, ?maybe extract content from conversation",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:28:59.699Z",
+                "replies": [],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBweU",
+                "content": "content analysis in conversation channels, e.g. sentiment analysis, harmful/polite words",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:27:56.596Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwfA",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:36:33.479Z",
+                        "modifiedTime": "2025-02-20T02:36:33.479Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "and time analysis?",
+                        "content": "and time analysis?"
+                    },
+                    {
+                        "id": "AAABdgjBwfY",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:39:06.289Z",
+                        "modifiedTime": "2025-02-20T02:39:06.289Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "yes, forgot to add, or simply response time statistics",
+                        "content": "yes, forgot to add, or simply response time statistics"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBweM",
+                "content": "chat participation and activeness, links between team members",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:27:41.688Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwfs",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:43:41.379Z",
+                        "modifiedTime": "2025-02-20T02:43:41.379Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "in slack, use of the group channel vs use of DMs",
+                        "content": "in slack, use of the group channel vs use of DMs"
+                    },
+                    {
+                        "id": "AAABdgjBwf4",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:45:35.002Z",
+                        "modifiedTime": "2025-02-20T02:45:35.002Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "we don&#39;t have access to DMs, most likely",
+                        "content": "we don't have access to DMs, most likely"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwd4",
+                "content": "chat participation and activeness, links between team members",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:27:11.119Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBweE",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:27:26.962Z",
+                        "modifiedTime": "2025-02-20T02:27:26.962Z",
+                        "action": "resolve",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "",
+                        "content": ""
+                    }
+                ],
+                "resolved": true
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwc4",
+                "content": "chat participation and activeness, links between team members",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:19:03.471Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwd0",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:26:51.716Z",
+                        "modifiedTime": "2025-02-20T02:26:51.716Z",
+                        "action": "resolve",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "",
+                        "content": ""
+                    }
+                ],
+                "resolved": true
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwcA",
+                "content": "We lost responsiveness (timely)",
+                "author": "Brian Bailey",
+                "created_time": "2025-02-20T02:16:45.962Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwco",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:18:05.392Z",
+                        "modifiedTime": "2025-02-20T02:18:05.392Z",
+                        "action": "resolve",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "",
+                        "content": ""
+                    }
+                ],
+                "resolved": true
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwb4",
+                "content": "I think the tool choice should come at the end, or is it even necessary to be listed? For example, its the only tool choice\u00a0in the contract despite the fact that the team will use many tools",
+                "author": "Brian Bailey",
+                "created_time": "2025-02-20T02:15:39.780Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwcI",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:17:10.554Z",
+                        "modifiedTime": "2025-02-20T02:17:10.554Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "This is a good point. I think tool choice can be skipped. Maybe we should just offer one tool while students can have their own options.",
+                        "content": "This is a good point. I think tool choice can be skipped. Maybe we should just offer one tool while students can have their own options."
+                    },
+                    {
+                        "id": "AAABdgjBwdI",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:22:26.548Z",
+                        "modifiedTime": "2025-02-20T02:22:26.548Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "I would just ignore it. The contract is not dependent on the tool choice.",
+                        "content": "I would just ignore it. The contract is not dependent on the tool choice."
+                    },
+                    {
+                        "id": "AAABdgjBwdo",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:26:19.247Z",
+                        "modifiedTime": "2025-02-20T02:26:19.247Z",
+                        "action": "resolve",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "",
+                        "content": ""
+                    }
+                ],
+                "resolved": true
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwb0",
+                "content": "This would be measured by content analysis in conversation channels, e.g. sentiment analysis, harmful/polite words analysis",
+                "author": "Yifan Song",
+                "created_time": "2025-02-20T02:15:38.791Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBweQ",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:27:49.753Z",
+                        "modifiedTime": "2025-02-20T02:27:49.753Z",
+                        "action": "resolve",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "",
+                        "content": ""
+                    }
+                ],
+                "resolved": true
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwbM",
+                "content": "Not sure about this one. Comments in a good doc feel more like reviewing each other's work which is below",
+                "author": "Brian Bailey",
+                "created_time": "2025-02-20T02:08:45.004Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwbQ",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:09:32.119Z",
+                        "modifiedTime": "2025-02-20T02:09:56.629Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "and the second and third bullet in this section feel similar. support and asking for help would also be needed if assigned tasks cannot be completed.",
+                        "content": "and the second and third bullet in this section feel similar. support and asking for help would also be needed if assigned tasks cannot be completed."
+                    },
+                    {
+                        "id": "AAABdgjBwbU",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:09:40.988Z",
+                        "modifiedTime": "2025-02-20T02:09:40.988Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Yes, I removed it and replaced it with provide constructive\u00a0feedback.",
+                        "content": "Yes, I removed it and replaced it with provide constructive\u00a0feedback."
+                    },
+                    {
+                        "id": "AAABdgjBwbY",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:09:58.848Z",
+                        "modifiedTime": "2025-02-20T02:12:14.873Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "I created a new copy above",
+                        "content": "I created a new copy above"
+                    },
+                    {
+                        "id": "AAABdgjBwbk",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:11:57.007Z",
+                        "modifiedTime": "2025-02-20T02:11:57.007Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Can the second and third points be merged to something like this &quot;We agree to support each other, notify others if assigned work cannot be completed on time, and ask for help when needed",
+                        "content": "Can the second and third points be merged to something like this \"We agree to support each other, notify others if assigned work cannot be completed on time, and ask for help when needed"
+                    },
+                    {
+                        "id": "AAABdgjBwbs",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:12:39.781Z",
+                        "modifiedTime": "2025-02-20T02:12:54.976Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "I guess merging them makes the resulting statement complex, so maybe its best to separate the statements",
+                        "content": "I guess merging them makes the resulting statement complex, so maybe its best to separate the statements"
+                    },
+                    {
+                        "id": "AAABdgjBwbw",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:13:59.410Z",
+                        "modifiedTime": "2025-02-20T02:13:59.410Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Yes, my current approach in the new copy is 1) move notify others to &quot;Work Norms&quot; as this is part of working; 2) remove ask for help as this may be hard to measure, but as a reverse direction, I believe this could be measured by giving feedback and revising work",
+                        "content": "Yes, my current approach in the new copy is 1) move notify others to \"Work Norms\" as this is part of working; 2) remove ask for help as this may be hard to measure, but as a reverse direction, I believe this could be measured by giving feedback and revising work"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdgjBwZg",
+                "content": "I don't think this is a viable choice. Full consensus means \"unanimous\" and I wonder if this is really a choice\u00a0a team must make in a contract. I think the more important issue is to discuss important decisions as a team rather than the method of voting",
+                "author": "Brian Bailey",
+                "created_time": "2025-02-20T01:38:44.196Z",
+                "replies": [
+                    {
+                        "id": "AAABdgjBwao",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T01:51:50.885Z",
+                        "modifiedTime": "2025-02-20T01:51:50.885Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Maybe this point can be removed and merged into inclusiveness?",
+                        "content": "Maybe this point can be removed and merged into inclusiveness?"
+                    },
+                    {
+                        "id": "AAABdgjBwbI",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:06:04.015Z",
+                        "modifiedTime": "2025-02-20T02:06:04.015Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Agreed. It mainly about discussing the issues prior to making decisions. One person should not decide for the team. It could be supported with communication data?",
+                        "content": "Agreed. It mainly about discussing the issues prior to making decisions. One person should not decide for the team. It could be supported with communication data?"
+                    },
+                    {
+                        "id": "AAABdgjBwbg",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-20T02:11:15.260Z",
+                        "modifiedTime": "2025-02-20T02:11:15.260Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "Yes, while there could be more advanced content analysis, we can at least start with simple (meaningful) message distribution",
+                        "content": "Yes, while there could be more advanced content analysis, we can at least start with simple (meaningful) message distribution"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdd3LZX8",
+                "content": "@yifan33@illinois.edu Can students use the @ feature in Google Docs. As an example, I assigned this task to you. Does GitHub have a similar feature?",
+                "author": "Brian Bailey",
+                "created_time": "2025-02-17T21:59:02.967Z",
+                "replies": [
+                    {
+                        "id": "AAABdd3LZYA",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-17T22:00:00.006Z",
+                        "modifiedTime": "2025-02-17T22:00:00.006Z",
+                        "author": {
+                            "displayName": "Brian Bailey",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a-/ALV-UjUXZ5uYwmXZWmkgC9JMdq0p2S-4IrRdIBQQmoRfoJNxiJcDEbU=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "If you are not able to complete this task, let the team know by the end of the day",
+                        "content": "If you are not able to complete this task, let the team know by the end of the day"
+                    },
+                    {
+                        "id": "AAABdfyAI2g",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-19T15:31:24.856Z",
+                        "modifiedTime": "2025-02-19T15:31:24.856Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "@ in Google Docs would be a clever and easy way if students write a planning doc. In GitHub, there will be similar functions but require more complex project management skills so maybe not appropriate for our class",
+                        "content": "@ in Google Docs would be a clever and easy way if students write a planning doc. In GitHub, there will be similar functions but require more complex project management skills so maybe not appropriate for our class"
+                    },
+                    {
+                        "id": "AAABdfyAI2o",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-19T15:32:19.058Z",
+                        "modifiedTime": "2025-02-19T15:32:19.058Z",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "On the other hand, it may be easier for us to parse pre-defined planning template in the dashboard compared to parsing free text from a Google Doc",
+                        "content": "On the other hand, it may be easier for us to parse pre-defined planning template in the dashboard compared to parsing free text from a Google Doc"
+                    }
+                ],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdd3LZXo",
+                "content": "Input would be the written goals",
+                "author": "Brian Bailey",
+                "created_time": "2025-02-17T21:40:06.374Z",
+                "replies": [
+                    {
+                        "id": "AAABdfyAI1E",
+                        "kind": "drive#reply",
+                        "createdTime": "2025-02-19T15:24:56.423Z",
+                        "modifiedTime": "2025-02-19T15:24:56.423Z",
+                        "action": "resolve",
+                        "author": {
+                            "displayName": "Yifan Song",
+                            "kind": "drive#user",
+                            "me": false,
+                            "photoLink": "//lh3.googleusercontent.com/a/ACg8ocIjd4F1BZJcSsvMIVeRJ-kElHYs2Th_6LPQAMryzEYbnszcaw=s50-c-k-no"
+                        },
+                        "deleted": false,
+                        "htmlContent": "",
+                        "content": ""
+                    }
+                ],
+                "resolved": true
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdcMs2go",
+                "content": "maybe add \"norms\" to keep consistent with the next section",
+                "author": "Yifan Song",
+                "created_time": "2025-02-16T01:17:49.671Z",
+                "replies": [],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdcMs2gk",
+                "content": "I think \"Work Norms\" would be more accurate as decision-making sounds very concrete and this section has more than just decision making.",
+                "author": "Yifan Song",
+                "created_time": "2025-02-16T01:16:38.680Z",
+                "replies": [],
+                "resolved": false
+            },
+            {
+                "file_id": "1vdyhCpgsAkWYi5qR5YSCtDNHfaw1uHEEHyMC--UgfPU",
+                "comment_id": "AAABdcMs2gg",
+                "content": "This is moved to \"Interaction\" based on Ritika's comment as it's more about interaction than decision-making. However, this point also seems to overlap with the first point about \"timely/professional\" communication",
+                "author": "Yifan Song",
+                "created_time": "2025-02-16T01:14:53.955Z",
+                "replies": [],
+                "resolved": false
+            }
+        ]
+    ]
+}

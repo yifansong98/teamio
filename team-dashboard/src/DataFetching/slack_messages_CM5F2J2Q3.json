@@ -1,0 +1,323 @@
+[
+    {
+        "timestamp": "2025-03-26 18:48:31",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "<https://dl-acm-org.proxy2.library.illinois.edu/doi/abs/10.1109/ICSE-SEET58685.2023.00030|Improving Grading Outcomes in Software Engineering Projects Through Automated Contributions Summaries>",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-26 14:55:36",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "BTW, the system has a great name - TeamCAST - we need something clever too!",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-26 00:05:05",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "I read the thesis document and the other paper this evening. In the thesis doc, I quick critique:\n+ Self-reporting of team activity sessions.\n+ Ability to tag contributors to each sessions and / or specific artifacts.\n+ Coarseness of the data. It was mainly a capture of the work documents, team timeline and individual time invested.\n+ Moving toward automated data collection.\n+ Researchers are moving in this direction. We better get a paper ready soon or risk being scooped.",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-25 20:49:48",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "Lets discuss this thesis document",
+        "reactions": [
+            {
+                "emoji": "+1",
+                "count": 1,
+                "user_ids": [
+                    "U05NHLMH9UZ"
+                ],
+                "user_names": [
+                    "Yifan Song"
+                ]
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-03-25 20:49:38",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "yes!",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-25 20:45:22",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "Although it's not a conference/journal paper, this Master thesis from last year is trying to build something very similar to our goal. While we leverage the power of log data from different tools, they primarily rely on recording work sessions and uploading artifacts directly from students, which might be overwhelming. But the dual-interface design and the visualizations/statistics may still be insightful.\n\nTheir lab has another work about peer assessment, which also seems relevant: <https://ieeexplore.ieee.org/document/10229351>",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-25 19:50:51",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "Are there other papers that might be more interesting / related to our project? I feel like we have been referencing Tcal for several weeks. Maybe its also time to move on",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-25 19:48:39",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "We can have a general disscussion of both of these papers - the general ideas that cut across each",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-25 19:21:52",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "There's another paper from the same author of T-Cal visualizing async group conversations for MOOC that might also be interesting: <https://dl.acm.org/doi/10.1145/3162075>",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-25 19:18:04",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "I can show the updated prototype and seek feedback again. But as I have already demo in the past group meetings, maybe we can discuss the T-Cal paper that we missed last time?",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-24 19:08:27",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "I could use some help coming up with a topic for the group meeting this week.",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-03-12 18:58:49",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "Thank you for all the feedback!",
+        "reactions": [
+            {
+                "emoji": "+1",
+                "count": 1,
+                "user_ids": [
+                    "UM62NF91R"
+                ],
+                "user_names": [
+                    "Wendy Shi"
+                ]
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-02-26 19:01:03",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "Do we meet at 2124? I\u2019m here",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-02-26 18:58:21",
+        "user_id": "U06GZCZ4QQ1",
+        "user_name": "Rohan Kumar",
+        "message": "same here",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-02-26 18:57:46",
+        "user_id": "U07M0SB6LKV",
+        "user_name": "Ritika Vithani",
+        "message": "I will be a few minutes late",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-02-25 19:45:35",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "I think many of us have read it and it would be useful to discuss in light of existing projects",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-02-25 19:45:14",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "For the meeting this week, can we discuss T-Cal paper? *T-Cal: Understanding Team Conversational Data with Calendar-based Visualization*\n<https://dl.acm.org/doi/10.1145/3173574.3174074>",
+        "reactions": [
+            {
+                "emoji": "+1",
+                "count": 4,
+                "user_ids": [
+                    "U05NHLMH9UZ",
+                    "U07M0SB6LKV",
+                    "UM62NF91R",
+                    "U05QTUA8XQQ"
+                ],
+                "user_names": [
+                    "Yifan Song",
+                    "Ritika Vithani",
+                    "Wendy Shi",
+                    "Linna Niu"
+                ]
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-02-12 19:28:25",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "<https://docs.google.com/spreadsheets/d/1Kd5wZeN-R0J38--pocYqXeaR7y4St847EgntGUapSFU/edit?gid=0#gid=0>",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-02-12 19:15:11",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "<https://docs.google.com/document/d/1ChfxgFdzKd--hz6j0SKG4yJ4n-3n-gcnN_zCNB1kDmg/edit?tab=t.0#heading=h.f2r4rxi50k6n>",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-02-12 18:57:18",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "I failed to send printing jobs off campus network. Could anyone help with this as you should all have access to the document? I'm heading to Siebel now.",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-02-10 22:14:54",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "For the group meeting this week, remember that we are in 2124 SC from 1-2 p.m. For the topic, I would like to perform a \"design sprint\" for the teamwork I/O project. I want to focus on the user interface for the input side of the team contract information for the sprint. I have some larger white paper and pencils and markers I can bring. Yifan will show us what he has for the prototypes and perhaps some specific goals / objectives for a revision and then we will brainstorming design ideas.",
+        "reactions": [
+            {
+                "emoji": "+1",
+                "count": 4,
+                "user_ids": [
+                    "U05NHLMH9UZ",
+                    "U05QTUA8XQQ",
+                    "UM62NF91R",
+                    "U07M0SB6LKV"
+                ],
+                "user_names": [
+                    "Yifan Song",
+                    "Linna Niu",
+                    "Wendy Shi",
+                    "Ritika Vithani"
+                ]
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-01-29 17:57:01",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "Hi everyone, people are out of town or have a class conflict today. I am also home with a sick kid today. So, let's skip the meeting today and I am going to try and re-schedule to accommodate more people for the meeting.",
+        "reactions": [
+            {
+                "emoji": "+1",
+                "count": 3,
+                "user_ids": [
+                    "U05NHLMH9UZ",
+                    "U05QTUA8XQQ",
+                    "UM62NF91R"
+                ],
+                "user_names": [
+                    "Yifan Song",
+                    "Linna Niu",
+                    "Wendy Shi"
+                ]
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-01-29 01:17:21",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "ok with me",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-01-28 21:16:23",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "The paper has 24 pages but we can skip the statistical/machine-learning details (the technical method might also be outdated with the advance in LLM - it would actually be interesting to see how LLM predicts viability)",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-01-28 21:10:46",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "I recently read an interesting paper called \"*<https://hci.stanford.edu/publications/2020/viability-prediction/viability-prediction.pdf|My Team Will Go On: Differentiating High and Low Viability Teams through Team Interaction>*\". The paper tried to predict a team's viability - a team\u2019s capacity for sustained and future success - based on features of a very short conversation. While this paper is not about visualization design, I think it can offer helpful insights in how we analyze the conversation data, especially in providing early warning signals of malfunction teams for instructors.",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-01-28 20:08:51",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "<@U05NHLMH9UZ> Can you recommend one that is not too long?",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-01-28 20:08:30",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "This time, let's do a paper relevant to visualization design and team behavior.",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-01-28 20:08:14",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "Can we come up with a discussion topic for Wednesday meeting?",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-01-15 20:01:02",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "<https://illinois.zoom.us/j/2941110109?pwd=Z1A1ZkdtYWFVOE5RL2wvY0x5ZnpRQT09>",
+        "reactions": [
+            {
+                "emoji": "+1",
+                "count": 1,
+                "user_ids": [
+                    "U05NHLMH9UZ"
+                ],
+                "user_names": [
+                    "Yifan Song"
+                ]
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-01-15 19:59:45",
+        "user_id": "U05NHLMH9UZ",
+        "user_name": "Yifan Song",
+        "message": "Is there a Zoom link for today's group meeting?",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-01-14 12:47:51",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "Are we ready to meet again tomorrow (Wednesday) at 2:00 p.m.?",
+        "reactions": []
+    },
+    {
+        "timestamp": "2025-01-09 15:28:10",
+        "user_id": "UMG7404N4",
+        "user_name": "Brian Bailey",
+        "message": "I hope everyone had a great winter break and looking forward to 2025. At the next group meeting, it would be great to discuss this NVIDIA CEO Jensen Huang's keynote presentation at CES 2025: <https://www.youtube.com/live/k82RwXqZHY8>",
+        "reactions": [
+            {
+                "emoji": "+1",
+                "count": 3,
+                "user_ids": [
+                    "U05NHLMH9UZ",
+                    "U07M0SB6LKV",
+                    "UM62NF91R"
+                ],
+                "user_names": [
+                    "Yifan Song",
+                    "Ritika Vithani",
+                    "Wendy Shi"
+                ]
+            }
+        ]
+    }
+]
