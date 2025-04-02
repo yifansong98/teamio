@@ -13,7 +13,7 @@ export default function ContractReflection() {
   const [activePage, setActivePage] = useState('communication');
 
   const handleReturn = () => {
-    navigate('/');
+    navigate('/teamio');
   };
 
   return (

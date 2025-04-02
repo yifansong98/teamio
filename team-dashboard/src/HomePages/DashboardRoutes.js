@@ -18,7 +18,7 @@ export default function DashboardRoutes() {
   return (
     <Routes>
       {/* Home Page */}
-      <Route path="/" element={<ProgressTypes />} />
+      <Route path="/teamio" element={<ProgressTypes />} />
 
       {/* Behavior Pages */}
       <Route path="/communication" element={<Communication />} />
