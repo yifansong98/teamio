@@ -1,5 +1,5 @@
 // src/ContractPages/Visualizations/CommunicationNorms/MeetingAttendanceChart.js
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   BarChart,
   Bar,
@@ -12,28 +12,73 @@ import {
 } from 'recharts';
 
 /**
- * Data Format (dummy example):
- * [
- *   { meeting: 'Meeting 1', onTime: 2, late: 1, missing: 1, userStatus: 'onTime' },
- *   { meeting: 'Meeting 2', onTime: 1, late: 2, missing: 1, userStatus: 'late' },
+ * We'll read from localStorage "TeamIO_Meetings" => an array of rows:
+ * e.g. [
+ *   { date, startTime, endTime, mode, isSaved, presentList:[], onTimeList:[] },
  *   ...
  * ]
- * userStatus => which category the current user belongs to, for "Show my data" highlight
+ * We'll convert each row to an object: { meeting, onTime, late, missing, userStatus }
+ * userStatus => 'onTime'|'late'|'missing'
  */
 
-const dummyData = [
-  { meeting: 'Meeting 1', onTime: 2, late: 1, missing: 1, userStatus: 'onTime' },
-  { meeting: 'Meeting 2', onTime: 1, late: 2, missing: 1, userStatus: 'late' },
-  { meeting: 'Meeting 3', onTime: 3, late: 0, missing: 1, userStatus: 'missing' },
-  { meeting: 'Meeting 4', onTime: 2, late: 2, missing: 0, userStatus: 'late' },
-];
-
 export default function MeetingAttendanceChart() {
-  // In practice, you might pass in real data as props or from parent state
-  const [data] = useState(dummyData);
-
-  // "Show my data" => highlight the user segment for each bar
+  // We store the final chart data
+  const [data, setData] = useState([]);
   const [showMyData, setShowMyData] = useState(false);
+
+  // On mount, read local storage and transform
+  useEffect(() => {
+    // read local storage
+    const raw = localStorage.getItem('TeamIO_Meetings');
+    let rows = [];
+    if (raw) {
+      try {
+        rows = JSON.parse(raw);
+      } catch (err) {
+        console.warn('Failed to parse TeamIO_Meetings from localStorage:', err);
+      }
+    }
+    // filter only isSaved rows
+    const savedRows = rows.filter(r => r.isSaved);
+
+    // transform
+    const userId = localStorage.getItem('TeamIO_CurrentUserId') || '1';
+    const userName = `Member ${userId}`;
+
+    const finalData = savedRows.map((row, i) => {
+      // we can label the meeting by date or "Meeting #"
+      const dateStr = row.date || `Meeting ${i+1}`;
+
+      const presentCount = row.presentList.length;
+      // # not present => 4 - presentCount
+      const missingCount = 4 - presentCount;
+      const onTimeCount = row.onTimeList.length;
+      const lateCount = presentCount - onTimeCount;
+
+      // figure out userStatus
+      let userStatus = 'missing';
+      if (row.presentList.includes(userName)) {
+        // user is present
+        if (row.onTimeList.includes(userName)) {
+          userStatus = 'onTime';
+        } else {
+          userStatus = 'late';
+        }
+      } else {
+        userStatus = 'missing';
+      }
+
+      return {
+        meeting: dateStr,
+        onTime: onTimeCount,
+        late: lateCount,
+        missing: missingCount,
+        userStatus,
+      };
+    });
+
+    setData(finalData);
+  }, []);
 
   // Colors for each category
   const colorOnTime = '#82ca9d';   // green
@@ -45,7 +90,6 @@ export default function MeetingAttendanceChart() {
   const highlightStrokeWidth = 2;
 
   // For each category, we define a function that returns <Cell> for each data item
-  // If showMyData && userStatus= that category => highlight stroke, else normal
   function renderOnTimeCells() {
     return data.map((entry, i) => {
       const highlight = (showMyData && entry.userStatus === 'onTime');
@@ -86,11 +130,16 @@ export default function MeetingAttendanceChart() {
     });
   }
 
+  if (!data || data.length === 0) {
+    return (
+      <div style={{ textAlign: 'center' }}>
+        <p>No meeting data found. Please have the scribe enter meeting data first.</p>
+      </div>
+    );
+  }
+
   return (
     <div style={{ textAlign: 'center' }}>
-      {/* <h3 style={{ marginBottom: '1rem' }}>Meeting Attendance &amp; Punctuality</h3> */}
-
-      {/* Horizontal Stacked Bar Chart (layout="vertical") */}
       <BarChart
         width={600}
         height={300}
@@ -104,7 +153,6 @@ export default function MeetingAttendanceChart() {
         <Tooltip />
         <Legend />
 
-        {/* Each bar segment has a fill for the legend color, and uses <Cell> for per-entry logic */}
         <Bar dataKey="onTime" stackId="a" name="On-Time" fill={colorOnTime} isAnimationActive={false}>
           {renderOnTimeCells()}
         </Bar>
@@ -116,7 +164,6 @@ export default function MeetingAttendanceChart() {
         </Bar>
       </BarChart>
 
-      {/* "Show my data" below the chart */}
       <div style={{ marginTop: '1rem' }}>
         <label style={{ fontSize: '1rem', color: '#333' }}>
           <input

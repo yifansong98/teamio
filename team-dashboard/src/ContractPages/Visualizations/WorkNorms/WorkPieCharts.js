@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 
-const currentUser = "Member 1"; // We'll always highlight "Member 1"
+const storedId = localStorage.getItem('TeamIO_CurrentUserId') || '1';
+const currentUser = `Member ${storedId}`;
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 const HIGHLIGHT_STROKE = '#000'; // black stroke for current user

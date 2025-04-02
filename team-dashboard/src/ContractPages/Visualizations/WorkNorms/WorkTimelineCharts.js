@@ -10,7 +10,8 @@ import {
   Legend,
 } from 'recharts';
 
-const currentUser = "Member 1";
+const storedId = localStorage.getItem('TeamIO_CurrentUserId') || '1';
+const currentUser = `Member ${storedId}`;
 
 // We build a function that given an array of {day, count} for the team
 // and an array of {day, count} for the user, we produce a list of
