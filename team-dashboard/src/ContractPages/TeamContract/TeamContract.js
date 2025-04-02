@@ -77,7 +77,7 @@ function TeamContract() {
 
   // Return to home page
   const handleReturn = () => {
-    navigate('/');
+    navigate('/teamio');
   };
 
   // Export to PDF using jsPDF and html2canvas
