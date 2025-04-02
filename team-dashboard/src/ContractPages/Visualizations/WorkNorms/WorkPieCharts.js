@@ -2,25 +2,8 @@
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 
-const currentUser = "Member 3";
+const currentUser = "Member 1"; // We'll always highlight "Member 1"
 
-// Dummy data for Google Docs (Edits only)
-const googleDocsEditsData = [
-  { name: 'Member 1', value: 40 },
-  { name: 'Member 2', value: 35 },
-  { name: 'Member 3', value: 25 },
-  { name: 'Member 4', value: 15 },
-];
-
-// Dummy data for GitHub (Commits only)
-const githubCommitsData = [
-  { name: 'Member 1', value: 20 },
-  { name: 'Member 2', value: 30 },
-  { name: 'Member 3', value: 15 },
-  { name: 'Member 4', value: 25 },
-];
-
-// Colors and highlighting
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 const HIGHLIGHT_STROKE = '#000'; // black stroke for current user
 
@@ -89,8 +72,50 @@ export default function WorkPieCharts() {
   // "Show my data" => highlight current user
   const [showMyData, setShowMyData] = useState(false);
 
-  // pick data for the current tab
-  const data = activeTab === 'googleDocs' ? googleDocsEditsData : githubCommitsData;
+  // We'll read from localStorage:
+  // distribution.google_docs => array of {dummy_user, count}
+  // distribution.github => array of {dummy_user, count}
+  let dataGoogle = [];
+  let dataGithub = [];
+
+  // parse localStorage if it exists
+  const raw = localStorage.getItem('TeamIO_ProcessedData');
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.distribution) {
+        if (Array.isArray(parsed.distribution.google_docs)) {
+          dataGoogle = parsed.distribution.google_docs.map(item => ({
+            name: item.dummy_user,
+            value: item.count
+          }));
+        }
+        if (Array.isArray(parsed.distribution.github)) {
+          dataGithub = parsed.distribution.github.map(item => ({
+            name: item.dummy_user,
+            value: item.count
+          }));
+        }
+      }
+    } catch (err) {
+      console.warn('Failed to parse processed data from localStorage', err);
+    }
+  }
+
+  // fallback if we have no data
+  if (dataGoogle.length === 0) {
+    // we either show some placeholders or empty array
+    dataGoogle = [
+      { name: 'Member 1', value: 0 },
+    ];
+  }
+  if (dataGithub.length === 0) {
+    dataGithub = [
+      { name: 'Member 1', value: 0 },
+    ];
+  }
+
+  const data = (activeTab === 'googleDocs') ? dataGoogle : dataGithub;
 
   // Render each slice with a thick black border if it's the current user and showMyData = true
   function renderCell(entry, index) {
@@ -150,7 +175,13 @@ export default function WorkPieCharts() {
         >
           {data.map((entry, index) => renderCell(entry, index))}
         </Pie>
-        <Tooltip formatter={(value) => activeTab === 'googleDocs' ? `${value} edits` : `${value} commits`} />
+        <Tooltip
+          formatter={(value) =>
+            activeTab === 'googleDocs'
+              ? `${value} edits`
+              : `${value} commits`
+          }
+        />
         <Legend content={<CustomLegend showMyData={showMyData} />} />
       </PieChart>
 
