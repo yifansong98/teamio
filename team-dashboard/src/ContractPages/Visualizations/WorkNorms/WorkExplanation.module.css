@@ -1,0 +1,110 @@
+/* src/ContractPages/Visualizations/WorkNorms/TimelineExplanation.module.css */
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+  }
+  
+  .modalContent {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    width: 450px;
+    max-width: 90%;
+    font-family: system-ui, sans-serif;
+    color: #2d3748;
+    position: relative;
+  }
+  
+  h3 {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+  }
+  
+  .chartContainer {
+    margin-top: 1rem;
+    text-align: center;
+  }
+  
+  .chartCaption {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #555;
+  }
+  
+  .closeButton {
+    margin-top: 1.5rem;
+    background-color: #a0aec0;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+
+  .modalContentLarge {
+    background: #fff;
+    padding: 2rem 2.5rem;
+    border-radius: 8px;
+    max-width: 920px;
+    width: 95%;
+    max-height: 92vh;
+    overflow-y: auto;
+  }
+  
+  .chartBlock {
+    margin-top: 2rem;
+  }
+  
+  .blockTitle {
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+  
+  .rowOfPies {
+    display: flex;
+    gap: 2.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .singlePie {
+    text-align: center;
+  }
+  
+  .pieCaption {
+    margin-top: 0.25rem;
+    font-weight: 500;
+  }
+  
+  .legendRow {
+    margin-top: 0.75rem;
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+  }
+  
+  .legendItem {
+    display: flex;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+  
+  .legendSwatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 6px;
+  }
+  
