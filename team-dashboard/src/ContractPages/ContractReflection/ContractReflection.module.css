@@ -195,3 +195,13 @@
   border-radius: 4px;
   background: #f9f9f9;
 }
+
+.clickableQuestion {
+  font-size: 0.9rem;
+  text-decoration: underline;
+  color: #3182ce;
+  cursor: pointer;
+}
+.clickableQuestion:hover {
+  color: #2c5282;
+}
