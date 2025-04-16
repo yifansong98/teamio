@@ -131,10 +131,9 @@ export default function ProgressTypes() {
 
       <div className={styles.uploadSection}>
         <h2>Upload Your Data</h2>
-
+        <h4>Google Docs File:</h4>
         <form className={styles.uploadForm} onSubmit={handleGdocsUpload}>
           <label className={styles.uploadLabel}>
-            Google Docs File: 
             <input
               type="file"
               accept=".json"
@@ -142,13 +141,13 @@ export default function ProgressTypes() {
             />
           </label>
           <button type="submit" className={styles.uploadButton}>
-            Upload Google Docs Data
+            Upload Data
           </button>
         </form>
 
+        <h4>GitHub File:</h4>
         <form className={styles.uploadForm} onSubmit={handleGithubUpload}>
           <label className={styles.uploadLabel}>
-            GitHub File:
             <input
               type="file"
               accept=".json"
@@ -156,13 +155,13 @@ export default function ProgressTypes() {
             />
           </label>
           <button type="submit" className={styles.uploadButton}>
-            Upload GitHub Data
+            Upload Data
           </button>
         </form>
 
+        <h4>Slack File:</h4>
         <form className={styles.uploadForm} onSubmit={handleSlackUpload}>
           <label className={styles.uploadLabel}>
-            Slack File:
             <input
               type="file"
               accept=".json"
@@ -170,7 +169,7 @@ export default function ProgressTypes() {
             />
           </label>
           <button type="submit" className={styles.uploadButton}>
-            Upload Slack Data
+            Upload Data
           </button>
         </form>
       </div>
@@ -189,7 +188,7 @@ export default function ProgressTypes() {
       <div className={styles.uploadSection}>
         <h2>Reattribute Your Data</h2>
         {/* Our new "Reattribute" button */}
-        <button onClick={handleReattribute} className={styles.reattributeButton}>
+        <button onClick={handleReattribute} className={styles.reflectButton}>
           Reattribute
         </button>
       </div>
