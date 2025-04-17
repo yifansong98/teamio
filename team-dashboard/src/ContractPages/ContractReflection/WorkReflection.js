@@ -1,4 +1,3 @@
-// src/ContractPages/ContractReflection/WorkReflection.js
 import React, { useState } from 'react';
 import WorkPieCharts from '../Visualizations/WorkNorms/WorkPieCharts';
 import WorkTimelineCharts from '../Visualizations/WorkNorms/WorkTimelineCharts';
@@ -9,170 +8,148 @@ import PieChartExplanation from '../Visualizations/WorkNorms/PieChartExplanation
 
 import styles from './ContractReflection.module.css';
 
+/* ────────────────────────────────────────────────────────────────────────── */
+
 const workStatements = [
   {
     id: 'work1',
     text: 'We agree to divide work equitably.',
     caption:
-      'Pie Chart: showing each member’s share of total contributions for the selected tool (Google Docs edits or GitHub commits), displaying the row contribution count when hovering.',
-    vizType: 'pie', 
+      'Pie Chart: displays each member’s share of total contributions for the selected tool, hovering to see the raw counts.',
+    vizType: 'pie',
   },
   {
     id: 'work2',
     text: 'We agree to work in a timely manner.',
     caption:
-      'Timeline Plot: showing the cumulative percentage of contributions based on the metric you selected, where the final day represents 100% of the total contributions, displaying the row contribution count when hovering.',
-    vizType: 'timeline', 
+      'Timeline Plot: shows cumulative % of contributions, where the final day equals 100%, hovering to inspect daily totals.',
+    vizType: 'timeline',
   },
   {
     id: 'work3',
-    text: 'We agree to review each other’s work and provide constructive feedback.',
+    text: 'We agree to review and provide feedback to each other’s work.',
     caption:
-      'Sankey diagram showing the flow of comments: which member left how many comments on another member’s work. When hovering, the link displays "Member X leaves N comments to Member Y."',
-    vizType: 'comment', 
+      'Sankey diagram: visualises comment flows (Member X → Member Y, N comments). Hover a link for details.',
+    vizType: 'comment',
   },
 ];
 
+/* ────────────────────────────────────────────────────────────────────────── */
+
 export default function WorkReflection({ onPrevPage }) {
+  /* reflection check‑boxes */
   const [reflectFlags, setReflectFlags] = useState(
     workStatements.reduce((acc, st) => ({ ...acc, [st.id]: false }), {})
   );
 
-  // For reflection prompt
-  const selectedStatements = workStatements.filter((st) => reflectFlags[st.id]);
+  const selected = workStatements.filter((st) => reflectFlags[st.id]);
   const reflectionPrompt =
-    selectedStatements.length > 0
-      ? `You have chosen to reflect on the following work dimensions:\n${selectedStatements
+    selected.length > 0
+      ? `You have chosen to reflect on the following work dimensions:\n${selected
           .map((st, i) => `${i + 1}. ${st.text}`)
           .join('\n')}\n\nPlease provide your overall reflection below:`
       : 'Please provide your overall reflection for Work:';
 
-  const [showTimelyModal, setShowTimelyModal] = useState(false);
+  /* pop‑up modals */
   const [showEquitableModal, setShowEquitableModal] = useState(false);
+  const [showTimelyModal, setShowTimelyModal] = useState(false);
 
-
-  // Handler for the clickable question text
-  function handleOpenEquitableModal() {
-    setShowEquitableModal(true);
-  }  
-  function handleOpenTimelyModal() {
-    setShowTimelyModal(true);
-  }
+  /* helpers */
+  const toggleFlag = (id) =>
+    setReflectFlags((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
-    <div>
-      <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
-        Please select at least one dimension you would like to reflect about your team's work.
-        <br />We are collecting data only from your Google Drive folder [link] and GitHub repo [link] 
-        from [startDate] to [endDate]. There will be more work that may not be fully represented 
-        in this data visualization, such as paper prototyping or brainstorming.
+    <div className={styles.pageInner}>
+      {/* instruction banner */}
+      <div className={styles.topInstruction}>
+        Please select at least one dimension you would like to reflect on for your
+        team’s work. Data covers your Google Drive folder [link] and GitHub repo [link]
+        from [startDate] to [endDate].
       </div>
-      <hr style={{ marginBottom: '1rem' }} />
 
+      <hr className={styles.sectionDivider} />
+
+      {/* ───────────  CARD PER STATEMENT  ─────────── */}
       {workStatements.map((st) => (
-        <div key={st.id} className={styles.subSection}>
-          <div className={styles.leftSubSection}>
-            <div className={styles.subSectionTitle}>Desired Teamwork Behavior (from your team contract):</div>
+        <section key={st.id} className={styles.card}>
+        {/* statement + (new‑line) question link */}
+        <h3 className={styles.statement}>{st.text}</h3>
+        {st.id === 'work1' && (
+          <button
+            className={styles.questionLinkBlock}
+            onClick={() => setShowEquitableModal(true)}
+          >
+            What are equitable working patterns?
+          </button>
+        )}
+        {st.id === 'work2' && (
+          <button
+            className={styles.questionLinkBlock}
+            onClick={() => setShowTimelyModal(true)}
+          >
+            What are timely working patterns?
+          </button>
+        )}
+        {st.id === 'work3' && (
+          <button
+            className={styles.questionLinkBlock}
+            onClick={() => setShowTimelyModal(true)}
+          >
+            Why interacting with each other's work is important?
+          </button>
+        )}
 
-            {/* If this is statement #2, show the clickable question text */}
-            {st.id === 'work1' ? (
-              <div
-                className={styles.subSectionStatement}
-                style={{ whiteSpace: 'pre-line' }}
-              >
-                {st.text}{'\n'}
-                <span
-                  className={styles.clickableQuestion}
-                  onClick={handleOpenEquitableModal}
-                >
-                  What are equitable working patterns?
-                </span>
-              </div>
-            ) : st.id === 'work2' ? (
-              <div
-                className={styles.subSectionStatement}
-                style={{ whiteSpace: 'pre-line' }}
-              >
-                {st.text}{'\n'}
-                <span
-                  className={styles.clickableQuestion}
-                  onClick={handleOpenTimelyModal}
-                >
-                  What are timely working patterns?
-                </span>
-              </div>
-            ) : (
-              <div
-                className={styles.subSectionStatement}
-                style={{ whiteSpace: 'pre-line' }}
-              >
-                {st.text}
-              </div>
-            )}
 
-            <div
-              className={styles.subSectionCaption}
-              style={{ whiteSpace: 'pre-line' }}
-            >
-              {st.caption}
-            </div>
-
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={reflectFlags[st.id]}
-                onChange={() =>
-                  setReflectFlags((prev) => ({
-                    ...prev,
-                    [st.id]: !prev[st.id],
-                  }))
-                }
-              />
-              I would like to reflect on this dimension
-            </label>
+          {/* visualisation */}
+          <div className={styles.vizWrapper}>
+            {st.vizType === 'pie' && <WorkPieCharts />}
+            {st.vizType === 'timeline' && <WorkTimelineCharts />}
+            {st.vizType === 'comment' && <DoubleCommentSankey />}
           </div>
-          <div className={styles.rightSubSection}>
-            {st.vizType === 'pie' ? (
-              <WorkPieCharts />
-            ) : st.vizType === 'timeline' ? (
-              <WorkTimelineCharts />
-            ) : st.vizType === 'comment' ? (
-              <DoubleCommentSankey />
-            ) : null}
-          </div>
-        </div>
+
+          {/* caption */}
+          <p className={styles.vizCaption}>{st.caption}</p>
+
+          {/* checkbox */}
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={reflectFlags[st.id]}
+              onChange={() => toggleFlag(st.id)}
+            />
+            I would like to reflect on this dimension
+          </label>
+        </section>
       ))}
 
-      <div style={{ marginBottom: '1rem', textAlign: 'left', padding: '0 1rem' }}>
-        {selectedStatements.length === 0 ? (
-          <div style={{ color: 'red' }}>
-            You need to at least reflect on one dimension of your work.
-          </div>
+      {/* summary + editor */}
+      <div className={styles.summaryBox}>
+        {selected.length === 0 ? (
+          <span className={styles.warnText}>
+            You need to select at least one work dimension.
+          </span>
         ) : (
-          <div>
-            <p style={{ fontWeight: 'bold' }}>
-              You have chosen to reflect on the following dimensions:
-            </p>
-            <ul style={{ marginLeft: '1.5rem' }}>
-              {selectedStatements.map((st) => (
+          <>
+            <p><strong>You have chosen to reflect on:</strong></p>
+            <ul>
+              {selected.map((st) => (
                 <li key={st.id}>{st.text}</li>
               ))}
             </ul>
-          </div>
+          </>
         )}
       </div>
 
-      <div className={styles.finalReflectionSection}>
-        <ReflectionEditor sectionName="Work" prompt={reflectionPrompt} />
-      </div>
+      <ReflectionEditor sectionName="Work" prompt={reflectionPrompt} />
 
+      {/* nav buttons */}
       <div className={styles.pageNavButtons}>
         <button className={styles.prevPageButton} onClick={onPrevPage}>
-          &laquo; Previous Page
+          &laquo; Previous Page
         </button>
       </div>
 
-      {/* CHANGED: The popup modal for timely explanation */}
+      {/* pop‑ups */}
       {showEquitableModal && (
         <PieChartExplanation onClose={() => setShowEquitableModal(false)} />
       )}
