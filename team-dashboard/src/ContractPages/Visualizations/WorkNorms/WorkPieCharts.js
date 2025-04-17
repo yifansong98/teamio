@@ -42,6 +42,9 @@ function CustomLegend({ payload, showMyData }) {
     >
       {payload.map((entry, index) => {
         const isUser = showMyData && entry.value === currentUser;
+        if (isUser && entry.value === currentUser) {
+          entry.value += " (You)"; // Highlight current user in legend
+        }
         return (
           <div
             key={`legend-${index}`}
@@ -125,8 +128,8 @@ export default function WorkPieCharts() {
       <Cell
         key={`cell-${index}`}
         fill={COLORS[index % COLORS.length]}
-        stroke={isCurrent ? HIGHLIGHT_STROKE : "#fff"}
-        strokeWidth={isCurrent ? 3 : 1}
+        // stroke={isCurrent ? HIGHLIGHT_STROKE : "#fff"}
+        // strokeWidth={isCurrent ? 3 : 1}
       />
     );
   }
@@ -147,7 +150,7 @@ export default function WorkPieCharts() {
             cursor: 'pointer',
           }}
         >
-          Google Docs
+          Google Docs (edits)
         </button>
         <button
           onClick={() => setActiveTab('github')}
@@ -160,7 +163,7 @@ export default function WorkPieCharts() {
             cursor: 'pointer',
           }}
         >
-          GitHub
+          GitHub (Commits)
         </button>
       </div>
 

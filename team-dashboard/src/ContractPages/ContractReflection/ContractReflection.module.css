@@ -195,3 +195,118 @@
   border-radius: 4px;
   background: #f9f9f9;
 }
+
+.clickableQuestion {
+  font-size: 0.9rem;
+  text-decoration: underline;
+  color: #3182ce;
+  cursor: pointer;
+}
+.clickableQuestion:hover {
+  color: #2c5282;
+}
+
+/* ===== WorkReflection card layout ===== */
+.pageInner {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.topInstruction {
+  margin: 0 1rem 1.5rem;
+  text-align: left;
+  line-height: 1.4;
+  font-size: 0.95rem;
+}
+
+.sectionDivider {
+  margin-bottom: 1.5rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.75rem 1rem;
+  margin-bottom: 2rem;
+  background: #fdfdfd;
+  border: 1px solid #e1e1e1;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+
+.statement {
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.questionLink {
+  background: none;
+  border: none;
+  color: #3182ce;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+.questionLink:hover {
+  color: #225a9e;
+}
+
+.vizWrapper {
+  width: 100%;
+  max-width: 520px;
+  margin-bottom: 0.75rem;
+}
+
+.vizCaption {
+  font-size: 0.9rem;
+  color: #444;
+  text-align: center;
+  margin-bottom: 0.75rem;
+  margin-left: 1rem;
+  margin-right: 1rem;
+  line-height: 1.3;
+}
+
+.checkboxLabel {
+  font-size: 0.95rem;
+}
+
+.summaryBox {
+  margin: 1.5rem 1rem;
+  text-align: left;
+}
+
+.warnText {
+  color: #c53030;
+}
+
+/* centre every viz (including Recharts svg) */
+.vizWrapper {
+  width: 100%;
+  max-width: 520px;
+  margin: 0 auto 0.75rem;
+  display: flex;
+  justify-content: center;
+}
+
+/* question link now appears on its own row */
+.questionLinkBlock {
+  background: none;
+  border: none;
+  color: #3182ce;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 0.9rem;
+  margin-top: 0.2rem;
+  margin-bottom: 1.2rem;
+  padding: 0;
+}
+
+.questionLinkBlock:hover {
+  color: #225a9e;
+}

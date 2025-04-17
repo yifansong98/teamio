@@ -64,7 +64,7 @@
 
 /* New Reflect button */
 .reflectButtonContainer {
-  text-align: center;
+  text-align: left;
   margin-top: 2rem;
 }
 
@@ -129,4 +129,22 @@
   font-size: 1rem;
   color: #333;
   border-radius: 4px;
+}
+
+.reattributeButton {
+  padding: 0.75rem 1.5rem;
+  /* background-color: #ed8936;
+  color: #fff; */
+  background: #2d3748;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 1rem;
+}
+.reattributeButton:hover {
+  /* background-color: #dd6b20; */
+  background: #4a5568;
 }

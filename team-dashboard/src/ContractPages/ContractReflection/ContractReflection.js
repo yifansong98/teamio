@@ -10,7 +10,7 @@ import styles from './ContractReflection.module.css';
 
 export default function ContractReflection() {
   const navigate = useNavigate();
-  const [activePage, setActivePage] = useState('communication');
+  const [activePage, setActivePage] = useState('work');
 
   const handleReturn = () => {
     navigate('/teamio');
@@ -29,16 +29,6 @@ export default function ContractReflection() {
         <div className={styles.headerCenter}>
           <button
             className={
-              activePage === 'communication'
-                ? styles.activeHeaderButton
-                : styles.headerSwitchButton
-            }
-            onClick={() => setActivePage('communication')}
-          >
-            Communication Reflection
-          </button>
-          <button
-            className={
               activePage === 'work'
                 ? styles.activeHeaderButton
                 : styles.headerSwitchButton
@@ -46,6 +36,16 @@ export default function ContractReflection() {
             onClick={() => setActivePage('work')}
           >
             Work Reflection
+          </button>
+          <button
+            className={
+              activePage === 'communication'
+                ? styles.activeHeaderButton
+                : styles.headerSwitchButton
+            }
+            onClick={() => setActivePage('communication')}
+          >
+            Communication Reflection
           </button>
         </div>
       </header>
