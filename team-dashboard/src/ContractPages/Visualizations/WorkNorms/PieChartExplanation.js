@@ -29,16 +29,16 @@ const equalPie = [
 /*  We keep 0‑value slices so colours stay consistent.                */
 /* ------------------------------------------------------------------ */
 const roleGoogleDocs = [
-  { name: 'Member 1', value: 50 },
-  { name: 'Member 2', value: 50 },
-  { name: 'Member 3', value: 0 },
-  { name: 'Member 4', value: 0 },
+  { name: 'Member 1', value: 40 },
+  { name: 'Member 2', value: 10},
+  { name: 'Member 3', value: 40 },
+  { name: 'Member 4', value: 10 },
 ];
 const roleGitHub = [
-  { name: 'Member 1', value: 0 },
-  { name: 'Member 2', value: 0 },
-  { name: 'Member 3', value: 50 },
-  { name: 'Member 4', value: 50 },
+  { name: 'Member 1', value: 10 },
+  { name: 'Member 2', value: 40 },
+  { name: 'Member 3', value: 10 },
+  { name: 'Member 4', value: 40 },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -71,13 +71,13 @@ function PieBlock({ title, googleData, githubData }) {
       <div className={styles.rowOfPies}>
         {/* Google Docs */}
         <div className={styles.singlePie}>
-          <PieChart width={220} height={220}>
+          <PieChart width={210} height={200}>
             <Pie
               data={googleData}
               dataKey="value"
               cx="50%"
               cy="50%"
-              outerRadius={80}
+              outerRadius={70}
               label
             >
               {googleData.map((entry) => (
@@ -95,13 +95,13 @@ function PieBlock({ title, googleData, githubData }) {
 
         {/* GitHub */}
         <div className={styles.singlePie}>
-          <PieChart width={220} height={220}>
+          <PieChart width={210} height={200}>
             <Pie
               data={githubData}
               dataKey="value"
               cx="50%"
               cy="50%"
-              outerRadius={80}
+              outerRadius={70}
               label
             >
               {githubData.map((entry) => (

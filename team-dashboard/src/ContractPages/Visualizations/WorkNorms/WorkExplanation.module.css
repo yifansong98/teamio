@@ -55,9 +55,9 @@
     background: #fff;
     padding: 2rem 2.5rem;
     border-radius: 8px;
-    max-width: 920px;
+    max-width: 600px;
     width: 95%;
-    max-height: 92vh;
+    max-height: 70vh;
     overflow-y: auto;
   }
   
