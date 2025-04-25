@@ -1,16 +1,16 @@
 {
   "files": {
     "main.css": "/teamio/static/css/main.ba6d20a3.css",
-    "main.js": "/teamio/static/js/main.4b62a327.js",
+    "main.js": "/teamio/static/js/main.cda450ed.js",
     "static/js/977.2c7e5b76.chunk.js": "/teamio/static/js/977.2c7e5b76.chunk.js",
     "static/js/455.af66e489.chunk.js": "/teamio/static/js/455.af66e489.chunk.js",
     "index.html": "/teamio/index.html",
     "main.ba6d20a3.css.map": "/teamio/static/css/main.ba6d20a3.css.map",
-    "main.4b62a327.js.map": "/teamio/static/js/main.4b62a327.js.map",
+    "main.cda450ed.js.map": "/teamio/static/js/main.cda450ed.js.map",
     "455.af66e489.chunk.js.map": "/teamio/static/js/455.af66e489.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.ba6d20a3.css",
-    "static/js/main.4b62a327.js"
+    "static/js/main.cda450ed.js"
   ]
 }
