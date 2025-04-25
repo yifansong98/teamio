@@ -20,27 +20,28 @@ export default function ProgressTypes() {
       setMessage('No Google Docs file selected!');
       return;
     }
-    const formData = new FormData();
-    formData.append('file', gdocsFile);
-    try {
-      const res = await fetch(
-        'https://teamio-backend-c5aefe033171.herokuapp.com/upload_gdocs',
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`Google Docs upload success: ${data.message}`);
-      } else {
-        setMessage(
-          `Google Docs upload failed: ${data.error || JSON.stringify(data)}`
-        );
-      }
-    } catch (error) {
-      setMessage(`Google Docs upload failed: ${error.toString()}`);
-    }
+    setMessage('API call is temporarily blocked for dev.');
+    // const formData = new FormData();
+    // formData.append('file', gdocsFile);
+    // try {
+    //   const res = await fetch(
+    //     'https://teamio-backend-c5aefe033171.herokuapp.com/upload_gdocs',
+    //     {
+    //       method: 'POST',
+    //       body: formData,
+    //     }
+    //   );
+    //   const data = await res.json();
+    //   if (res.ok) {
+    //     setMessage(`Google Docs upload success: ${data.message}`);
+    //   } else {
+    //     setMessage(
+    //       `Google Docs upload failed: ${data.error || JSON.stringify(data)}`
+    //     );
+    //   }
+    // } catch (error) {
+    //   setMessage(`Google Docs upload failed: ${error.toString()}`);
+    // }
   }
 
   async function handleGithubUpload(e) {
@@ -49,27 +50,28 @@ export default function ProgressTypes() {
       setMessage('No GitHub file selected!');
       return;
     }
-    const formData = new FormData();
-    formData.append('file', githubFile);
-    try {
-      const res = await fetch(
-        'https://teamio-backend-c5aefe033171.herokuapp.com/upload_github',
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-      const data = await res.json();
-      if (res.ok) {
-        setMessage(`GitHub upload success: ${data.message}`);
-      } else {
-        setMessage(
-          `GitHub upload failed: ${data.error || JSON.stringify(data)}`
-        );
-      }
-    } catch (error) {
-      setMessage(`GitHub upload failed: ${error.toString()}`);
-    }
+    setMessage('API call is temporarily blocked for dev.');
+    // const formData = new FormData();
+    // formData.append('file', githubFile);
+    // try {
+    //   const res = await fetch(
+    //     'https://teamio-backend-c5aefe033171.herokuapp.com/upload_github',
+    //     {
+    //       method: 'POST',
+    //       body: formData,
+    //     }
+    //   );
+    //   const data = await res.json();
+    //   if (res.ok) {
+    //     setMessage(`GitHub upload success: ${data.message}`);
+    //   } else {
+    //     setMessage(
+    //       `GitHub upload failed: ${data.error || JSON.stringify(data)}`
+    //     );
+    //   }
+    // } catch (error) {
+    //   setMessage(`GitHub upload failed: ${error.toString()}`);
+    // }
   }
 
   async function handleSlackUpload(e) {

@@ -147,9 +147,9 @@ export default function WorkTimelineCharts() {
 
       <LineChart
         width={500}
-        height={300}
+        height={350}
         data={lineData}
-        margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+        margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
       >
         <CartesianGrid strokeDasharray="3 3" />
         {/* X-axis with actual date strings from "day" */}

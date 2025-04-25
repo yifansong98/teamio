@@ -3,15 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as d3 from 'd3';
 import { sankey, sankeyLinkHorizontal } from 'd3-sankey';
 
-/**
- * SankeyChart
- * A subcomponent that implements a 2-column sankey for 4 members:
- *   0..3 => left, 4..7 => right
- * Each link is { source, target, value }, i => j+4
- * 
- * "Show my data" highlights only the flows if they involve the current user,
- * but does NOT change node color.
- */
 export default function SankeyChart({
   width,
   height,
@@ -20,152 +11,135 @@ export default function SankeyChart({
   currentUserLeftIndex,
   currentUserRightIndex,
 }) {
-  const svgRef = useRef();
+  const svgRef     = useRef();
   const tooltipRef = useRef();
   const [hoveredLinkIndex, setHoveredLinkIndex] = useState(null);
 
   useEffect(() => {
-    // 1) Define 8 nodes: 0..3 => left, 4..7 => right
+    /* ---------- 1 · DEFINE NODES & LINKS ---------- */
     const nodes = [
-      { id: 0, name: "Member 1 (L)" },
-      { id: 1, name: "Member 2 (L)" },
-      { id: 2, name: "Member 3 (L)" },
-      { id: 3, name: "Member 4 (L)" },
-      { id: 4, name: "Member 1 (R)" },
-      { id: 5, name: "Member 2 (R)" },
-      { id: 6, name: "Member 3 (R)" },
-      { id: 7, name: "Member 4 (R)" },
+      { id: 0, name: 'Member 1' },
+      { id: 1, name: 'Member 2' },
+      { id: 2, name: 'Member 3' },
+      { id: 3, name: 'Member 4' },
+      { id: 4, name: 'Member 1' },
+      { id: 5, name: 'Member 2' },
+      { id: 6, name: 'Member 3' },
+      { id: 7, name: 'Member 4' },
     ];
 
-    // 2) Convert rawLinks => sankey links => i-> j+4
     const links = rawLinks
       .filter(d => d.i !== d.j)
       .map(d => ({
         source: d.i,
-        target: d.j + 4,
-        value: d.value,
+        target: d.j + 4,   // right column
+        value:  d.value,
       }));
 
-    // Clear previous
-    d3.select(svgRef.current).selectAll("*").remove();
+    /* ---------- 2 · CLEAN & TOOLTIP ---------- */
+    d3.select(svgRef.current).selectAll('*').remove();
 
-    // Create or select a tooltip
     let tooltip = d3.select(tooltipRef.current);
     if (tooltip.empty()) {
-      tooltip = d3.select("body").append("div")
-        .attr("class", "sankey-tooltip")
-        .style("position", "absolute")
-        .style("visibility", "hidden")
-        .style("background", "#fff")
-        .style("border", "1px solid #ccc")
-        .style("padding", "5px")
-        .style("border-radius", "4px")
-        .style("font-size", "12px")
-        .style("pointer-events", "none");
+      tooltip = d3.select('body')
+        .append('div')
+        .attr('class', 'sankey-tooltip')
+        .style('position', 'absolute')
+        .style('visibility', 'hidden')
+        .style('background', '#fff')
+        .style('border', '1px solid #ccc')
+        .style('padding', '6px 8px')
+        .style('border-radius', '4px')
+        .style('font-size', '12px')
+        .style('pointer-events', 'none');
       tooltipRef.current = tooltip.node();
     }
 
-    // 3) Define sankey
-    const sankeyGenerator = sankey()
+    /* ---------- 3 · SANKEY GEN ---------- */
+    const sankeyGen = sankey()
       .nodeId(d => d.id)
       .nodeWidth(15)
       .nodePadding(20)
-      .nodeAlign(node => (node.id < 4 ? 0 : 2))
-      .nodeSort((a, b) => a.id - b.id)
+      .nodeAlign(n => (n.id < 4 ? 0 : 2))  // fixed two columns
+      .nodeSort((a, b) => a.id - b.id)      // keep 0‑3, 4‑7 order
       .extent([[0, 0], [width, height]]);
 
-    const graph = sankeyGenerator({
-      nodes: nodes.map(d => ({ ...d })),
-      links: links.map(d => ({ ...d })),
+    const graph = sankeyGen({
+      nodes: nodes.map(n => ({ ...n })),
+      links: links.map(l => ({ ...l })),
     });
 
     const svg = d3.select(svgRef.current)
-      .attr("width", width)
-      .attr("height", height);
+      .attr('width',  width)
+      .attr('height', height);
 
-    // Colors for members
-    const memberColors = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
-    // Link highlight colors
-    const givingColor = "#FF9999";    // flows from current user
-    const receivingColor = "#9999FF"; // flows to current user
-    const defaultLinkColor = "#ccc";
+    /* ---------- 4 · LINKS ---------- */
+    const memberColors   = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+    const givingColor    = '#FF9999';
+    const receivingColor = '#9999FF';
+    const defaultLink    = '#d0d0d0';
 
-    // 4) Draw links
-    svg.append("g")
-      .selectAll("path")
+    svg.append('g')
+      .selectAll('path')
       .data(graph.links)
       .enter()
-      .append("path")
-      .attr("d", sankeyLinkHorizontal())
-      .attr("fill", "none")
-      .attr("stroke", (d, i) => {
+      .append('path')
+      .attr('d', sankeyLinkHorizontal())
+      .attr('fill', 'none')
+      .attr('stroke', d => {
         if (showMyData) {
-          // If the current user is the source => giving color
-          if (d.source.id === currentUserLeftIndex) {
-            return givingColor;
-          }
-          // If the current user is the target => receiving color
-          if (d.target.id === currentUserRightIndex) {
-            return receivingColor;
-          }
+          if (d.source.id === currentUserLeftIndex)  return givingColor;
+          if (d.target.id === currentUserRightIndex) return receivingColor;
         }
-        return defaultLinkColor;
+        return defaultLink;
       })
-      .attr("stroke-width", d => Math.max(1, d.width))
-      .attr("stroke-opacity", (d, i) => {
-        if (hoveredLinkIndex != null) {
-          return i === hoveredLinkIndex ? 1 : 0.3;
-        }
-        return 0.8;
+      .attr('stroke-width', d => Math.max(1, d.width))
+      .attr('stroke-opacity', d =>
+        hoveredLinkIndex != null && hoveredLinkIndex !== graph.links.indexOf(d) ? 0.25 : 0.8
+      )
+      .on('mouseover', (event, d) => {
+        setHoveredLinkIndex(graph.links.indexOf(d));
+        const src = nodes[d.source.id].name;
+        const dst = nodes[d.target.id].name;
+        tooltip
+          .style('visibility', 'visible')
+          .html(`<strong>${src} → ${dst}</strong><br/>${d.value} comments`);
       })
-      .on("mouseover", (event, d) => {
-        const idx = graph.links.indexOf(d);
-        setHoveredLinkIndex(idx);
-        d3.select(event.currentTarget).raise();
-
-        const leftName = graph.nodes[d.source.id].name.replace(" (L)", "");
-        const rightName = graph.nodes[d.target.id].name.replace(" (R)", "");
-        tooltip.style("visibility", "visible")
-          .html(`<strong>${leftName} → ${rightName}</strong><br/>${d.value} feedback`);
+      .on('mousemove', event => {
+        tooltip
+          .style('top',  `${event.pageY + 12}px`)
+          .style('left', `${event.pageX + 12}px`);
       })
-      .on("mousemove", (event) => {
-        tooltip.style("top", (event.pageY + 10) + "px")
-          .style("left", (event.pageX + 10) + "px");
-      })
-      .on("mouseout", () => {
+      .on('mouseout', () => {
         setHoveredLinkIndex(null);
-        tooltip.style("visibility", "hidden");
+        tooltip.style('visibility', 'hidden');
       });
 
-    // 5) Draw nodes (same color left & right for the same base index)
-    const nodeGroup = svg.append("g")
-      .selectAll("g")
+    /* ---------- 5 · NODES & LABELS ---------- */
+    const nodeG = svg.append('g')
+      .selectAll('g')
       .data(graph.nodes)
       .enter()
-      .append("g");
+      .append('g');
 
-    nodeGroup.append("rect")
-      .attr("x", d => d.x0)
-      .attr("y", d => d.y0)
-      .attr("width", d => d.x1 - d.x0)
-      .attr("height", d => d.y1 - d.y0)
-      .attr("fill", d => {
-        let baseIndex = d.id < 4 ? d.id : d.id - 4;
-        return memberColors[baseIndex];
-      })
-      .attr("stroke", "#666");
+    // rectangles
+    nodeG.append('rect')
+      .attr('x', d => d.x0)
+      .attr('y', d => d.y0)
+      .attr('width',  d => d.x1 - d.x0)
+      .attr('height', d => d.y1 - d.y0)
+      .attr('fill', d => memberColors[d.id % 4])
+      .attr('stroke', '#666');
 
-    // Node labels
-    nodeGroup.append("text")
-      .attr("x", d => d.x0 - 6)
-      .attr("y", d => (d.y0 + d.y1) / 2)
-      .attr("dy", "0.35em")
-      .attr("text-anchor", "end")
-      .text(d => d.name.replace(" (L)", "").replace(" (R)", ""))
-      .style("font-weight", "normal")
-      .filter(d => d.x0 > width / 2)
-      .attr("x", d => d.x1 + 6)
-      .attr("text-anchor", "start");
+    // text labels
+    nodeG.append('text')
+      .attr('dy', '0.35em')
+      .attr('x',  d => (d.id < 4 ? d.x0 - 10 : d.x1 + 10)) // left or right offset
+      .attr('y',  d => (d.y0 + d.y1) / 2)
+      .attr('text-anchor', d => (d.id < 4 ? 'end' : 'start'))
+      .style('font-size', 12)
+      .style('font-family', 'sans-serif')
+      .text(d => d.name);
 
   }, [
     width,
