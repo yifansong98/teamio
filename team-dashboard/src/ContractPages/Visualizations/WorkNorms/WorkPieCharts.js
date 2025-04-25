@@ -168,12 +168,12 @@ export default function WorkPieCharts() {
       </div>
 
       {/* Single PieChart for the active tab */}
-      <PieChart width={320} height={320}>
+      <PieChart width={500} height={350}>
         <Pie
           data={data}
           cx="50%"
           cy="50%"
-          outerRadius={90}
+          outerRadius={120}
           dataKey="value"
           label={renderPercentageLabel}
         >

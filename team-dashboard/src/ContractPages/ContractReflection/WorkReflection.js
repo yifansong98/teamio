@@ -5,6 +5,7 @@ import DoubleCommentSankey from '../Visualizations/WorkNorms/DoubleCommentSankey
 import ReflectionEditor from '../Components/ReflectionEditor';
 import TimelineExplanation from '../Visualizations/WorkNorms/TimelineExplanation';
 import PieChartExplanation from '../Visualizations/WorkNorms/PieChartExplanation';
+import SankeyExplanation from '../Visualizations/WorkNorms/SankeyExplanation';
 
 import styles from './ContractReflection.module.css';
 
@@ -29,7 +30,7 @@ const workStatements = [
     id: 'work3',
     text: 'We agree to review and provide feedback to each other’s work.',
     caption:
-      'Sankey diagram: visualises comment flows (Member X → Member Y, N comments). Hover a link for details.',
+      'Sankey diagram: visualises feedback flows, hovering a link for details, e.g., Member X → Member Y, N comments.',
     vizType: 'comment',
   },
 ];
@@ -53,6 +54,7 @@ export default function WorkReflection({ onPrevPage }) {
   /* pop‑up modals */
   const [showEquitableModal, setShowEquitableModal] = useState(false);
   const [showTimelyModal, setShowTimelyModal] = useState(false);
+  const [showSankeyModal, setShowSankeyModal] = useState(false);
 
   /* helpers */
   const toggleFlag = (id) =>
@@ -93,7 +95,7 @@ export default function WorkReflection({ onPrevPage }) {
         {st.id === 'work3' && (
           <button
             className={styles.questionLinkBlock}
-            onClick={() => setShowTimelyModal(true)}
+            onClick={() => setShowSankeyModal(true)}
           >
             Why interacting with each other's work is important?
           </button>
@@ -155,6 +157,9 @@ export default function WorkReflection({ onPrevPage }) {
       )}
       {showTimelyModal && (
         <TimelineExplanation onClose={() => setShowTimelyModal(false)} />
+      )}
+      {showSankeyModal && (
+        <SankeyExplanation onClose={() => setShowSankeyModal(false)} />
       )}
     </div>
   );

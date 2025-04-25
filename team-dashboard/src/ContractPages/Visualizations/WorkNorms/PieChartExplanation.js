@@ -133,21 +133,21 @@ export default function PieChartExplanation({ onClose }) {
       <div className={styles.modalContentLarge}>
         <h3>Equitable Working Patterns</h3>
         <p className={styles.introText} align="left">
-          Equitable working patterns include (but are not limited to):{' '}
-          <strong>fair work distribution on all aspects</strong> and{' '}
+          Equitable working patterns include (but not limited to):{' '}
+          <strong>fair distribution on all aspects</strong> and{' '}
           <strong>role/task‑based distribution</strong>.
         </p>
 
         {/* Example 1 */}
         <PieBlock
-          title="Example equal distribution across tools"
+          title="Example 1: fair distribution on all aspects"
           googleData={equalPie}
           githubData={equalPie}
         />
 
         {/* Example 2 */}
         <PieBlock
-          title="Example role/task‑based distribution"
+          title="Example 2: role/task‑based distribution"
           googleData={roleGoogleDocs}
           githubData={roleGitHub}
         />

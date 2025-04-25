@@ -27,10 +27,10 @@ export default function TimelineExplanation({ onClose }) {
 
         <div className={styles.chartContainer}>
           <LineChart
-            width={400}
-            height={250}
+            width={500}
+            height={300}
             data={exampleData}
-            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
+            margin={{ top: 20, right: 30, left: 30, bottom: 20 }}
           >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="day" />
