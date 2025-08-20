@@ -32,21 +32,38 @@ const TEAM_MEMBERS = [
 ];
 
 const MOCK_CONTRIBUTIONS = [
-    { id: 1, authorId: 1, description: 'Created initial project structure', tool: 'GitHub', date: '2025-07-15', attributedTo: [1], valuedBy: [{from: 2, tag: 'Leadership', text: "Great start!"}], hours: 3 },
-    { id: 2, authorId: 2, description: 'Wrote API documentation', tool: 'Google Drive', date: '2025-07-16', attributedTo: [2], valuedBy: [{from: 1, tag: 'Quality Work', text: "Very clear."}], hours: 5 },
-    { id: 3, authorId: 1, description: 'Implemented user authentication', tool: 'GitHub', date: '2025-07-18', attributedTo: [1, 2], valuedBy: [{ from: 4, tag: 'Quality Work', text: 'This was a complex feature, great job!' }, { from: 3, tag: 'Helpful Support', text: 'Helped me get unblocked.' }], hours: 8 },
-    { id: 4, authorId: 3, description: 'Designed UI in Figma', tool: 'Offline Work', date: '2025-07-19', attributedTo: [3, 4], valuedBy: [{from: 1, tag: 'Creative Idea'}], hours: 6, evidence: 'figma_design.png' },
-    { id: 5, authorId: 4, description: 'Set up database schema', tool: 'GitHub', date: '2025-07-20', attributedTo: [4], valuedBy: [{ from: 1, tag: 'Leadership' }], hours: 4 },
+    // Alex: Heavy on GitHub, steady work
+    { id: 1, authorId: 1, description: 'Created initial project structure', tool: 'GitHub', date: '2025-07-15', attributedTo: [1], valuedBy: [], hours: 3 },
+    { id: 3, authorId: 1, description: 'Implemented user authentication', tool: 'GitHub', date: '2025-07-18', attributedTo: [1, 2], valuedBy: [{ from: 4, tag: 'Quality Work' }], hours: 8 },
+    { id: 8, authorId: 1, description: 'Added responsive CSS', tool: 'GitHub', date: '2025-07-21', attributedTo: [1], valuedBy: [], hours: 5 },
+    { id: 11, authorId: 1, description: 'Finalized README documentation', tool: 'Google Drive', date: '2025-07-26', attributedTo: [1], valuedBy: [], hours: 2 },
+
+    // Brianna: Heavy on Google Drive, work clustered at the end
+    { id: 2, authorId: 2, description: 'Wrote API documentation draft', tool: 'Google Drive', date: '2025-07-25', attributedTo: [2], valuedBy: [{from: 1, tag: 'Quality Work'}], hours: 5 },
     { id: 6, authorId: 2, description: 'Refactored application logic', tool: 'GitHub', date: '2025-07-22', attributedTo: [2], valuedBy: [{ from: 3, tag: 'Quality Work' }], hours: 7 },
-    { id: 7, authorId: 3, description: 'User testing feedback', tool: 'Offline Work', date: '2025-07-24', attributedTo: [3], valuedBy: [], hours: 4, evidence: 'user_feedback_notes.pdf' },
+    { id: 12, authorId: 2, description: 'Created presentation slides', tool: 'Google Drive', date: '2025-07-26', attributedTo: [2], valuedBy: [], hours: 4 },
+    { id: 13, authorId: 2, description: 'Polished final proposal document', tool: 'Google Drive', date: '2025-07-27', attributedTo: [2], valuedBy: [{from: 4, tag: 'Quality Work'}], hours: 6 },
+
+    // Charlie: Heavy on Offline Work, clustered at the beginning
+    { id: 4, authorId: 3, description: 'Designed UI in Figma', tool: 'Offline Work', date: '2025-07-16', attributedTo: [3, 4], valuedBy: [{from: 1, tag: 'Creative Idea'}], hours: 6, evidence: 'figma_design.png' },
+    { id: 7, authorId: 3, description: 'Conducted user testing interviews', tool: 'Offline Work', date: '2025-07-17', attributedTo: [3], valuedBy: [], hours: 4, evidence: 'user_feedback_notes.pdf' },
+    { id: 14, authorId: 3, description: 'Whiteboard session for architecture planning', tool: 'Offline Work', date: '2025-07-14', attributedTo: [1, 2, 3, 4], valuedBy: [{from: 1, tag: 'Leadership'}], hours: 3 },
+    { id: 15, authorId: 3, description: 'Minor bug fixes', tool: 'GitHub', date: '2025-07-24', attributedTo: [3], valuedBy: [], hours: 2 },
+
+    // Dana: Database work on GitHub, supportive on Google Drive
+    { id: 5, authorId: 4, description: 'Set up database schema', tool: 'GitHub', date: '2025-07-20', attributedTo: [4], valuedBy: [{ from: 1, tag: 'Leadership' }], hours: 4 },
+    { id: 16, authorId: 4, description: 'Wrote database migration scripts', tool: 'GitHub', date: '2025-07-23', attributedTo: [4], valuedBy: [], hours: 5 },
+    { id: 17, authorId: 4, description: 'Proofread final proposal', tool: 'Google Drive', date: '2025-07-27', attributedTo: [4], valuedBy: [], hours: 2 },
 ];
 
 const MOCK_INTERACTIONS = [
-    { id: 1, from: 2, to: 1, type: 'Comment', tool: 'Google Drive', content: "Looks good, maybe we can add a section for error handling?", on: "API Documentation" },
+    { id: 1, from: 2, to: 1, type: 'Comment', tool: 'Google Drive', content: "For the README, can you add a section on deployment?", on: "README Documentation" },
     { id: 2, from: 4, to: 1, type: 'Code Review', tool: 'GitHub', content: "LGTM, but can we extract this logic into a helper function?", on: "PR #12: User Auth" },
     { id: 3, from: 3, to: 2, type: 'Code Review', tool: 'GitHub', content: "Nice refactor! This is much cleaner.", on: "PR #15: Refactor Logic" },
     { id: 4, from: 1, to: 4, type: 'Comment', tool: 'GitHub', content: "Good catch on the schema design.", on: "Commit #a3f5d6" },
     { id: 5, from: 1, to: 3, type: 'Comment', tool: 'Offline Work', content: "The Figma designs are very clear and helpful.", on: "Figma UI Design" },
+    { id: 6, from: 4, to: 2, type: 'Comment', tool: 'Google Drive', content: "Great work on the slides, everything looks very professional.", on: "Presentation Slides" },
+    { id: 7, from: 1, to: 2, type: 'Code Review', tool: 'GitHub', content: "This logic looks solid.", on: "PR #15: Refactor Logic" },
 ];
 
 
@@ -255,35 +272,8 @@ const GoldStandardModal = ({ behavior, onCancel }) => {
     return (<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20"><div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg"><h3 className="text-xl font-bold mb-4">{current.title}</h3><p className="text-sm text-gray-600 mb-4">{current.description}</p><div className="my-6 flex items-center justify-center">{current.viz}</div><div className="mt-6 flex justify-end"><button onClick={onCancel} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold">Close</button></div></div></div>);
 };
 
-const DataViewDropdown = ({ view, setView }) => (
-    <div className="flex items-center space-x-2">
-        <span className="text-sm font-medium text-gray-600">Data View:</span>
-        <select value={view} onChange={e => setView(e.target.value)} className="text-sm border-gray-300 rounded-md shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-            <option value="Overall">Overall</option>
-            <option value="Google Drive">Google Drive</option>
-            <option value="GitHub">GitHub</option>
-        </select>
-    </div>
-);
-
-const EquitableContributionPanel = ({ setShowGoldStandard }) => {
-    const [view, setView] = useState('Overall');
+const PieChart = ({ data, toolName }) => {
     const [hoveredMember, setHoveredMember] = useState(null);
-
-    const totalAttributions = MOCK_CONTRIBUTIONS.reduce((sum, c) => sum + c.attributedTo.length, 0);
-    const data = TEAM_MEMBERS.map(m => {
-        const memberAttributions = MOCK_CONTRIBUTIONS.filter(c => c.attributedTo.includes(m.id));
-        const githubCount = memberAttributions.filter(c => c.tool === 'GitHub').length;
-        const googleCount = memberAttributions.filter(c => c.tool === 'Google Drive').length;
-        const offlineCount = memberAttributions.filter(c => c.tool === 'Offline Work').length;
-        return {
-            ...m,
-            value: memberAttributions.length,
-            percentage: ((memberAttributions.length / totalAttributions) * 100),
-            details: `GitHub (commits): ${githubCount}\nGoogle Docs (Edits): ${googleCount}\nOffline Work (hours): ${offlineCount}`
-        }
-    });
-
     let cumulativePercent = 0;
     const pieData = data.map(d => {
         const percent = d.percentage;
@@ -294,66 +284,138 @@ const EquitableContributionPanel = ({ setShowGoldStandard }) => {
     });
 
     return (
+        <div className="flex-1 p-4 bg-white rounded-lg shadow-md flex flex-col items-center justify-center min-w-[300px]">
+            <h4 className="font-bold text-gray-700 mb-2">{toolName}</h4>
+            <div className="relative">
+                <svg width="180" height="180" viewBox="0 0 100 100" className="transform -rotate-90">
+                    {pieData.map(slice => {
+                        if(slice.percentage === 0) return null;
+                        const x1 = 50 + 50 * Math.cos(slice.startAngle * 2 * Math.PI / 100);
+                        const y1 = 50 + 50 * Math.sin(slice.startAngle * 2 * Math.PI / 100);
+                        const x2 = 50 + 50 * Math.cos(slice.endAngle * 2 * Math.PI / 100);
+                        const y2 = 50 + 50 * Math.sin(slice.endAngle * 2 * Math.PI / 100);
+                        const largeArcFlag = slice.percentage > 50 ? 1 : 0;
+                        return <path key={slice.id} d={`M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArcFlag} 1 ${x2} ${y2} Z`} fill={slice.colorHex} onMouseEnter={() => setHoveredMember(slice)} onMouseLeave={() => setHoveredMember(null)} />;
+                    })}
+                </svg>
+                {hoveredMember && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2 bg-gray-800 text-white text-xs rounded shadow-lg"><p className="font-bold">{hoveredMember.name}</p><p>{hoveredMember.value} contribution(s)</p></div>}
+            </div>
+            <div className="mt-4 space-y-1 text-xs w-full">{data.map(m => (<div key={m.id} className="flex items-center"><div className={`w-3 h-3 rounded-sm ${m.avatarColor}`}></div><span className="ml-2 text-gray-700">{m.name} ({m.percentage.toFixed(1)}%)</span></div>))}</div>
+        </div>
+    );
+};
+
+const EquitableContributionPanel = ({ setShowGoldStandard }) => {
+    const tools = ['GitHub', 'Google Drive', 'Offline Work'];
+    const toolData = tools.map(tool => {
+        const contributionsForTool = MOCK_CONTRIBUTIONS.filter(c => c.tool === tool);
+        const totalAttributions = contributionsForTool.reduce((sum, c) => sum + c.attributedTo.length, 0);
+        if (totalAttributions === 0) return { toolName: tool, data: [] };
+
+        const data = TEAM_MEMBERS.map(m => {
+            const memberAttributions = contributionsForTool.filter(c => c.attributedTo.includes(m.id));
+            return {
+                ...m,
+                value: memberAttributions.length,
+                percentage: totalAttributions > 0 ? (memberAttributions.length / totalAttributions) * 100 : 0,
+            }
+        });
+        return { toolName: tool, data };
+    });
+
+    return (
         <div>
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">Equitable Contribution <button onClick={() => setShowGoldStandard('equity')} className="p-1 rounded-full hover:bg-gray-200"><svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button></h3>
-                    <p className="mt-2 text-gray-600">This chart shows the total work distribution. Hover over a pie slice to see details.</p>
-                </div>
-                <DataViewDropdown view={view} setView={setView} />
-            </div>
-            <div className="p-6 bg-white rounded-lg shadow-md h-96 flex items-center justify-center">
-                <div className="flex items-center justify-center space-x-8 relative">
-                    <svg width="256" height="256" viewBox="0 0 100 100" className="transform -rotate-90">
-                        {pieData.map(slice => {
-                            const x1 = 50 + 50 * Math.cos(slice.startAngle * 2 * Math.PI / 100);
-                            const y1 = 50 + 50 * Math.sin(slice.startAngle * 2 * Math.PI / 100);
-                            const x2 = 50 + 50 * Math.cos(slice.endAngle * 2 * Math.PI / 100);
-                            const y2 = 50 + 50 * Math.sin(slice.endAngle * 2 * Math.PI / 100);
-                            const largeArcFlag = slice.percentage > 50 ? 1 : 0;
-                            return <path key={slice.id} d={`M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArcFlag} 1 ${x2} ${y2} Z`} fill={slice.colorHex} onMouseEnter={() => setHoveredMember(slice)} onMouseLeave={() => setHoveredMember(null)} />;
-                        })}
-                    </svg>
-                    <div className="space-y-2">{data.map(m => (<div key={m.id} className="flex items-center"><div className={`w-4 h-4 rounded-sm ${m.avatarColor}`}></div><span className="ml-2 text-sm text-gray-700">{m.name} ({m.percentage.toFixed(1)}%)</span></div>))}</div>
-                    {hoveredMember && <div className="absolute top-0 left-full ml-4 p-3 bg-gray-800 text-white text-xs rounded shadow-lg w-48 whitespace-pre-line"><p className="font-bold">{hoveredMember.name}</p><p>{hoveredMember.details}</p></div>}
+                    <p className="mt-2 text-gray-600">These charts show the distribution of contributions for each tool. Compare them to see if different people are leading in different areas.</p>
                 </div>
             </div>
-            <textarea className="mt-4 w-full p-2 border rounded-md" placeholder="This chart shows the total work distribution. How does the team feel about this balance?"></textarea>
+            <div className="flex flex-wrap gap-6 justify-center">
+                {toolData.map(td => td.data.length > 0 && <PieChart key={td.toolName} data={td.data} toolName={td.toolName} />)}
+            </div>
+            <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
+                <p className="text-sm text-gray-600 mb-2">Looking at the contribution balance across different tools, what patterns do you see? Does the team have specialists for certain types of work? Does this distribution feel fair and effective?</p>
+                <textarea className="w-full p-2 border rounded-md"></textarea>
+            </div>
         </div>
     );
 };
 
 const TimelinessPanel = ({ setShowGoldStandard }) => {
-    const [view, setView] = useState('Overall');
     const [hoveredContribution, setHoveredContribution] = useState(null);
     const projectStartDate = new Date('2025-07-14');
     const projectEndDate = new Date('2025-07-28');
     const totalDays = (projectEndDate - projectStartDate) / (1000 * 60 * 60 * 24);
-    const maxHours = Math.max(...MOCK_CONTRIBUTIONS.map(c => c.hours));
-    
+
+    const getShape = (tool, colorClass) => {
+        const baseClasses = "w-4 h-4 absolute transform -translate-y-1/2 -translate-x-1/2";
+        switch (tool) {
+            case 'GitHub': // Circle
+                return <div className={`${baseClasses} ${colorClass} rounded-full`}></div>;
+            case 'Google Drive': // Triangle
+                return <div className={`w-0 h-0 absolute transform -translate-y-1/2 -translate-x-1/2 border-l-8 border-l-transparent border-b-[14px] ${colorClass.replace('bg-', 'border-b-')} border-r-8 border-r-transparent`}></div>;
+            case 'Offline Work': // Square
+                return <div className={`${baseClasses} ${colorClass}`}></div>;
+            default:
+                return null;
+        }
+    };
+
     return (
         <div>
              <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">Timeliness <button onClick={() => setShowGoldStandard('timeliness')} className="p-1 rounded-full hover:bg-gray-200"><svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button></h3>
-                    <p className="mt-2 text-gray-600">What patterns do you notice? Was work front-loaded, back-loaded, or steady? </p>
+                    <p className="mt-2 text-gray-600">This timeline visualizes when contributions were made. Each shape represents a contribution from a different tool, colored by the author.</p>
                 </div>
-                <DataViewDropdown view={view} setView={setView} />
             </div>
-            <div className="p-4 bg-white rounded-lg shadow-md"><div className="space-y-4">{TEAM_MEMBERS.map(member => {
-                const contributions = MOCK_CONTRIBUTIONS.filter(c => c.authorId === member.id);
-                return (<div key={member.id}><span className="font-medium text-sm text-gray-700">{member.name}</span><div className="mt-1 w-full bg-gray-200 rounded h-8 relative">{contributions.map(c => { const contributionDate = new Date(c.date); const leftPosition = ((contributionDate - projectStartDate) / (1000 * 60 * 60 * 24) / totalDays) * 100; const width = (c.hours / maxHours) * 15 + 2; return (<div key={`${c.id}-${member.id}`} onMouseEnter={() => setHoveredContribution(c)} onMouseLeave={() => setHoveredContribution(null)} className={`absolute top-0 h-8 rounded ${member.avatarColor}`} style={{ left: `${leftPosition}%`, width: `${width}%`, minWidth: '8px' }}></div>); })}</div></div>)
-            })}</div>
+            <div className="p-4 bg-white rounded-lg shadow-md">
+                <div className="space-y-4">
+                    {TEAM_MEMBERS.map(member => {
+                        const contributions = MOCK_CONTRIBUTIONS.filter(c => c.authorId === member.id);
+                        return (
+                            <div key={member.id} className="flex items-center">
+                                <span className="font-medium text-sm text-gray-700 w-20">{member.name}</span>
+                                <div className="flex-grow bg-gray-200 rounded h-8 relative ml-4">
+                                    {contributions.map(c => {
+                                        const contributionDate = new Date(c.date);
+                                        const leftPosition = ((contributionDate - projectStartDate) / (1000 * 60 * 60 * 24) / totalDays) * 100;
+                                        return (
+                                            <div key={c.id} 
+                                                 onMouseEnter={() => setHoveredContribution(c)} 
+                                                 onMouseLeave={() => setHoveredContribution(null)} 
+                                                 className="absolute top-1/2"
+                                                 style={{ left: `${leftPosition}%` }}>
+                                                {getShape(c.tool, member.avatarColor)}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+                 <div className="mt-8 flex justify-center items-center space-x-6 text-sm text-gray-600">
+                    <div className="flex items-center"><div className="w-4 h-4 bg-gray-400 rounded-full mr-2"></div><span>GitHub</span></div>
+                    <div className="flex items-center"><div className="w-0 h-0 border-l-8 border-l-transparent border-b-[14px] border-b-gray-400 border-r-8 border-r-transparent mr-2"></div><span>Google Drive</span></div>
+                    <div className="flex items-center"><div className="w-4 h-4 bg-gray-400 mr-2"></div><span>Offline Work</span></div>
+                </div>
+            </div>
             <div className="mt-4 flex justify-between text-xs text-gray-500"><span>Start: {projectStartDate.toLocaleDateString()}</span><span>End: {projectEndDate.toLocaleDateString()}</span></div>
-            {hoveredContribution && <div className="mt-2 p-2 bg-gray-100 rounded text-sm"><strong>{TEAM_MEMBERS.find(m => m.id === hoveredContribution.authorId).name} - {hoveredContribution.date}:</strong> {hoveredContribution.description} ({hoveredContribution.hours} hrs)</div>}
+            {hoveredContribution && <div className="mt-2 p-2 bg-gray-100 rounded text-sm"><strong>{TEAM_MEMBERS.find(m => m.id === hoveredContribution.authorId).name} - {hoveredContribution.date}:</strong> [{hoveredContribution.tool}] {hoveredContribution.description}</div>}
+            <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
+                <p className="text-sm text-gray-600 mb-2">What patterns do you notice in each person's work rhythm? Was work front-loaded, back-loaded, or steady? How did the timing of different types of work (e.g., coding vs. writing) affect the team?</p>
+                <textarea className="w-full p-2 border rounded-md"></textarea>
             </div>
-            <textarea className="mt-4 w-full p-2 border rounded-md" placeholder="What patterns do you notice? Was work front-loaded, back-loaded, or steady?"></textarea>
         </div>
     );
 };
 
+
 const SupportPanel = ({ setShowGoldStandard }) => {
-    const [view, setView] = useState('Overall');
     const [hoveredCell, setHoveredCell] = useState(null);
 
     return (
@@ -361,20 +423,43 @@ const SupportPanel = ({ setShowGoldStandard }) => {
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">Mutual Support <button onClick={() => setShowGoldStandard('support')} className="p-1 rounded-full hover:bg-gray-200"><svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button></h3>
-                    <p className="mt-2 text-gray-600">Are there patterns in how support is given and received? Is it reciprocal?</p>
+                    <p className="mt-2 text-gray-600">This heatmap shows the flow of mutual support, based on interactions like code reviews and comments. The color intensity indicates the number of supportive interactions from one member (row) to another (column).</p>
                 </div>
-                <DataViewDropdown view={view} setView={setView} />
             </div>
-            <div className="p-4 bg-white rounded-lg shadow-md overflow-x-auto"><div className="inline-block min-w-full relative"><div className="flex items-center"><div className="w-32 flex-shrink-0"></div><div className="flex-grow grid grid-cols-4 gap-2">{TEAM_MEMBERS.map(member => (<div key={member.id} className="text-center font-semibold text-sm text-gray-600 p-2">Receives</div>))}</div></div><div className="flex items-center mt-1"><div className="w-32 flex-shrink-0"></div><div className="flex-grow grid grid-cols-4 gap-2">{TEAM_MEMBERS.map(member => (<div key={member.id} className="text-center font-semibold text-sm text-gray-600 p-2">{member.name}</div>))}</div></div>{TEAM_MEMBERS.map(giver => (<div key={giver.id} className="flex items-center mt-2"><div className="w-32 flex-shrink-0 text-right pr-4 font-semibold text-sm text-gray-600">{giver.id === TEAM_MEMBERS[0].id && <div className="absolute -left-4 transform -rotate-90 origin-bottom-left text-center font-semibold text-sm text-gray-600">Gives</div>}{giver.name}</div><div className="flex-grow grid grid-cols-4 gap-2">{TEAM_MEMBERS.map(receiver => { const interactions = MOCK_INTERACTIONS.filter(i => i.from === giver.id && i.to === receiver.id); const count = interactions.length; const opacity = count > 0 ? Math.min(0.4 + count * 0.2, 1) : 0.1; return (<div key={receiver.id} onMouseEnter={() => setHoveredCell({giver, receiver, interactions})} onMouseLeave={() => setHoveredCell(null)} className="h-12 rounded flex items-center justify-center font-bold text-white cursor-pointer" style={{ backgroundColor: giver.colorHex, opacity }}>{count}</div>); })}</div></div>))}
-                {hoveredCell && hoveredCell.interactions.length > 0 && <div className="absolute top-0 left-1/2 -translate-x-1/2 mt-4 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-10 w-96"><p className="font-bold mb-2">{hoveredCell.giver.name} gave feedback to {hoveredCell.receiver.name}:</p><ul className="list-disc list-inside space-y-1">{hoveredCell.interactions.map(i => <li key={i.id}>[{i.type} on {i.on}]: "{i.content}"</li>)}</ul></div>}
-                </div></div>
-            <textarea className="mt-4 w-full p-2 border rounded-md" placeholder="Are there patterns in how support is given and received? Is it reciprocal?"></textarea>
+            <div className="p-4 bg-white rounded-lg shadow-md overflow-x-auto">
+                <div className="inline-block min-w-full relative">
+                    <div className="flex items-center">
+                        <div className="w-32 flex-shrink-0"></div>
+                        <div className="flex-grow grid grid-cols-4 gap-2">
+                            {TEAM_MEMBERS.map(member => (<div key={member.id} className="text-center font-semibold text-sm text-gray-600 p-2">{member.name} Receives</div>))}
+                        </div>
+                    </div>
+                    {TEAM_MEMBERS.map(giver => (
+                        <div key={giver.id} className="flex items-center mt-2">
+                            <div className="w-32 flex-shrink-0 text-right pr-4 font-semibold text-sm text-gray-600">{giver.name} Gives</div>
+                            <div className="flex-grow grid grid-cols-4 gap-2">
+                                {TEAM_MEMBERS.map(receiver => { 
+                                    const interactions = MOCK_INTERACTIONS.filter(i => i.from === giver.id && i.to === receiver.id); 
+                                    const count = interactions.length; 
+                                    const opacity = count > 0 ? Math.min(0.4 + count * 0.2, 1) : 0.1; 
+                                    return (<div key={receiver.id} onMouseEnter={() => setHoveredCell({giver, receiver, interactions})} onMouseLeave={() => setHoveredCell(null)} className="h-12 rounded flex items-center justify-center font-bold text-white cursor-pointer" style={{ backgroundColor: giver.colorHex, opacity }}>{count}</div>); 
+                                })}
+                            </div>
+                        </div>
+                    ))}
+                    {hoveredCell && hoveredCell.interactions.length > 0 && <div className="absolute top-0 left-1/2 -translate-x-1/2 mt-4 p-3 bg-gray-800 text-white text-xs rounded-lg shadow-lg z-10 w-96"><p className="font-bold mb-2">{hoveredCell.giver.name} gave feedback to {hoveredCell.receiver.name}:</p><ul className="list-disc list-inside space-y-1">{hoveredCell.interactions.map(i => <li key={i.id}>[{i.type} on {i.on}]: "{i.content}"</li>)}</ul></div>}
+                </div>
+            </div>
+            <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
+                <p className="text-sm text-gray-600 mb-2">Are there any notable patterns in how support is given and received? Is the support reciprocal? Are there any team members who might need more support?</p>
+                <textarea className="w-full p-2 border rounded-md"></textarea>
+            </div>
         </div>
     );
 };
 
 const ValuedContributionsPanel = ({ setShowGoldStandard }) => {
-    const [view, setView] = useState('Overall');
     const [selectedUser, setSelectedUser] = useState(null);
     const data = TEAM_MEMBERS.map(member => ({ id: member.id, name: member.name, value: MOCK_CONTRIBUTIONS.filter(c => c.attributedTo.includes(member.id) && c.valuedBy.length > 0).length, color: member.avatarColor }));
     const maxValue = Math.max(...data.map(d => d.value), 1);
@@ -385,15 +470,18 @@ const ValuedContributionsPanel = ({ setShowGoldStandard }) => {
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-xl font-semibold text-gray-800 flex items-center gap-2">Valued Contributions <button onClick={() => setShowGoldStandard('valued')} className="p-1 rounded-full hover:bg-gray-200"><svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button></h3>
-                    <p className="mt-2 text-gray-600">How are valued contributions distributed across the team? Click a bar to see details.</p>
+                    <p className="mt-2 text-gray-600">This bar chart displays the number of contributions from each team member that were bookmarked as 'Valued' by their peers. It helps visualize how recognized, high-impact work is distributed.</p>
                 </div>
-                <DataViewDropdown view={view} setView={setView} />
             </div>
             <div className="p-6 bg-white rounded-lg shadow-md">
                 <div className="space-y-4">{data.map(item => (<div key={item.name} className="flex items-center"><span className="w-24 text-sm font-medium text-gray-700">{item.name}</span><div className="flex-grow bg-gray-200 rounded-full h-6 cursor-pointer" onClick={() => setSelectedUser(item)}><div className={`${item.color} h-6 rounded-full flex items-center justify-end pr-2 text-white font-bold text-sm`} style={{ width: `${(item.value / maxValue) * 100}%` }}>{item.value}</div></div></div>))}</div>
                 {selectedUser && (<div className="mt-6 p-4 bg-gray-50 rounded-lg"><h4 className="font-bold text-gray-800">Details for {selectedUser.name}</h4><ul className="mt-2 list-disc list-inside text-sm text-gray-700 space-y-1">{valuedContributionsForSelectedUser.map(c => <li key={c.id}>"{c.description}" was valued by {c.valuedBy.map(v => TEAM_MEMBERS.find(m=>m.id===v.from).name).join(', ')}</li>)}</ul></div>)}
             </div>
-            <textarea className="mt-4 w-full p-2 border rounded-md" placeholder="How are valued contributions distributed across the team?"></textarea>
+            <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
+                <p className="text-sm text-gray-600 mb-2">How are valued contributions distributed across the team? What kinds of work does the team seem to value most?</p>
+                <textarea className="w-full p-2 border rounded-md"></textarea>
+            </div>
         </div>
     );
 };
