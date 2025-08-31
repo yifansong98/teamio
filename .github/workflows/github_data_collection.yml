@@ -1,0 +1,48 @@
+name: Collect GitHub Data
+
+on:
+    workflow_dispatch:
+        inputs:
+            team_id: 
+                description: 'Team ID'
+                required: true
+                default: 'teamio'
+            repository_owner:
+                description: 'GitHub Repository Owner (Organization or User)'
+                required: true
+                default: 'CS465UIDesign'
+            repository_name:
+                description: 'GitHub Repository Name'
+                required: true
+                default: ''
+            github_token:
+                description: 'GitHub Token for Private Repositories'
+                required: false
+                default: ''
+
+jobs:
+    fetch-and-process:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v3
+            - name: Set up Python
+              uses: actions/setup-python@v4
+              with:
+                  python-version: '3.x'
+            - name: Install Dependencies
+              run: |
+                  python3 -m pip install --upgrade pip
+                  pip3 install -r requirements.txt
+            - name: Fetch GitHub Data
+              env:
+                  GITHUB_OWNER: ${{ github.event.inputs.repository_owner }}
+                  GITHUB_TOKEN: ${{ github.event.inputs.github_token }}
+                  REPOSITORY_NAME: ${{ github.event.inputs.repository_name }}
+              run: |
+                  python3 scripts/fetch_github_data.py --owner "$GITHUB_OWNER" --repo-name "$REPOSITORY_NAME" --token "$GITHUB_TOKEN"
+            - name: Post GitHub Data to Firebase
+              run: |
+                  echo "Commit Data: ${{ steps.fetch-and-process.outputs.commit_data }}"
+                  python3 scripts/post_github_data.py --commit-data "${{ steps.fetch-and-process.outputs.commit_data }} --team-id "${{ github.event.inputs.team_id }}"
+            
