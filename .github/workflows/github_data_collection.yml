@@ -35,6 +35,7 @@ jobs:
                   python3 -m pip install --upgrade pip
                   pip3 install -r requirements.txt
             - name: Fetch GitHub Data
+              id: fetch-github-data
               env:
                   GITHUB_OWNER: ${{ github.event.inputs.repository_owner }}
                   GITHUB_TOKEN: ${{ github.event.inputs.github_token }}
@@ -43,6 +44,5 @@ jobs:
                   python3 scripts/fetch_github_data.py --owner "$GITHUB_OWNER" --repo-name "$REPOSITORY_NAME" --token "$GITHUB_TOKEN"
             - name: Post GitHub Data to Firebase
               run: |
-                  echo "Commit Data: ${{ steps.fetch-and-process.outputs.commit_data }}"
-                  python3 scripts/post_github_data.py --commit-data "${{ steps.fetch-and-process.outputs.commit_data }} --team-id "${{ github.event.inputs.team_id }}"
+                  python3 scripts/post_github_data.py --commit-data "${{ steps.fetch-github-data.outputs.commit_data }}" --team-id "${{ github.event.inputs.team_id }}"
             
