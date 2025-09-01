@@ -94,7 +94,11 @@ if __name__ == "__main__":
     }
 
     commit_data = collect_commit_data()
-    print(f"::set-output name=commit_data::{json.dumps(commit_data)}")
+    github_output = os.environ.get("GITHUB_OUTPUT")
+    if github_output:
+        with open(github_output, "a") as gh_out:
+            gh_out.write(f"commit_data={json.dumps(commit_data)}\n")
+
     print("Commit history has been collected and saved to commit_history.json")
     with open("commit_history.json", "w") as file:
         json.dump(commit_data, file, indent=4)
