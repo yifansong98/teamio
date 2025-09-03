@@ -131,67 +131,137 @@ const MainDashboard = ({ setCurrentPage, stepsCompletion }) => (
 
 
 const LinkToolsPage = ({ setCurrentPage, setStepsCompletion }) => {
-    const [teamLinks, setTeamLinks] = useState({ github: '', googleDrive: '' });
-    const [personalAccounts, setPersonalAccounts] = useState({
-        1: { github: '', google: '' }, 2: { github: 'bri-dev', google: 'brianna@example.com' }, 3: { github: 'c-davis', google: '' }, 4: { github: '', google: 'dana@example.com' }
-    });
-    const handleTeamLinkChange = (toolKey, value) => setTeamLinks(prev => ({ ...prev, [toolKey]: value }));
-    const handlePersonalAccountChange = (memberId, tool, value) => setPersonalAccounts(prev => ({ ...prev, [memberId]: { ...prev[memberId], [tool]: value } }));
-    const handleDone = () => {
-        setStepsCompletion(prev => ({ ...prev, step1: true }));
-        setCurrentPage('dashboard');
-    };
-    const teamToolsToLink = [ { key: 'github', name: 'GitHub Repository' }, { key: 'googleDrive', name: 'Google Docs' }];
+            const [teamLinks, setTeamLinks] = useState({ github: '', googleDrive: '' });
+            const [personalAccounts, setPersonalAccounts] = useState({
+                1: { github: '', google: '' }, 2: { github: 'bri-dev', google: 'brianna@example.com' }, 3: { github: 'c-davis', google: '' }, 4: { github: '', google: 'dana@example.com' }
+            });
+            const handleTeamLinkChange = (toolKey, value) => setTeamLinks(prev => ({ ...prev, [toolKey]: value }));
+            const handlePersonalAccountChange = (memberId, tool, value) => setPersonalAccounts(prev => ({ ...prev, [memberId]: { ...prev[memberId], [tool]: value } }));
+            const handleDone = () => {
+                setStepsCompletion(prev => ({ ...prev, step1: true }));
+                setCurrentPage('dashboard');
+            };
+            
+            return (
+                <div className="p-4 md:p-8 max-w-4xl mx-auto">
+                    <button onClick={() => setCurrentPage('dashboard')} className="text-blue-600 hover:underline mb-6">&larr; Back to Dashboard</button>
+                    <h1 className="text-2xl font-bold text-gray-800">Step 1: Link Collaboration Tools</h1>
+                    <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
+                        <p className="text-md font-semibold">Instructions:</p>
+                         <div className="text-sm mt-2 space-y-2">
+                            <p>
+                            In this step, please provide links to your team’s collaboration tools:
+                            </p>
+                            <ul className="list-disc list-inside space-y-1 ml-5">
+                                <li>GitHub repository</li>
+                                <li>Google Drive folder</li>
+                            </ul>
 
-    return (
-        <div className="p-4 md:p-8 max-w-4xl mx-auto">
-            <button onClick={() => setCurrentPage('dashboard')} className="text-blue-600 hover:underline mb-6">&larr; Back to Dashboard</button>
-            <h1 className="text-2xl font-bold text-gray-800">Step 1: Link Collaboration Tools</h1>
-            <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
-                <p className="text-sm font-semibold">Instructions:</p>
-                 <ul className="list-disc list-inside text-sm mt-2 space-y-2"><li><span className="font-bold">Team Resources:</span> Any team member can update these links for the whole team.<ul className="list-disc list-inside ml-5 mt-1 space-y-1"><li>For GitHub repo, you can leave it blank until the start of implementation. Please use the repo created by the course staff.</li><li>For Google Docs, you can update the link for each deliverable, or you can link your main project folder only once and we'll filter files by date. Please make sure the link will grant "Editor" access for all documents in the folder.</li></ul></li><li><span className="font-bold">Personal Accounts:</span> Each team member must enter their usernames to map their contributions correctly.</li></ul>
-            </div>
-            <div className="mt-8"><h2 className="text-xl font-semibold text-gray-700 mb-4">Team Resources</h2><div className="space-y-6">{teamToolsToLink.map(tool => (<div key={tool.key} className="p-4 border rounded-lg bg-white shadow-sm"><label htmlFor={tool.key} className="block text-lg font-medium text-gray-700">{tool.name}</label><div className="mt-2 flex items-center space-x-3"><input id={tool.key} type="text" placeholder={`Paste ${tool.name} URL here...`} value={teamLinks[tool.key]} onChange={(e) => handleTeamLinkChange(tool.key, e.target.value)} className="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" /><button className="px-4 py-2 rounded-md font-semibold text-sm bg-blue-500 text-white hover:bg-blue-600 transition-colors">{teamLinks[tool.key] ? 'Update' : 'Connect'}</button></div></div>))}</div></div>
-            <div className="mt-10"><h2 className="text-xl font-semibold text-gray-700 mb-4">Personal Accounts</h2><div className="space-y-6">{TEAM_MEMBERS.map(member => { const isCurrentUser = member.id === CURRENT_USER_ID; return (<div key={member.id} className={`p-4 border rounded-lg bg-white shadow-sm ${!isCurrentUser ? 'bg-gray-50' : ''}`}><h3 className="font-bold text-lg text-gray-800">{member.name} {isCurrentUser && <span className="text-sm font-normal text-blue-600">(You)</span>}</h3><div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4"><div><label htmlFor={`github-${member.id}`} className="block text-sm font-medium text-gray-600">GitHub Username</label><input id={`github-${member.id}`} type="text" placeholder="e.g., alex-doe" value={personalAccounts[member.id].github} onChange={(e) => handlePersonalAccountChange(member.id, 'github', e.target.value)} disabled={!isCurrentUser} className={`mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${!isCurrentUser ? 'bg-gray-200 cursor-not-allowed' : ''}`} /></div><div><label htmlFor={`google-${member.id}`} className="block text-sm font-medium text-gray-600">Google Account Email</label><input id={`google-${member.id}`} type="email" placeholder="e.g., alex@example.com" value={personalAccounts[member.id].google} onChange={(e) => handlePersonalAccountChange(member.id, 'google', e.target.value)} disabled={!isCurrentUser} className={`mt-1 w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 ${!isCurrentUser ? 'bg-gray-200 cursor-not-allowed' : ''}`} /></div></div></div>); })}</div></div>
-            <div className="mt-10 text-center"><button onClick={handleDone} className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors">Done</button></div>
-        </div>
-    );
-};
+                            <p>
+                                We use log data from these tools to:
+                            </p>
+                            <ul className="list-disc list-inside space-y-1 ml-5">
+                                <li>Track individual contributions</li>
+                                <li>Review overall team progress</li>
+                                <li>Analyze work distribution and feedback patterns</li>
+                            </ul>
+
+                            <p>
+                                This information allows your team to reflect on evidence-based feedback, helping you identify strengths and opportunities for improvement.
+                            </p>
+
+                            <p>
+                                <strong>Note:</strong>
+                            </p>
+                                <ul className="list-disc list-inside space-y-1 ml-5">
+                                <li>Any team member can update links for the whole team.</li>
+                                <li>Each team member should provide their own GitHub username and Google account email so that individual contributions can be accurately mapped.</li>
+                            </ul>
+                            
+                        </div>
+                    </div>
+
+                    <div className="mt-8 space-y-8">
+                        {/* GitHub Section */}
+                        <div className="p-6 border rounded-lg bg-white shadow-sm">
+                            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
+                                <ToolIcon tool="GitHub" />
+                                <span>GitHub</span>
+                            </h2>
+                            <div>
+                                <label htmlFor="github-repo" className="block text-md font-medium text-gray-700">Team Repository URL</label>
+                                <div className="mt-2 flex items-center space-x-3">
+                                    <input id="github-repo" type="text" placeholder="https://github.com/org-name/repo-name" value={teamLinks.github} onChange={(e) => handleTeamLinkChange('github', e.target.value)} className="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-sm" />
+                                    <button className="px-4 py-2 rounded-md font-semibold text-sm bg-blue-500 text-white hover:bg-blue-600 transition-colors">{teamLinks.github ? 'Update' : 'Connect'}</button>
+                                </div>
+                            </div>
+                            <div className="mt-6 pt-6 border-t">
+                                <h3 className="block text-md font-medium text-gray-700">Personal GitHub Accounts</h3>
+                                <div className="space-y-4 mt-4">{TEAM_MEMBERS.map(member => { const isCurrentUser = member.id === CURRENT_USER_ID; return (<div key={member.id} className={`p-3 border rounded-lg ${isCurrentUser ? 'bg-blue-50' : ''}`}><h4 className="font-bold text-md text-gray-800">{member.name} {isCurrentUser && <span className="text-sm font-normal text-blue-600 ">(You)</span>}</h4><div className="mt-2"><label htmlFor={`github-${member.id}`} className="sr-only">GitHub Username for {member.name}</label><input id={`github-${member.id}`} type="text" placeholder="GitHub Username..." value={personalAccounts[member.id].github} onChange={(e) => handlePersonalAccountChange(member.id, 'github', e.target.value)} disabled={!isCurrentUser} className={`w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 placeholder:text-sm focus:border-blue-500 ${!isCurrentUser ? 'bg-gray-200 cursor-not-allowed' : ''}`} /></div></div>); })}</div>
+                            </div>
+                        </div>
+
+                        {/* Google Drive Section */}
+                        <div className="p-6 border rounded-lg bg-white shadow-sm">
+                            <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center space-x-2">
+                                <ToolIcon tool="Google Docs" />
+                                <span>Google Drive</span>
+                            </h2>
+                            <div>
+                                <label htmlFor="google-drive-folder" className="block text-md font-medium text-gray-700">Team Drive Folder URL</label>
+                                <div className="mt-2 flex items-center space-x-3">
+                                    <input id="google-drive-folder" type="text" placeholder="https://drive.google.com/drive/folders/your-folder-id" value={teamLinks.googleDrive} onChange={(e) => handleTeamLinkChange('googleDrive', e.target.value)} className="flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-sm" />
+                                    <button className="px-4 py-2 rounded-md font-semibold text-sm bg-blue-500 text-white hover:bg-blue-600 transition-colors">{teamLinks.googleDrive ? 'Update' : 'Connect'}</button>
+                                </div>
+                            </div>
+                            <div className="mt-6 pt-6 border-t">
+                                <h3 className="block text-md font-medium text-gray-700">Personal Google Accounts</h3>
+                                <div className="space-y-4 mt-4">{TEAM_MEMBERS.map(member => { const isCurrentUser = member.id === CURRENT_USER_ID; return (<div key={member.id} className={`p-3 border rounded-lg ${isCurrentUser ? 'bg-blue-50' : ''}`}><h4 className="font-bold text-md text-gray-800">{member.name} {isCurrentUser && <span className="text-sm font-normal text-blue-600">(You)</span>}</h4><div className="mt-2"><label htmlFor={`google-${member.id}`} className="sr-only">Google Account Email for {member.name}</label><input id={`google-${member.id}`} type="email" placeholder="Google Account Email..." value={personalAccounts[member.id].google} onChange={(e) => handlePersonalAccountChange(member.id, 'google', e.target.value)} disabled={!isCurrentUser} className={`w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 placeholder:text-sm ${!isCurrentUser ? 'bg-gray-200 cursor-not-allowed' : ''}`} /></div></div>); })}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-10 text-center"><button onClick={handleDone} className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors">Done</button></div>
+                </div>
+            );
+        };
 
 const AttributeContributionsPage = ({ setCurrentPage, setStepsCompletion }) => {
-    const [contributions, setContributions] = useState(MOCK_CONTRIBUTIONS);
-    const [editingContribution, setEditingContribution] = useState(null);
-    const [showValuedModal, setShowValuedModal] = useState(null);
-    const [showOfflineModal, setShowOfflineModal] = useState(false);
-    const toggleAttribution = (contributionId, memberId) => { setContributions(contributions.map(c => { if (c.id === contributionId && c.authorId === CURRENT_USER_ID) { const isAttributed = c.attributedTo.includes(memberId); const newAttributedTo = isAttributed ? c.attributedTo.filter(id => id !== memberId) : [...c.attributedTo, memberId]; return { ...c, attributedTo: newAttributedTo }; } return c; })); };
-    const handleAddOfflineWork = (newItem) => { const newContribution = { id: contributions.length + 1, authorId: CURRENT_USER_ID, ...newItem, tool: 'External Work', attributedTo: newItem.contributors, valuedBy: [], comments: [] }; setContributions([...contributions, newContribution]); setShowOfflineModal(false); };
-    const handleEditOfflineWork = (updatedItem) => { setContributions(contributions.map(c => c.id === updatedItem.id ? { ...c, ...updatedItem, attributedTo: updatedItem.contributors } : c)); setEditingContribution(null); };
-    const handleDeleteOfflineWork = (id) => { if(window.confirm("Are you sure you want to delete this external contribution?")){ setContributions(contributions.filter(c => c.id !== id)); } };
-    const handleDone = () => { setStepsCompletion(prev => ({...prev, step2: true})); setCurrentPage('dashboard'); }
+            const [contributions, setContributions] = useState(MOCK_CONTRIBUTIONS);
+            const [editingContribution, setEditingContribution] = useState(null);
+            const [showValuedModal, setShowValuedModal] = useState(null);
+            const [showOfflineModal, setShowOfflineModal] = useState(false);
+            const [showConfirmDelete, setShowConfirmDelete] = useState(null);
+            const toggleAttribution = (contributionId, memberId) => { setContributions(contributions.map(c => { if (c.id === contributionId && c.authorId === CURRENT_USER_ID) { const isAttributed = c.attributedTo.includes(memberId); const newAttributedTo = isAttributed ? c.attributedTo.filter(id => id !== memberId) : [...c.attributedTo, memberId]; return { ...c, attributedTo: newAttributedTo }; } return c; })); };
+            const handleAddOfflineWork = (newItem) => { const newContribution = { id: contributions.length + 100, authorId: CURRENT_USER_ID, ...newItem, tool: 'External Work', attributedTo: newItem.contributors, valuedBy: [], comments: [] }; setContributions([...contributions, newContribution]); setShowOfflineModal(false); };
+            const handleEditOfflineWork = (updatedItem) => { setContributions(contributions.map(c => c.id === updatedItem.id ? { ...c, ...updatedItem, attributedTo: updatedItem.contributors } : c)); setEditingContribution(null); };
+            const handleDeleteOfflineWork = (id) => { setContributions(contributions.filter(c => c.id !== id)); setShowConfirmDelete(null); };
+            const handleDone = () => { setStepsCompletion(prev => ({...prev, step2: true})); setCurrentPage('dashboard'); }
 
-    return (
-        <div className="p-4 md:p-8 max-w-6xl mx-auto">
-            <button onClick={() => setCurrentPage('dashboard')} className="text-blue-600 hover:underline mb-6">&larr; Back to Dashboard</button>
-            <h1 className="text-2xl font-bold text-gray-800">Step 2: Annotate Contributions</h1>
-            <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
-                <p className="text-sm">From the resources you linked, the system has extracted the following contribution history. Please review each item with your team and use the options below to create a more complete and accurate picture of your work.</p>
-                 <ul className="list-disc list-inside text-sm space-y-2 mt-2">
-                    <li><span className="font-bold">Attribute Work:</span> For each item, the logged contributor can attribute the work to other team members who also contributed, such as during pair programming.</li>
-                    <li><span className="font-bold">Highlight Valuable Contributions:</span> You can highlight contributions from your teammates that you found particularly valuable (e.g., high-quality or difficult work) using the bookmark icon (<svg className="w-4 h-4 inline-block -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>). You cannot highlight your own work.</li>
-                    <li><span className="font-bold">Add External Work:</span> If important work happened outside of the linked tools (e.g., a whiteboard session), use the button at the end of the list to add it. Only one person needs to add an external item.</li>
-                </ul>
-            </div>
-            <div className="mt-8 overflow-x-auto"><div className="min-w-full bg-white rounded-lg shadow">{contributions.map(c => { const author = TEAM_MEMBERS.find(m => m.id === c.authorId); const isCurrentUserAuthor = c.authorId === CURRENT_USER_ID; const isOfflineWork = c.tool === 'External Work'; return (<div key={c.id} className={`p-4 border-b flex flex-col md:flex-row md:items-center md:justify-between ${!isCurrentUserAuthor ? 'bg-gray-50' : ''}`}><div className="flex-grow mb-4 md:mb-0 flex items-center space-x-4"><ToolIcon tool={c.tool} /><div><p className="font-semibold text-gray-800">{c.description}</p><p className="text-sm text-gray-500">Logged by {author.name} on {c.date}</p></div></div><div className={`flex items-center space-x-2 md:space-x-4 ${!isCurrentUserAuthor && !isOfflineWork ? 'opacity-50' : ''}`}><div className="flex items-center"><span className="text-sm font-medium text-gray-600 mr-2">Attributed to:</span><div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${author.avatarColor} ring-2 ring-offset-1 ring-blue-500`}>{author.initials}</div><div className="border-l h-6 border-gray-300 mx-3"></div>{TEAM_MEMBERS.filter(m => m.id !== c.authorId).map(member => { const isAttributed = c.attributedTo.includes(member.id); return (<button key={member.id} onClick={() => toggleAttribution(c.id, member.id)} disabled={!isCurrentUserAuthor} className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm transition-all duration-200 mx-1 ${member.avatarColor} ${isAttributed ? 'opacity-100 ring-2 ring-offset-1 ring-green-500' : 'opacity-40 hover:opacity-100'} ${!isCurrentUserAuthor ? 'cursor-not-allowed' : ''}`} title={isCurrentUserAuthor ? `Attribute to ${member.name}`: ''}>{member.initials}</button>); })}</div><div className="flex items-center"><button onClick={() => setShowValuedModal(c.id)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Tag as Valued"><svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg></button>{isCurrentUserAuthor && isOfflineWork && (<><button onClick={() => setEditingContribution(c)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Edit External Work"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg></button><button onClick={() => handleDeleteOfflineWork(c.id)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Delete External Work"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button></>)}</div></div></div>); })}</div></div>
-            <div className="mt-6 text-center">
-                <button onClick={() => setShowOfflineModal(true)} className="bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-600 transition-colors">+ Add External Work</button>
-            </div>
-            <div className="mt-8 text-center"><button onClick={handleDone} className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors">Done</button></div>
-            {showValuedModal !== null && <ValuedContributionModal contributionId={showValuedModal} onCancel={() => setShowValuedModal(null)} />}
-            {showOfflineModal && <AddOfflineWorkModal onSubmit={handleAddOfflineWork} onCancel={() => setShowOfflineModal(false)} />}
-            {editingContribution && <AddOfflineWorkModal existingWork={editingContribution} onSubmit={handleEditOfflineWork} onCancel={() => setEditingContribution(null)} />}
-        </div>
-    );
-};
+            return (
+                <div className="p-4 md:p-8 max-w-6xl mx-auto">
+                    <button onClick={() => setCurrentPage('dashboard')} className="text-blue-600 hover:underline mb-6">&larr; Back to Dashboard</button>
+                    <h1 className="text-2xl font-bold text-gray-800">Step 2: Annotate Contributions</h1>
+                    <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
+                        <p className="text-sm">From the resources you linked, the system has extracted the following contribution history. Please review each item with your team and use the options below to create a more complete and accurate picture of your work.</p>
+                         <ul className="list-disc list-inside text-sm space-y-2 mt-2">
+                            <li><span className="font-bold">Attribute Work:</span> For each item, the logged contributor can attribute the work to other team members who also contributed, such as during pair programming.</li>
+                            <li><span className="font-bold">Highlight Valuable Contributions:</span> You can highlight contributions from your teammates that you found particularly valuable (e.g., high-quality or difficult work) using the bookmark icon (<svg className="w-4 h-4 inline-block -mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>). You cannot highlight your own work.</li>
+                            <li><span className="font-bold">Add External Work:</span> If important work happened outside of the linked tools (e.g., a whiteboard session), use the button at the end of the list to add it. Only one person needs to add an external item.</li>
+                        </ul>
+                    </div>
+                    <div className="mt-8 overflow-x-auto"><div className="min-w-full bg-white rounded-lg shadow">{contributions.map(c => { const author = TEAM_MEMBERS.find(m => m.id === c.authorId); const isCurrentUserAuthor = c.authorId === CURRENT_USER_ID; const isOfflineWork = c.tool === 'External Work'; return (<div key={c.id} className={`p-4 border-b flex flex-col md:flex-row md:items-center md:justify-between ${!isCurrentUserAuthor ? 'bg-gray-50' : ''}`}><div className="flex-grow mb-4 md:mb-0 flex items-center space-x-4"><ToolIcon tool={c.tool} /><div><p className="font-semibold text-gray-800">{c.description}</p><p className="text-sm text-gray-500">Logged by {author.name} on {c.date}</p></div></div><div className={`flex items-center space-x-2 md:space-x-4 ${!isCurrentUserAuthor ? 'opacity-60' : ''}`}><div className="flex items-center"><span className="text-sm font-medium text-gray-600 mr-2">Attributed to:</span><div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${author.avatarColor} ring-2 ring-offset-1 ring-blue-500`}>{author.initials}</div><div className="border-l h-6 border-gray-300 mx-3"></div>{TEAM_MEMBERS.filter(m => m.id !== c.authorId).map(member => { const isAttributed = c.attributedTo.includes(member.id); return (<button key={member.id} onClick={() => toggleAttribution(c.id, member.id)} disabled={!isCurrentUserAuthor} className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm transition-all duration-200 mx-1  ${isAttributed ? member.avatarColor +' ring-2 ring-offset-1 ring-green-500' : 'bg-gray-400 hover:bg-gray-500'} ${!isCurrentUserAuthor ? 'cursor-not-allowed' : ''}`} title={isCurrentUserAuthor ? `Attribute to ${member.name}`: ''}>{member.initials}</button>); })}</div><div className="flex items-center"><button onClick={() => setShowValuedModal(c.id)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Tag as Valued"><svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg></button>{isCurrentUserAuthor && isOfflineWork && (<><button onClick={() => setEditingContribution(c)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Edit External Work"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg></button><button onClick={() => setShowConfirmDelete(c.id)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Delete External Work"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button></>)}</div></div></div>); })}</div></div>
+                    <div className="mt-6 text-center">
+                        <button onClick={() => setShowOfflineModal(true)} className="bg-indigo-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-indigo-600 transition-colors">+ Add External Work</button>
+                    </div>
+                    <div className="mt-8 text-center"><button onClick={handleDone} className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors">Done</button></div>
+                    {showValuedModal !== null && <ValuedContributionModal contributionId={showValuedModal} onCancel={() => setShowValuedModal(null)} />}
+                    {showOfflineModal && <AddOfflineWorkModal onSubmit={handleAddOfflineWork} onCancel={() => setShowOfflineModal(false)} />}
+                    {editingContribution && <AddOfflineWorkModal existingWork={editingContribution} onSubmit={handleEditOfflineWork} onCancel={() => setEditingContribution(null)} />}
+                    {showConfirmDelete !== null && <ConfirmationModal message="Are you sure you want to delete this external contribution?" onConfirm={() => handleDeleteOfflineWork(showConfirmDelete)} onCancel={() => setShowConfirmDelete(null)} />}
+                </div>
+            );
+        };
 
 // --- Modal Components ---
 
@@ -254,8 +324,25 @@ const ReflectionsPage = ({ setCurrentPage, setStepsCompletion }) => {
              <button onClick={() => setCurrentPage('dashboard')} className="text-blue-600 hover:underline mb-6">&larr; Back to Dashboard</button>
             <h1 className="text-2xl font-bold text-gray-800">Step 3: Team Reflection</h1>
             <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
-                <p className="text-sm">Based on the <strong> annotated contribution history from Step 2 </strong>, we've generated visual summaries for the following teamwork behaviors. These behaviors were identified as important by both instructors and students in prior research [citation].</p>
-            </div>
+                <p className="text-sm">
+                From the <strong>annotated contribution history</strong> you completed in Step 2, we’ve 
+                generated visual summaries that capture important teamwork behaviors. These behaviors 
+                were chosen because both instructors and students, in past research [citation], recognized them as 
+                critical for successful collaboration. They include:
+            </p>
+
+            <ul className="mt-2 list-disc list-inside text-sm space-y-2 mt-2">
+                <li><strong>Equitable contribution</strong> – ensuring work is shared fairly among team members</li>
+                <li><strong>Timeliness</strong> – completing tasks on schedule to keep the team on track</li>
+                <li><strong>Mutual support</strong> – helping and encouraging one another throughout the process</li>
+                <li><strong>Valued contributions</strong> – recognizing and building upon meaningful input from teammates</li>
+            </ul>
+
+            <p className="text-sm mt-3">
+            For each behavior, we recommend viewing the <strong>gold standard</strong> — 
+            <em>"Why is [behavior] important?" </em> - which provides explanations and examples of what strong teamwork looks like in practice. 
+  </p>
+        </div>
             <div className="mt-4 border-b border-gray-200">
                 <nav className="-mb-px flex space-x-4 md:space-x-8 overflow-x-auto" aria-label="Tabs">
                     {tabs.map(tab => (
@@ -321,7 +408,7 @@ const PieChart = ({ data, toolName }) => {
                 </svg>
                 {hoveredMember && <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-2 bg-gray-800 text-white text-xs rounded shadow-lg"><p className="font-bold">{hoveredMember.name}</p><p>{hoveredMember.value} contribution(s)</p></div>}
             </div>
-            <div className="mt-4 space-y-1 text-xs w-full">{data.map(m => (<div key={m.id} className="flex items-center"><div className={`w-3 h-3 rounded-sm ${m.avatarColor}`}></div><span className="ml-2 text-gray-700">{m.name} ({m.percentage.toFixed(1)}%)</span></div>))}</div>
+            <div className="mt-4 space-y-1 text-xs w-full">{data.map(m => (<div key={m.id} className="flex items-center"><div className={`w-3 h-3 rounded-sm ${m.avatarColor}`}></div><span className="ml-2 text-gray-700">{m.name} </span></div>))}</div>
         </div>
     );
 };
@@ -373,7 +460,7 @@ const EquitableContributionPanel = ({ setShowGoldStandard }) => {
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-xl font-semibold text-gray-800">Equitable Contribution</h3>
-                    <p className="mt-2 text-gray-600">The pie charts below show the distribution of contributions. For GitHub, one unit is a commit. For Google Docs, one unit is an edit. For External Work, one unit is one hour.</p>
+                    <p className="mt-2 text-gray-600">The pie charts below illustrate how contributions were distributed across tools. A single unit corresponds to a commit in GitHub, an edit in Google Docs, and one hour of work for External Work.</p>
                     <button onClick={() => setShowGoldStandard('equity')} className="text-sm text-blue-600 hover:underline mt-1">Why is equitable contribution important?</button>
                 </div>
             </div>
@@ -382,7 +469,7 @@ const EquitableContributionPanel = ({ setShowGoldStandard }) => {
             </div>
             <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
-                <p className="text-sm text-gray-600 mb-2">Looking at the contribution balance across different tools, what patterns do you see? Does the team have specialists for certain types of work? Does this distribution feel fair and effective?</p>
+                <p className="text-sm text-gray-600 mb-2">Looking back at your team’s work, do you feel that contributions were shared fairly among members? Were there moments when some members carried more of the load, or when others had fewer chances to contribute? What strategies could your team use in the future to ensure contributions are more balanced?</p>
                 <WordCountTextArea />
             </div>
         </div>
@@ -415,7 +502,7 @@ const TimelinessPanel = ({ setShowGoldStandard }) => {
              <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-xl font-semibold text-gray-800">Timeliness</h3>
-                    <p className="mt-2 text-gray-600">This chart visualizes when contributions were made by each team member over the project timeline. Each shape represents a type of work, colored by the author.</p>
+                    <p className="mt-2 text-gray-600">This chart visualizes when each team member made contributions throughout the project timeline. Each shape represents the type of work and is colored to indicate the contributor, helping you see patterns of participation over time.</p>
                      <button onClick={() => setShowGoldStandard('timeliness')} className="text-sm text-blue-600 hover:underline mt-1">Why is timeliness important?</button>
                 </div>
             </div>
@@ -461,7 +548,7 @@ const TimelinessPanel = ({ setShowGoldStandard }) => {
             {hoveredContribution && <div className="mt-2 p-2 bg-gray-100 rounded text-sm"><strong>{TEAM_MEMBERS.find(m => m.id === hoveredContribution.authorId).name} - {hoveredContribution.date}:</strong> [{hoveredContribution.tool}] {hoveredContribution.description}</div>}
             <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
-                <p className="text-sm text-gray-600 mb-2">What patterns do you notice in each person's work rhythm? Was work front-loaded, back-loaded, or steady? How did the timing of different types of work (e.g., coding vs. writing) affect the team?</p>
+                <p className="text-sm text-gray-600 mb-2">How well did you and your team manage deadlines and complete tasks on time? Were there any patterns of last-minute work or early completion? How did this affect the team’s progress and collaboration?</p>
                 <WordCountTextArea />
             </div>
         </div>
@@ -477,7 +564,7 @@ const SupportPanel = ({ setShowGoldStandard }) => {
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-xl font-semibold text-gray-800">Mutual Support</h3>
-                    <p className="mt-2 text-gray-600">This heatmap shows the flow of support, based on interactions like code reviews and comments. The color intensity of a cell indicates the number of supportive interactions from one member (row) to another (column).</p>
+                    <p className="mt-2 text-gray-600">This heatmap visualizes the flow of support within the team. Each row represents the member giving support, and each column represents the member receiving it. The color intensity of a cell indicates the number of supportive interactions—such as code reviews, comments, or feedback—between the two members.</p>
                     <button onClick={() => setShowGoldStandard('support')} className="text-sm text-blue-600 hover:underline mt-1">Why is mutual support important?</button>
                 </div>
             </div>
@@ -507,7 +594,7 @@ const SupportPanel = ({ setShowGoldStandard }) => {
             </div>
             <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
-                <p className="text-sm text-gray-600 mb-2">Are there any notable patterns in how support is given and received? Is the support reciprocal? Are there any team members who might need more support?</p>
+                <p className="text-sm text-gray-600 mb-2">What patterns do you notice in how support is given and received? Is the support reciprocal among team members? Are there individuals who might benefit from more support?</p>
                 <WordCountTextArea />
             </div>
         </div>
@@ -522,7 +609,7 @@ const ValuedContributionsPanel = ({ setShowGoldStandard }) => {
             <div className="flex justify-between items-start mb-4">
                 <div>
                     <h3 className="text-xl font-semibold text-gray-800">Valued Contributions</h3>
-                    <p className="mt-2 text-gray-600">This list shows all contributions that were bookmarked as 'Valued' by teammates. This helps surface high-impact work that the team collectively appreciated.</p>
+                    <p className="mt-2 text-gray-600">This list displays contributions that teammates have bookmarked as ‘Valued.’ It highlights high-impact work that the team collectively recognized and appreciated.</p>
                     <button onClick={() => setShowGoldStandard('valued')} className="text-sm text-blue-600 hover:underline mt-1">Why are valued contributions important?</button>
                 </div>
             </div>
@@ -547,7 +634,7 @@ const ValuedContributionsPanel = ({ setShowGoldStandard }) => {
             </div>
             <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
-                <p className="text-sm text-gray-600 mb-2">What kinds of work does the team seem to value most? Are there any surprises here? How can the team ensure that all types of important work are recognized?</p>
+                <p className="text-sm text-gray-600 mb-2">Which contributions were most frequently recognized as valuable by your teammates, and why do you think they had such an impact? How can the team ensure that every meaningful contribution gets recognized?</p>
                 <WordCountTextArea />
             </div>
         </div>
