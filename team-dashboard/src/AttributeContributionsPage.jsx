@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 const AttributeContributionsPage = () => {
   const location = useLocation();
-  const teamId = location.state?.teamId || "default_team_id"; // Replace with actual team ID retrieval logic
+  const navigate = useNavigate();
+  const teamId = location.state?.teamId || "teamdashboard"; // Replace with actual team ID retrieval logic
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -55,6 +57,15 @@ const AttributeContributionsPage = () => {
           ))}
         </div>
       )}
+      {/* Navigation Button to Reflections Page */}
+      <div style={styles.buttonContainer}>
+        <button
+          onClick={() => navigate("/teamio/reflections", { state: { teamId } })}
+          style={styles.button}
+        >
+          Go to Reflections
+        </button>
+      </div>
     </div>
   );
 };
@@ -112,6 +123,19 @@ const styles = {
   timestamp: {
     fontSize: "0.9rem",
     color: "#777",
+  },
+  buttonContainer: {
+    marginTop: "2rem",
+    textAlign: "center",
+  },
+  button: {
+    padding: "0.75rem 1.5rem",
+    backgroundColor: "#28a745",
+    color: "#fff",
+    border: "none",
+    borderRadius: "6px",
+    fontSize: "1rem",
+    cursor: "pointer",
   },
 };
 
