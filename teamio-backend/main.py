@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, Query
 import firebase_admin
 from firebase_admin import credentials, db
 from fastapi.middleware.cors import CORSMiddleware
@@ -48,15 +48,75 @@ async def fetch_github_data(request: Request):
 # Summary: Fetch contributions for a team as a list, sorted by timestamp descending.
 # Request body example: {"team_id": "your_team_id"}
 # Returns: List of contribution objects, sorted by timestamp descending.
+# @app.get("/api/contributions/all")
+# async def get_contributions(request: Request):
+#     body = await request.json()
+#     team_id = body.get('team_id', None)
+#     if not team_id:
+#         return {"error": "team_id is required"}
+
+#     ref = db.reference(f'contributions/{team_id}')
+#     contributions = list(ref.get().values()) or []
+#     contributions.sort(key=lambda x: x['timestamp'], reverse=True)
+
+#     return contributions
+
+# @app.get("/api/contributions/all")
+# async def get_contributions(team_id: str = Query(..., description="Team ID")):
+#     if not team_id:
+#         return {"error": "team_id is required"}
+
+#     ref = db.reference(f'contributions/{team_id}')
+#     data = ref.get()
+
+#     if not data:
+#         return {"contributions": []}
+
+#     contributions = list(data.values())
+#     contributions.sort(key=lambda x: x['timestamp'], reverse=True)
+
+#     return {"contributions": contributions}
+
+from fastapi.responses import JSONResponse
+
 @app.get("/api/contributions/all")
-async def get_contributions(request: Request):
-    body = await request.json()
-    team_id = body.get('team_id', None)
-    if not team_id:
-        return {"error": "team_id is required"}
+async def get_contributions(team_id: str = Query(...)):
+    try:
+        ref = db.reference(f'contributions/{team_id}')
+        raw_data = ref.get()
+        contributions = list(raw_data.values()) if raw_data else []
+        contributions.sort(key=lambda x: x['timestamp'], reverse=True)
+        return JSONResponse(content=contributions)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+    
+@app.get("/api/reflections/commits")
+async def get_commit_summary(team_id: str = Query(...)):
+ 
+    contrib_ref = db.reference(f"contributions/{team_id}")
+    contributions = contrib_ref.get() or {}
+    summary = {}
+    timeline_map = {}
 
-    ref = db.reference(f'contributions/{team_id}')
-    contributions = list(ref.get().values()) or []
-    contributions.sort(key=lambda x: x['timestamp'], reverse=True)
+    for contrib_id, contrib_data in contributions.items():
+        author = contrib_data.get("author", "unknown")
+        # print(author)
+        # Check if this contribution has a matching commit
+        commit_ref = db.reference(f"log_data/github/commit/{contrib_id}")
+        commit_data = commit_ref.get()
+        # print(commit_data)
 
-    return contributions
+        if commit_data:
+            summary[author] = summary.get(author, 0) + 1
+
+            timestamp = commit_data.get("timestamp")
+            if timestamp:
+                if author not in timeline_map:
+                    timeline_map[author] = []
+                timeline_map[author].append(timestamp)
+    timeline = [
+        {"author": author, "timestamps": timestamps}
+        for author, timestamps in timeline_map.items()
+    ]
+    print(timeline)
+    return JSONResponse(content={"summary": summary, "timeline": timeline})
