@@ -1,0 +1,33 @@
+{
+  "name": "docs-scrape",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+
+ "scripts": {
+  "dev": "vite",                
+  "build": "vite build && npm run copy",
+  "copy": "cpy \"manifest.json\" \"background.js\" \"content.js\" \"get_token.js\" \"bridge.js\" \"icons/**\" dist --cwd=public --parents",
+  "preview": "vite preview --port 5173",
+  "serve:dist": "npx serve -s dist -l 5173"
+}
+
+,
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.54.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.1.3",
+    "@types/react": "^19.1.10",
+    "@types/react-dom": "^19.1.7",
+    "@vitejs/plugin-react": "^4.3.1",
+    "cpy-cli": "^5.0.0",
+    "typescript": "^5.9.2",
+    "vite": "^5.4.2"
+  }
+}
