@@ -41,6 +41,10 @@ def get_commit_stats(commit_sha):
         }
     return {'additions': 0, 'deletions': 0}
 
+def sanitize_key(key):
+    """Sanitize a string to make it a valid Firebase path key."""
+    return key.replace('.', '_').replace('$', '_').replace('#', '_').replace('[', '_').replace(']', '_')
+
 def collect_commit_data():
     commit_data = []
     print("Running", GITHUB_REPO)
@@ -59,7 +63,7 @@ def collect_commit_data():
             stats = get_commit_stats(commit_sha)
             file_names = stats.get('files', [])
             commit_data.append({
-                'login': author,
+                'login': sanitize_key(author),
                 'sha': commit_sha,
                 'url': url,
                 'timestamp': timestamp,
@@ -91,7 +95,7 @@ def collect_pr_data():
         merge_commit_sha = pr.get('merge_commit_sha', '')
         state = pr.get('state', '')
         pr_data.append({
-            'login': login,
+            'login': sanitize_key(login),
             'pr_number': number,
             'url': url,
             'diff_url': diff_url,

@@ -2,37 +2,64 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
 
 const LinkToolsPage = () => {
-  const [repoOwner, setRepoOwner] = useState("");
-  const [repoName, setRepoName] = useState("");
+  const [googleDocsData, setGoogleDocsData] = useState(null); // State to store JSON data
+  const [googleDocsFileName, setGoogleDocsFileName] = useState(""); // State to store file name
+  const [repoURL, setRepoURL] = useState("");
   const [teamId, setTeamId] = useState("");
   const [loading, setLoading] = useState(false);
   const [responseMessage, setResponseMessage] = useState("");
 
   const navigate = useNavigate();
 
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setGoogleDocsFileName(file.name); // Save file name to state
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const parsedData = JSON.parse(event.target.result);
+          setGoogleDocsData(parsedData); // Save JSON data to state
+          console.log("Uploaded JSON Data:", parsedData);
+        } catch (error) {
+          setResponseMessage("Error: Invalid JSON file");
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     // Add your logic here to handle the inputs (e.g., API call)
+    // Extract owner and repo name from the URL
+    const match = repoURL.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    if (!match) {
+        setResponseMessage("Error: Invalid GitHub URL");
+        setLoading(false);
+        return;
+    }
+    const repoOwner = match[1];
+    const repoName = match[2];
+
     try {
-        const response = await fetch('http://localhost:3000/api/github/post', {
+        const response = await fetch(
+          `http://localhost:3000/api/github/post?team_id=${teamId}&owner=${repoOwner}&repo_name=${repoName}`,
+          {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
+              'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                team_id: teamId,
-                repo_owner: repoOwner,
-                repo_name: repoName,
-            }),
-        });
+          }
+        );
 
         if (response.ok) {
             const data = await response.json();
             setResponseMessage("Success: " + JSON.stringify(data));
 
-            navigate("/teamio/attribution", { state: { teamId: teamId } });
+            navigate("/teamio/mapping", { state: { teamId: teamId } });
         } else {
             const errorData = await response.json();
             setResponseMessage("Error: " + JSON.stringify(errorData));
@@ -46,7 +73,7 @@ const LinkToolsPage = () => {
 
   return (
     <div style={styles.container}>
-      <h1 style={styles.heading}>Link GitHub Repository</h1>
+      <h1 style={styles.heading}>Link Collaboration Tools</h1>
       <form onSubmit={handleSubmit} style={styles.form}>
         <div style={styles.inputGroup}>
             <label htmlFor="teamId" style={styles.label}>
@@ -63,33 +90,42 @@ const LinkToolsPage = () => {
             />
         </div>
         <div style={styles.inputGroup}>
-          <label htmlFor="repoOwner" style={styles.label}>
-            Repository Owner:
+          <label htmlFor="repoURL" style={styles.label}>
+            GitHub Repository URL:
           </label>
           <input
             type="text"
-            id="repoOwner"
-            value={repoOwner}
-            onChange={(e) => setRepoOwner(e.target.value)}
-            placeholder="Enter repository owner"
+            id="repoURL"
+            value={repoURL}
+            onChange={(e) => setRepoURL(e.target.value)}
+            placeholder="Enter repository url"
             style={styles.input}
             required
           />
         </div>
+
         <div style={styles.inputGroup}>
-          <label htmlFor="repoName" style={styles.label}>
-            Repository Name:
+          <label htmlFor="jsonFile" style={styles.label}>
+            Google Docs JSON:
           </label>
+          {/* Hidden file input */}
           <input
-            type="text"
-            id="repoName"
-            value={repoName}
-            onChange={(e) => setRepoName(e.target.value)}
-            placeholder="Enter repository name"
-            style={styles.input}
-            required
+            type="file"
+            id="jsonFile"
+            accept="application/json"
+            onChange={(e) => handleFileUpload(e)}
+            style={styles.hiddenInput} // Hide the default file input
           />
+          {/* Custom button to trigger file input */}
+          <button
+            type="button"
+            onClick={() => document.getElementById("jsonFile").click()} // Trigger file input click
+            style={styles.customButton}
+          >
+            {googleDocsData ? googleDocsFileName : "Upload File"}
+          </button>
         </div>
+
         <button type="submit" style={styles.button} disabled={loading}>
           {loading ? "Submitting..." : "Submit"}
         </button>
@@ -149,6 +185,20 @@ const styles = {
     borderRadius: "4px",
     fontSize: "1rem",
     cursor: "pointer",
+  },
+  hiddenInput: {
+    display: "none", // Completely hide the default file input
+  },
+  customButton: {
+    width: "100%",
+    padding: "0.75rem",
+    backgroundColor: "lightgray",
+    color: "#fff",
+    border: "none",
+    borderRadius: "4px",
+    fontSize: "1rem",
+    cursor: "pointer",
+    textAlign: "center",
   },
 };
 
