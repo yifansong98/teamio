@@ -4,6 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LinkToolsPage from "./LinkToolsPage";
 import AttributeContributionsPage from "./AttributeContributionsPage"; 
 import ReflectionsPage from "./ReflectionsPage";
+import './index.css';
 
 const root = ReactDOM.createRoot(document.getElementById("root")); // Use createRoot
 root.render(
