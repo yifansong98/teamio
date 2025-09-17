@@ -49,7 +49,7 @@ const AttributeContributionsPage = () => {
           {contributions.map((contribution, index) => (
             <div key={index} style={styles.contributionCard}>
               <h2 style={styles.title}>{contribution.title}</h2>
-              <p style={styles.author}>By: {contribution.author}</p>
+              <p style={styles.author}>By: {contribution.net_id}</p>
               <p style={styles.timestamp}>
                 {new Date(contribution.timestamp).toLocaleString()}
               </p>
