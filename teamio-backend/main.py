@@ -2,6 +2,13 @@ from fastapi import FastAPI, Request, Response
 import firebase_admin
 from firebase_admin import credentials, db
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+from pydantic import BaseModel
+import uuid
+import os
+from typing import Dict, Any, List
+from firebase_admin import db
+import json
 
 app = FastAPI()
 app.add_middleware(
@@ -60,3 +67,34 @@ async def get_contributions(request: Request):
     contributions.sort(key=lambda x: x['timestamp'], reverse=True)
 
     return contributions
+
+
+    
+
+
+from scripts.post_docs_data import post_docs_to_db
+from pydantic import BaseModel
+from fastapi import UploadFile, File, Form, HTTPException
+import json
+
+class DocsIngestBody(BaseModel):
+    team_id: str
+    doc: dict
+
+@app.post("/api/google_docs/post")
+async def post_google_docs_json(body: DocsIngestBody):
+    try:
+        post_docs_to_db(body.doc, body.team_id)
+        return {"message": "Google Docs data posted"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/google_docs/upload")
+async def upload_google_docs_file(team_id: str = Form(...), file: UploadFile = File(...)):
+    try:
+        raw = await file.read()
+        doc_json = json.loads(raw.decode("utf-8"))
+        post_docs_to_db(doc_json, team_id)
+        return {"message": "Google Docs data posted (file upload)"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid upload: {e}")
