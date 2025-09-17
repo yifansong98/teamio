@@ -7,7 +7,7 @@ def _uuid5(key: str) -> str:
     # content-derived stable id (idempotent)
     return str(uuid.uuid5(uuid.NAMESPACE_URL, key))
 
-def _author_to_email(author: str | None) -> str:
+def _author_to_email(author: str) -> str:
     """
     Your docs JSON may give 'author' as an email or a name.
     If it's not an email, you can map it later; for now keep as-is.

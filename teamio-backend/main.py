@@ -9,6 +9,7 @@ import os
 from typing import Dict, Any, List
 from firebase_admin import db
 import json
+from collections import defaultdict
 
 app = FastAPI()
 app.add_middleware(
@@ -28,61 +29,16 @@ firebase_admin.initialize_app(cred, {
 # Request body example: {"owner": "octocat", "repo_name": "Hello-World", "team_id": "your_team_id"}
 # Returns: Success message or error.
 @app.post("/api/github/post")
-async def fetch_github_data(request: Request):
-    body = await request.json()
-    owner = body.get('repo_owner', None)
-    repo_name = body.get('repo_name', None)
-    team_id = body.get('team_id', None)
+async def fetch_github_data(team_id: str = Query(...), owner: str = Query(...), repo_name: str = Query(...)):
+    try:
+        from scripts.fetch_github_data import fetch_data
+        from env import GITHUB_TOKEN
+        commit_data, pr_data = fetch_data(owner, repo_name, GITHUB_TOKEN)
 
-    if not owner or not repo_name:
-        return {"error": "repo_owner and repo_name are required"}
-
-    if not team_id:
-        return {"error": "team_id is required"}
-
-    if not owner or not repo_name:
-        return {"error": "owner and repo_name are required"}
-
-    from scripts.fetch_github_data import fetch_data
-    from env import GITHUB_TOKEN
-    commit_data, pr_data = fetch_data(owner, repo_name, GITHUB_TOKEN)
-    
-    from scripts.post_github_data import post_to_db
-    post_to_db(commit_data, pr_data, team_id)
-
-    return {"message": "Data successfully posted to Firebase"}
-
-# Summary: Fetch contributions for a team as a list, sorted by timestamp descending.
-# Request body example: {"team_id": "your_team_id"}
-# Returns: List of contribution objects, sorted by timestamp descending.
-# @app.get("/api/contributions/all")
-# async def get_contributions(request: Request):
-#     body = await request.json()
-#     team_id = body.get('team_id', None)
-#     if not team_id:
-#         return {"error": "team_id is required"}
-
-#     ref = db.reference(f'contributions/{team_id}')
-#     contributions = list(ref.get().values()) or []
-#     contributions.sort(key=lambda x: x['timestamp'], reverse=True)
-
-#     return contributions
-
-# @app.get("/api/contributions/all")
-# async def get_contributions(team_id: str = Query(..., description="Team ID")):
-#     if not team_id:
-#         return {"error": "team_id is required"}
-
-#     ref = db.reference(f'contributions/{team_id}')
-#     data = ref.get()
-
-#     if not data:
-#         return {"contributions": []}
-
-#     contributions = list(data.values())
-#     contributions.sort(key=lambda x: x['timestamp'], reverse=True)
-
-#     return {"contributions": contributions}
+        from scripts.post_github_data import post_to_db
+        post_to_db(commit_data, pr_data, team_id)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
 
 from fastapi.responses import JSONResponse
 
@@ -106,7 +62,7 @@ async def get_commit_summary(team_id: str = Query(...)):
     timeline_map = {}
 
     for contrib_id, contrib_data in contributions.items():
-        author = contrib_data.get("author", "unknown")
+        author = contrib_data.get("net_id", "unknown")
         # print(author)
         # Check if this contribution has a matching commit
         commit_ref = db.reference(f"log_data/github/commit/{contrib_id}")
@@ -128,16 +84,7 @@ async def get_commit_summary(team_id: str = Query(...)):
     print(timeline)
     return JSONResponse(content={"summary": summary, "timeline": timeline})
 
-
-
-    
-
-
 from scripts.post_docs_data import post_docs_to_db
-from pydantic import BaseModel
-from fastapi import UploadFile, File, Form, HTTPException
-import json
-
 class DocsIngestBody(BaseModel):
     team_id: str
     doc: dict
@@ -159,3 +106,75 @@ async def upload_google_docs_file(team_id: str = Form(...), file: UploadFile = F
         return {"message": "Google Docs data posted (file upload)"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid upload: {e}")
+
+@app.get("/api/teams/logins")
+async def get_team_logins(team_id: str = Query(...)):
+    try:
+        ref = db.reference(f'teams/{team_id}/logins')
+        logins_data = ref.get() or {}
+        logins = list(logins_data.keys())
+        return JSONResponse(content=logins)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/api/teams/map-logins")
+async def map_logins_to_net_ids(team_id: str = Query(...), Request: Request = None):
+    try:
+        data = await Request.json()
+        mappings = data["mappings"]
+        ref = db.reference(f'teams/{team_id}/logins')
+        net_ids_to_logins = defaultdict(list)
+        for login, net_id in mappings.items():
+            net_ids_to_logins[net_id].append(login)
+            ref.child(login).set({"net_id": net_id, "login": login})
+
+        students_ref = db.reference('students')
+        for net_id, new_logins in net_ids_to_logins.items():
+            student_ref = students_ref.child(net_id)
+            student_data = student_ref.get() or {
+                "net_id": net_id,
+                "team_id": team_id,
+                "contributions": [],
+                "logins": [],
+            }
+
+            # Append new logins to the existing logins
+            existing_logins = student_data.get("logins", [])
+            updated_logins = list(set(existing_logins + new_logins))  # Ensure no duplicates
+            student_data["logins"] = updated_logins
+            student_data["team_id"] = team_id  # Ensure team_id is updated
+
+            # Save the updated student data
+            student_ref.set(student_data)
+
+        net_ids_to_contributions = defaultdict(list)
+        contrib_ref = db.reference(f'contributions/{team_id}')
+        contributions = contrib_ref.get() or {}
+        for contrib_id, contrib_data in contributions.items():
+            author = contrib_data.get("author")
+            if author in mappings:
+                net_id = mappings[author]
+                net_ids_to_contributions[net_id].append(contrib_id)
+                contrib_data["net_id"] = net_id
+                contrib_ref.child(contrib_id).set(contrib_data)
+        
+        for net_id, new_contributions in net_ids_to_contributions.items():
+            student_ref = students_ref.child(net_id)
+            student_data = student_ref.get() or {
+                "net_id": net_id,
+                "team_id": team_id,
+                "contributions": [],
+                "logins": [],
+            }
+
+            # Append new contributions to the existing contributions
+            existing_contributions = student_data.get("contributions", [])
+            updated_contributions = list(set(existing_contributions + new_contributions))  # Ensure no duplicates
+            student_data["contributions"] = updated_contributions
+            student_data["team_id"] = team_id  # Ensure team_id is updated
+
+            # Save the updated student data
+            student_ref.set(student_data)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

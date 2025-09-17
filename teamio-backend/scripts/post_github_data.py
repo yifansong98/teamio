@@ -84,37 +84,31 @@ def post_to_log_data(github_data, metric):
         ref.set(contribution)
     print(f"Posted {len(github_data)} {metric}(s) to log_data/github/{metric}.")
 
-def post_to_students(github_data):
+def post_to_teams(github_data):
+    if not TEAM_ID:
+        raise ValueError("TEAM_ID is not set. Please provide a valid team ID.")
 
-    # Needs to be updated to use a mapping of GitHub logins to student info
-    team_members = set()
-    for contribution in github_data:
-        email = contribution['login']
-        net_id = email.split('@')[0]
-        team_members.add(net_id)
-        ref = db.reference(f'students/{net_id}')
-        student_data = ref.get() or {
-            'net_id': net_id,
-            'email': email,
-            'first_name': 'John',
-            'last_name': 'Doe',
-            'team_id': TEAM_ID,
-            'contributions': []
-        }
-        if contribution['contribution_id'] not in student_data['contributions']:
-            student_data['contributions'].append(contribution['contribution_id'])
-        ref.set(student_data)
-    print(f"Updated student records for {len(github_data)} contributions.")
+    team_logins = set(contribution['login'] for contribution in github_data)
 
     ref = db.reference(f'teams/{TEAM_ID}')
-    team_data = ref.get() or {'team_id': TEAM_ID, 'members': []}
-    team_data['team_id'] = TEAM_ID
-    ref.set(team_data)
+    if not ref.get():
+        ref.set({'team_id': TEAM_ID, 'logins': []})
 
-    ref = db.reference(f'teams/{TEAM_ID}/members')
-    existing_members = ref.get() or []
-    updated_members = list(set(existing_members) | team_members)
-    ref.set(updated_members)
+    ref = db.reference(f'teams/{TEAM_ID}/logins')
+    existing_logins = ref.get() or []
+
+    updates = {}
+    for login in team_logins:
+        sanitized_login = login  
+        if sanitized_login not in existing_logins:
+            updates[sanitized_login] = {
+                'login': login,  # Save the original login value
+                'net_id': login,  # Placeholder until we have a mapping
+            }
+
+    if updates:
+        ref.update(updates)
+
     print(f"Updated team {TEAM_ID} members.")
 
 def post_to_db(commit_data, pr_data, team_id=None):
@@ -124,11 +118,11 @@ def post_to_db(commit_data, pr_data, team_id=None):
     clean_commit_data = process_commit_data(commit_data)
     post_to_contributions(clean_commit_data, 'commit')
     post_to_log_data(clean_commit_data, 'commit')
-    post_to_students(clean_commit_data)
+    post_to_teams(clean_commit_data)
     print("Successfully posted commit data to the database.")
 
     clean_pr_data = process_pr_data(pr_data)
     post_to_contributions(clean_pr_data, 'pull_request')
     post_to_log_data(clean_pr_data, 'pull_request')
-    post_to_students(clean_pr_data)
+    post_to_teams(clean_pr_data)
     print("Successfully posted pull request data to the database.")
