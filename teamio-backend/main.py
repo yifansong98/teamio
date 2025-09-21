@@ -33,6 +33,7 @@ async def fetch_github_data(team_id: str = Query(...), owner: str = Query(...), 
     try:
         from scripts.fetch_github_data import fetch_data
         from env import GITHUB_TOKEN
+
         commit_data, pr_data = fetch_data(owner, repo_name, GITHUB_TOKEN)
 
         from scripts.post_github_data import post_to_db
@@ -92,6 +93,8 @@ class DocsIngestBody(BaseModel):
 @app.post("/api/google_docs/post")
 async def post_google_docs_json(body: DocsIngestBody):
     try:
+        print("Posting Google Docs data for team:", body.team_id)
+        print(body.doc)
         post_docs_to_db(body.doc, body.team_id)
         return {"message": "Google Docs data posted"}
     except Exception as e:
