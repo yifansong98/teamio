@@ -20,6 +20,10 @@ def _email_to_net_id(email: str) -> str:
     # Same convention as your GitHub path (email -> net_id)
     return (email.split("@")[0] if "@" in email else email).strip().lower()
 
+def sanitize_key(key):
+    """Sanitize a string to make it a valid Firebase path key."""
+    return key.replace('.', '_').replace('$', '_').replace('#', '_').replace('[', '_').replace(']', '_')
+
 def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     file = doc.get("file", {})
     file_id = file.get("id", "unknown_file")
@@ -37,7 +41,7 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         cid = _uuid5(f"{file_id}:rev:{ts}:{idx}:{typ}:{title[:64]}")
         out.append({
             "contribution_id": cid,
-            "login": author_email,                   # keep same key as GitHub path expects
+            "login": sanitize_key(author_email),                   # keep same key as GitHub path expects
             "timestamp": ts,
             "tool": "google_docs",
             "metric": "revision",
@@ -70,7 +74,7 @@ def process_docs_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
 
         out.append({
             "contribution_id": cid,
-            "login": author_email,                   # align with GitHub pipeline
+            "login": sanitize_key(author_email),                   # align with GitHub pipeline
             "timestamp": created,
             "tool": "google_docs",
             "metric": "comment",
@@ -107,37 +111,64 @@ def post_to_log_data_docs(contributions: List[Dict[str, Any]]):
         ref.set(c)  # store full record (includes 'raw')
     print(f"Posted {len(contributions)} item(s) to log_data/google_docs/*.")
 
-def post_to_students_and_team(contributions: List[Dict[str, Any]], team_id: str):
+# def post_to_students_and_team(contributions: List[Dict[str, Any]], team_id: str):
+#     # upsert students + team membership
+#     members = set()
+#     for c in contributions:
+#         email = c["login"]
+#         net_id = _email_to_net_id(email)
+#         members.add(net_id)
+
+#         sref = db.reference(f"students/{net_id}")
+#         student = sref.get() or {
+#             "net_id": net_id,
+#             "email": email,
+#             "first_name": "John",
+#             "last_name": "Doe",
+#             "team_id": team_id,
+#             "contributions": [],
+#         }
+#         if c["contribution_id"] not in student.get("contributions", []):
+#             student["contributions"].append(c["contribution_id"])
+#         student["team_id"] = team_id  # ensure latest
+#         sref.set(student)
+
+#     tref = db.reference(f"teams/{team_id}")
+#     team_data = tref.get() or {"team_id": team_id, "members": []}
+#     team_data["team_id"] = team_id
+#     tref.set(team_data)
+
+#     mref = db.reference(f"teams/{team_id}/members")
+#     existing = mref.get() or []
+#     updated = list(set(existing) | members)
+#     mref.set(updated)
+
+def post_to_teams(contributions: List[Dict[str, Any]], team_id: str):
     # upsert students + team membership
-    members = set()
-    for c in contributions:
-        email = c["login"]
-        net_id = _email_to_net_id(email)
-        members.add(net_id)
+    team_logins = set(contribution['login'] for contribution in contributions)
 
-        sref = db.reference(f"students/{net_id}")
-        student = sref.get() or {
-            "net_id": net_id,
-            "email": email,
-            "first_name": "John",
-            "last_name": "Doe",
-            "team_id": team_id,
-            "contributions": [],
-        }
-        if c["contribution_id"] not in student.get("contributions", []):
-            student["contributions"].append(c["contribution_id"])
-        student["team_id"] = team_id  # ensure latest
-        sref.set(student)
+    ref = db.reference(f'teams/{team_id}')
+    if not ref.get():
+        ref.set({'team_id': team_id, 'logins': []})
 
-    tref = db.reference(f"teams/{team_id}")
-    team_data = tref.get() or {"team_id": team_id, "members": []}
-    team_data["team_id"] = team_id
-    tref.set(team_data)
+    ref = db.reference(f'teams/{team_id}/logins')
+    existing_logins = ref.get() or []
 
-    mref = db.reference(f"teams/{team_id}/members")
-    existing = mref.get() or []
-    updated = list(set(existing) | members)
-    mref.set(updated)
+    updates = {}
+    for login in team_logins:
+        sanitized_login = login
+        if sanitized_login not in existing_logins:
+            updates[sanitized_login] = {
+                'login': login,
+                'net_id': login,
+            }
+    
+    if updates:
+        ref.update(updates)
+    
+    print(f"Updated team {team_id} members.")
+
+
 def post_docs_to_db(doc_json: Dict[str, Any], team_id: str):
     # build contributions
     revs = process_docs_revisions(doc_json)
@@ -152,7 +183,8 @@ def post_docs_to_db(doc_json: Dict[str, Any], team_id: str):
     post_to_log_data_docs(cmts)
 
     # update students + team
-    post_to_students_and_team(revs + cmts, team_id)
+    # post_to_students_and_team(revs + cmts, team_id)
+    post_to_teams(contributions=revs + cmts, team_id=team_id)
 
     print("Successfully posted Google Docs data to Firebase.")
 
