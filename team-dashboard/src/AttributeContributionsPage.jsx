@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 const AttributeContributionsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const teamId = location.state?.teamId || "teamdashboard"; // Replace with actual team ID retrieval logic
+  const teamId = location.state?.teamId; // Replace with actual team ID retrieval logic
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -27,7 +27,7 @@ const AttributeContributionsPage = () => {
         setLoading(false);
       }
     };
-
+    
     fetchContributions();
   }, []);
 

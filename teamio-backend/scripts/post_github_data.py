@@ -5,6 +5,10 @@ import uuid
 TEAM_ID = None
 FIREBASE_SERVICE_CREDENTIALS = None
 
+def _uuid5(key: str) -> str:
+    # content-derived stable id (idempotent)
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, key))
+
 def process_commit_data(commit_data):
     processed_data = []
     sha_set = set()
@@ -13,7 +17,7 @@ def process_commit_data(commit_data):
         sha = commit['sha']
         if sha not in sha_set:
             sha_set.add(sha)
-            commit['contribution_id'] = str(uuid.uuid4())
+            commit['contribution_id'] = _uuid5(sha)
             processed_data.append(commit)
         else:
             dupe_count += 1
@@ -44,7 +48,7 @@ def process_pr_data(pr_data):
         pr_number = pr['pr_number']
         if pr_number not in pr_number_set:
             pr_number_set.add(pr_number)
-            pr['contribution_id'] = str(uuid.uuid4())
+            pr['contribution_id'] = _uuid5(f"pr-{pr_number}")
             processed_data.append(pr)
         else:
             dupe_count += 1

@@ -58,12 +58,34 @@ const LinkToolsPage = () => {
         if (response.ok) {
             const data = await response.json();
             setResponseMessage("Success: " + JSON.stringify(data));
-
-            navigate("/teamio/mapping", { state: { teamId: teamId } });
         } else {
             const errorData = await response.json();
             setResponseMessage("Error: " + JSON.stringify(errorData));
         }
+
+        const googleDocsResponse = await fetch(
+          `http://localhost:3000/api/google_docs/post`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({"team_id": teamId, "doc": googleDocsData}),
+          }
+        );
+
+        if (googleDocsResponse.ok) {
+            const data = await googleDocsResponse.json();
+            setResponseMessage("Success: " + JSON.stringify(data));
+        } else {
+            const errorData = await googleDocsResponse.json();
+            setResponseMessage("Error: " + JSON.stringify(errorData));
+        }
+
+        if (response.ok && googleDocsResponse.ok) {
+            navigate("/teamio/mapping", { state: { teamId: teamId } });
+        }
+
     } catch (error) {
         setResponseMessage("Error: " + error.message);
     } finally {
