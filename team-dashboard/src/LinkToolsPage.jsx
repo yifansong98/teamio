@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom"; 
 
 const LinkToolsPage = () => {
-  const [googleDocsData, setGoogleDocsData] = useState(null); // State to store JSON data
-  const [googleDocsFileName, setGoogleDocsFileName] = useState(""); // State to store file name
+  const [googleDocsData, setGoogleDocsData] = useState(null); 
+  const [googleDocsFileName, setGoogleDocsFileName] = useState(""); 
   const [repoURL, setRepoURL] = useState("");
   const [teamId, setTeamId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -14,12 +14,12 @@ const LinkToolsPage = () => {
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setGoogleDocsFileName(file.name); // Save file name to state
+      setGoogleDocsFileName(file.name); 
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
           const parsedData = JSON.parse(event.target.result);
-          setGoogleDocsData(parsedData); // Save JSON data to state
+          setGoogleDocsData(parsedData); 
           console.log("Uploaded JSON Data:", parsedData);
         } catch (error) {
           setResponseMessage("Error: Invalid JSON file");
