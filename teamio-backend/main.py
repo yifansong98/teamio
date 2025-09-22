@@ -85,6 +85,33 @@ async def get_commit_summary(team_id: str = Query(...)):
     print(timeline)
     return JSONResponse(content={"summary": summary, "timeline": timeline})
 
+@app.get("/api/reflections/revisions")
+async def get_revisions_history(team_id: str = Query(...)):
+ 
+    contrib_ref = db.reference(f"contributions/{team_id}")
+    contributions = contrib_ref.get() or {}
+    summary = {}
+    timeline_map = {}
+
+    for contrib_id, contrib_data in contributions.items():
+        author = contrib_data.get("net_id", "unknown")
+        revision_ref = db.reference(f"log_data/google_docs/revision/{contrib_id}")
+        revision_data = revision_ref.get()
+
+        if revision_data:
+            summary[author] = summary.get(author, 0) + 1
+
+            timestamp = revision_data.get("timestamp")
+            if timestamp:
+                if author not in timeline_map:
+                    timeline_map[author] = []
+                timeline_map[author].append(timestamp)
+    timeline = [
+        {"author": author, "timestamps": timestamps}
+        for author, timestamps in timeline_map.items()
+    ]
+    return JSONResponse(content={"summary": summary, "timeline": timeline})
+
 from scripts.post_docs_data import post_docs_to_db
 class DocsIngestBody(BaseModel):
     team_id: str
