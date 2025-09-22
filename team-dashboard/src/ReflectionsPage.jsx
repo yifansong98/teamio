@@ -84,36 +84,68 @@ const ReflectionsPage = () => {
 
   const [commitData, setCommitData] = useState({});
   const [timelineData, setTimelineData] = useState([]);
+  const [revisionData, setRevisionData] = useState({});
+  const [timelineGDocData, setTimelineGDocData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("equitable");
 
   useEffect(() => {
-    const fetchCommitSummary = async () => {
-      try {
-        const response = await fetch(
-          `http://localhost:3000/api/reflections/commits?team_id=${teamId}`
-        );
-        const data = await response.json();
-        console.log("API response:", data);
-        if (response.ok) {
-          setCommitData(data.summary);
-          setTimelineData(Array.isArray(data.timeline) ? data.timeline : []);
-        } else {
-          setError(data.error || "Failed to fetch data");
-        }
-      } catch (err) {
-        setError("Error fetching commit summary");
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchData = async () => {
+    try {
+      const [commitRes, revisionRes] = await Promise.all([
+        fetch(`http://localhost:3000/api/reflections/commits?team_id=${teamId}`),
+        fetch(`http://localhost:3000/api/reflections/revisions?team_id=${teamId}`)
+      ]);
 
-    fetchCommitSummary();
-  }, [teamId]);
+      const commitData = await commitRes.json();
+      const revisionData = await revisionRes.json();
+
+      if (commitRes.ok) {
+        setCommitData(commitData.summary);
+        setTimelineData(Array.isArray(commitData.timeline) ? commitData.timeline : []);
+      } else {
+        setError(commitData.error || "Failed to fetch commit data");
+      }
+
+      if (revisionRes.ok) {
+        setRevisionData(revisionData.summary);
+        setTimelineGDocData(Array.isArray(revisionData.timeline) ? revisionData.timeline : []);
+      } else {
+        setError(revisionData.error || "Failed to fetch revision data");
+      }
+    } catch (err) {
+      setError("Error fetching reflection data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [teamId]);
 
   const hasPieData = Object.keys(commitData).length > 0;
   const hasTimelineData =  Array.isArray(timelineData) && timelineData.length > 0;
+  const hasGDocPieData = Object.keys(revisionData).length > 0;
+  const hasGDocTimelineData =  Array.isArray(timelineGDocData) && timelineGDocData.length > 0;
+
+  const colors = [
+  "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0",
+  "#9966FF", "#FF9F40", "#8E44AD", "#2ECC71",
+  "#E67E22", "#1ABC9C", "#C0392B", "#34495E"
+  ];
+
+    const allNetIds = Array.from(
+      new Set([
+        ...Object.keys(commitData || {}),
+        ...Object.keys(revisionData || {}),
+      ])
+    );
+
+    const userColors = {};
+    allNetIds.forEach((net_id, idx) => {
+      userColors[net_id] = colors[idx % colors.length];
+    });
 
   const pieChartData = {
     labels: Object.keys(commitData),
@@ -121,30 +153,78 @@ const ReflectionsPage = () => {
       {
         label: "Commits",
         data: Object.values(commitData),
-        backgroundColor: [
-          "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40",
-        ],
+        backgroundColor: Object.keys(commitData).map(
+        (id) => userColors[id]
+      ),
         borderWidth: 1,
       },
     ],
   };
-    const colors = [
-    "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF", "#FF9F40",
-    "#8E44AD", "#2ECC71", "#E67E22", "#1ABC9C", "#C0392B", "#34495E"
-    ];
+
+  const pieGDocChartData = {
+    labels: Object.keys(revisionData),
+    datasets: [
+      {
+        label: "Revisions",
+        data: Object.values(revisionData),
+        backgroundColor:Object.keys(revisionData).map(
+        (id) => userColors[id]
+      ),
+        borderWidth: 1,
+      },
+    ],
+  };
+
   const scatterChartData = {
-  datasets: timelineData.map((entry, idx) => ({
-    label: entry.author,
-    data: entry.timestamps.map((ts) => ({
-      x: new Date(ts),
-      y: entry.author,
+  datasets: [
+    // GitHub commits
+    ...timelineData.map((entry) => ({
+      label: entry.author, // just the author
+      data: entry.timestamps.map((ts) => ({
+        x: new Date(ts),
+        y: entry.author,
+      })),
+      backgroundColor: userColors[entry.author] || "#999999",
+      pointRadius: 6,
+      pointStyle: "circle", // shape for GitHub
     })),
-    backgroundColor: colors[idx % colors.length], 
-    pointRadius: 6,
-  })),
+
+    // Google Docs revisions
+    ...timelineGDocData.map((entry) => ({
+      label: entry.author, // same author name
+      data: entry.timestamps.map((ts) => ({
+        x: new Date(ts),
+        y: entry.author,
+      })),
+      backgroundColor: userColors[entry.author] || "#999999",
+      pointRadius: 6,
+      pointStyle: "triangle", // shape for Google Docs
+    })),
+  ],
 };
 
 const scatterOptions = {
+  maintainAspectRatio: false,
+  
+  plugins: {
+    legend: {
+      onClick: () => null,
+      labels: {
+        generateLabels: (chart) => {
+          const datasets = chart.data.datasets;
+          const uniqueAuthors = [...new Set(datasets.map(ds => ds.label))];
+
+          return uniqueAuthors.map((author) => ({
+            text: author,
+            fillStyle: userColors[author] || "#999999", // author color
+            strokeStyle: userColors[author] || "#999999",
+            hidden: false,
+            datasetIndex: datasets.findIndex(ds => ds.label === author),
+          }));
+        },
+      },
+    },
+  },
   scales: {
     x: {
       type: "time",
@@ -237,26 +317,68 @@ return (
               onCancel={() => setShowGoldStandard(null)}
             />
           )}
-          <div className="p-6 bg-white rounded-lg shadow-md flex justify-center">
+          <div className="p-6 bg-white rounded-lg shadow-md">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Commits Pie */}
+        <div className="w-full h-[400px] flex flex-col items-center">
+          <h2 className="text-lg font-semibold text-gray-700 mb-4">
+            GitHub
+          </h2>
+          <div className="w-full h-full">
             {hasPieData ? (
-              <div className="w-full h-[400px]">
               <Pie
                 data={pieChartData}
-                options={{ maintainAspectRatio: false, responsive: true, plugins: {
-                legend: {
-                  position: "bottom",   
-                  align: "start",      
-                  labels: {
-                    boxWidth: 20,
-                    padding: 15,
+                options={{
+                  maintainAspectRatio: false,
+                  responsive: true,
+                  plugins: {
+                    legend: {
+                      position: "bottom",
+                      align: "start",
+                      labels: {
+                        boxWidth: 20,
+                        padding: 15,
+                      },
+                    },
                   },
-                },
-              },}}
+                }}
               />
-              </div>
             ) : (
-              <p className="text-gray-500">No commit data available.</p>
+              <p className="text-gray-500 text-center">No commit data available.</p>
             )}
+          </div>
+        </div>
+
+              {/* Revisions Pie */}
+              <div className="w-full h-[400px] flex flex-col items-center">
+                <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                  Google Docs
+                </h2>
+                <div className="w-full h-full">
+                  {hasGDocPieData ? (
+                    <Pie
+                      data={pieGDocChartData}
+                      options={{
+                        maintainAspectRatio: false,
+                        responsive: true,
+                        plugins: {
+                          legend: {
+                            position: "bottom",
+                            align: "start",
+                            labels: {
+                              boxWidth: 20,
+                              padding: 15,
+                            },
+                          },
+                        },
+                      }}
+                    />
+                  ) : (
+                    <p className="text-gray-500 text-center">No revision data available.</p>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
           <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -290,7 +412,7 @@ return (
               onCancel={() => setShowGoldStandard(null)}
             />
           )}
-            <div className="p-6 bg-white rounded-lg shadow-md flex justify-center">
+            <div className="p-6 bg-white rounded-lg shadow-md flex flex-col items-center">
             {hasTimelineData ? (
               <div className="w-full h-[400px]">
               <Scatter
@@ -301,7 +423,18 @@ return (
             ) : (
               <p className="text-gray-500">No timeline data available.</p>
             )}
+             <div className="flex space-x-6 mb-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 rounded-full bg-gray-500"></div>
+                <span className="text-sm">GitHub</span>
+              </div>
+              <div className="flex items-center space-x-2">
+  <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[12px] border-l-transparent border-r-transparent border-b-gray-500"></div>
+                <span className="text-sm">Google Docs</span>
+              </div>
             </div>
+            </div>
+            
             <div className="mt-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
                 <p className="text-sm text-gray-600 mb-2">How well did you and your team manage deadlines and complete tasks on time? Were there any patterns of last-minute work or early completion? How did this affect the team’s progress and collaboration?</p>
