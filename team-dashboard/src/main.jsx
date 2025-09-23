@@ -1,10 +1,20 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import App from './App.jsx'
+import React from "react";
+import ReactDOM from "react-dom/client"; // Import from "react-dom/client"
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import LinkToolsPage from "./LinkToolsPage";
+import MappingLoginsPage from "./MappingLoginsPage";
+import AttributeContributionsPage from "./AttributeContributionsPage"; 
+import ReflectionsPage from "./ReflectionsPage";
+import './index.css';
 
-createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
-)
+const root = ReactDOM.createRoot(document.getElementById("root")); // Use createRoot
+root.render(
+  <BrowserRouter>
+    <Routes>
+      <Route path="/teamio" element={<LinkToolsPage />} />
+      <Route path="/teamio/mapping" element={<MappingLoginsPage />} />
+      <Route path="/teamio/attribution" element={<AttributeContributionsPage />} />
+      <Route path="/teamio/reflections" element={<ReflectionsPage />} />
+    </Routes>
+  </BrowserRouter>
+);
