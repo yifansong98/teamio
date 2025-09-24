@@ -5,3 +5,6 @@ __pycache__/
 .env.*
 *.log
 .DS_StoreTEAMIO_FIREBASE_SERVICE_CREDENTIALS.json
+TEAMIO_FIREBASE_SERVICE_CREDENTIALS.json
+.env
+.env
