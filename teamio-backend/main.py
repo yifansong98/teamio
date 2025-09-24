@@ -9,6 +9,16 @@ import os
 from typing import Dict, Any, List
 from firebase_admin import db
 import json
+from dotenv import load_dotenv
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
+
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")  # <-- read once
+if not GITHUB_TOKEN:
+    # Fail early with a clear message instead of a stack trace later
+    raise RuntimeError("GITHUB_TOKEN is not set. Create teamio-backend/.env with GITHUB_TOKEN=...")
+
 
 app = FastAPI()
 app.add_middleware(
@@ -44,7 +54,6 @@ async def fetch_github_data(request: Request):
         return {"error": "owner and repo_name are required"}
 
     from scripts.fetch_github_data import fetch_data
-    from env import GITHUB_TOKEN
     commit_data, pr_data = fetch_data(owner, repo_name, GITHUB_TOKEN)
     
     from scripts.post_github_data import post_to_db
@@ -55,18 +64,16 @@ async def fetch_github_data(request: Request):
 # Summary: Fetch contributions for a team as a list, sorted by timestamp descending.
 # Request body example: {"team_id": "your_team_id"}
 # Returns: List of contribution objects, sorted by timestamp descending.
+
+# replace your current GET handler
 @app.get("/api/contributions/all")
-async def get_contributions(request: Request):
-    body = await request.json()
-    team_id = body.get('team_id', None)
-    if not team_id:
-        return {"error": "team_id is required"}
-
+async def get_contributions(team_id: str):
     ref = db.reference(f'contributions/{team_id}')
-    contributions = list(ref.get().values()) or []
-    contributions.sort(key=lambda x: x['timestamp'], reverse=True)
-
+    raw = ref.get() or {}
+    contributions = list(raw.values()) if isinstance(raw, dict) else []
+    contributions.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
     return contributions
+
 
 
     
@@ -98,3 +105,19 @@ async def upload_google_docs_file(team_id: str = Form(...), file: UploadFile = F
         return {"message": "Google Docs data posted (file upload)"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Invalid upload: {e}")
+
+# Summary: Fetch detailed log_data record by tool/metric/contribution_id.
+# Query params example: ?tool=google_docs&metric=revision&contribution_id=UUID
+# Returns: Full log_data object or 404 if not found.
+@app.get("/api/log_data")
+async def get_log_data(tool: str, metric: str, contribution_id: str):
+    try:
+        ref = db.reference(f'log_data/{tool}/{metric}/{contribution_id}')
+        data = ref.get()
+        if not data:
+            raise HTTPException(status_code=404, detail="Log data not found")
+        return data
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
