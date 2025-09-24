@@ -62,7 +62,7 @@ const MappingLoginsPage = () => {
 
       if (response.ok) {
         setResponseMessage("Mappings successfully saved!");
-        navigate("/teamio/attribution", { state: { teamId: teamId } }); // Navigate to a success page or another route
+        navigate("/teamio/annotation", { state: { teamId: teamId } }); // Navigate to a success page or another route
       } else {
         const errorData = await response.json();
         setResponseMessage("Error: " + JSON.stringify(errorData));
