@@ -70,6 +70,8 @@ const AttributeContributionsPage = () => {
   const [teamMembers, setTeamMembers] = useState({});
   const [userColors, setUserColor] = useState({});
   const [contributions, setContributions] = useState([]);
+  const [commitData, setCommitData] = useState(null);
+  const [revisionData, setRevisionData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -108,7 +110,36 @@ const AttributeContributionsPage = () => {
       }
     };
 
+    const preloadReflectionData = async () => {
+      try {
+        const [commitRes, revisionRes] = await Promise.all([
+          fetch(
+            `http://localhost:3000/api/reflections/commits?team_id=${teamId}`
+          ),
+          fetch(
+            `http://localhost:3000/api/reflections/revisions?team_id=${teamId}`
+          ),
+        ]);
+
+        const commitData = await commitRes.json();
+        const revisionData = await revisionRes.json();
+
+        if (!commitRes.ok) {
+          throw new Error(commitData.error || "Failed to fetch commit data");
+        }
+        if (!revisionRes.ok) {
+          throw new Error(revisionData.error || "Failed to fetch revision data");
+        }
+
+        setCommitData(commitData);
+        setRevisionData(revisionData);
+      } catch (err) {
+        console.error("Error preloading reflection data:", err.message);
+      }
+    };
+
     fetchContributions();
+    preloadReflectionData();
   }, []);
 
   // const toggleAttribution = (contributionId, memberId) => { setContributions(contributions.map(c => { if (c.id === contributionId && c.authorId === CURRENT_USER_ID) { const isAttributed = c.attributedTo.includes(memberId); const newAttributedTo = isAttributed ? c.attributedTo.filter(id => id !== memberId) : [...c.attributedTo, memberId]; return { ...c, attributedTo: newAttributedTo }; } return c; })); };
@@ -258,7 +289,7 @@ const AttributeContributionsPage = () => {
    {/* Navigation Button to Reflections Page */}
       <div className="flex justify-center mt-4">
   <button
-    onClick={() => navigate("/teamio/reflections", { state: { teamId } })}
+    onClick={() => navigate("/teamio/reflections", { state: { teamId, commitData, revisionData } })}
     className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
   >
     Go to Reflections

@@ -10,6 +10,8 @@ from typing import Dict, Any, List
 from firebase_admin import db
 import json
 from collections import defaultdict
+import asyncio
+from fastapi.concurrency import run_in_threadpool
 
 app = FastAPI()
 app.add_middleware(
@@ -29,15 +31,15 @@ firebase_admin.initialize_app(cred, {
 # Request body example: {"owner": "octocat", "repo_name": "Hello-World", "team_id": "your_team_id"}
 # Returns: Success message or error.
 @app.post("/api/github/post")
-async def fetch_github_data(team_id: str = Query(...), owner: str = Query(...), repo_name: str = Query(...)):
+async def fetch_github_data(team_id: str = Query(...), owner: str = Query(...), repo_name: str = Query(...), main_branch_only: bool = Query(False), merged_prs_only: bool = Query(False)):
     try:
         from scripts.fetch_github_data import fetch_data
         from env import GITHUB_TOKEN
 
-        commit_data, pr_data = fetch_data(owner, repo_name, GITHUB_TOKEN)
+        commit_data, pr_data = await run_in_threadpool(fetch_data, owner, repo_name, main_branch_only, merged_prs_only, GITHUB_TOKEN)
 
         from scripts.post_github_data import post_to_db
-        post_to_db(commit_data, pr_data, team_id)
+        await run_in_threadpool(post_to_db, commit_data, pr_data, team_id)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
@@ -53,24 +55,32 @@ async def get_contributions(team_id: str = Query(...)):
         return JSONResponse(content=contributions)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
-    
+
 @app.get("/api/reflections/commits")
 async def get_commit_summary(team_id: str = Query(...)):
- 
-    contrib_ref = db.reference(f"contributions/{team_id}")
-    contributions = contrib_ref.get() or {}
+    # 1. Make the first blocking call to get all contributions
+    contrib_ref = await run_in_threadpool(db.reference, f"contributions/{team_id}")
+    contributions = await run_in_threadpool(contrib_ref.get) or {}
+
+    # 2. Prepare a list of asynchronous tasks, one for each commit lookup
+    tasks = []
+    for contrib_id in contributions.keys():
+        # Create a coroutine for each database call but DON'T run it yet
+        task = run_in_threadpool(db.reference(f"log_data/github/commit/{contrib_id}").get)
+        tasks.append(task)
+
+    # 3. Execute all the tasks concurrently!
+    # This is like giving the librarian the full list of books.
+    commit_results = await asyncio.gather(*tasks)
+
+    # 4. Now process the results, which are all in memory
     summary = {}
     timeline_map = {}
-
-    for contrib_id, contrib_data in contributions.items():
-        author = contrib_data.get("net_id", "unknown")
-        # print(author)
-        # Check if this contribution has a matching commit
-        commit_ref = db.reference(f"log_data/github/commit/{contrib_id}")
-        commit_data = commit_ref.get()
-        # print(commit_data)
-
+    
+    # We iterate through the original contributions and the results together
+    for contrib_data, commit_data in zip(contributions.values(), commit_results):
         if commit_data:
+            author = contrib_data.get("net_id", "unknown")
             summary[author] = summary.get(author, 0) + 1
 
             timestamp = commit_data.get("timestamp")
@@ -78,27 +88,36 @@ async def get_commit_summary(team_id: str = Query(...)):
                 if author not in timeline_map:
                     timeline_map[author] = []
                 timeline_map[author].append(timestamp)
+
     timeline = [
         {"author": author, "timestamps": timestamps}
         for author, timestamps in timeline_map.items()
     ]
-    print(timeline)
+    
     return JSONResponse(content={"summary": summary, "timeline": timeline})
 
 @app.get("/api/reflections/revisions")
 async def get_revisions_history(team_id: str = Query(...)):
- 
-    contrib_ref = db.reference(f"contributions/{team_id}")
-    contributions = contrib_ref.get() or {}
+    # 1. Make the first blocking call
+    contrib_ref = await run_in_threadpool(db.reference, f"contributions/{team_id}")
+    contributions = await run_in_threadpool(contrib_ref.get) or {}
+
+    # 2. Prepare a list of asynchronous tasks
+    tasks = []
+    for contrib_id in contributions.keys():
+        task = run_in_threadpool(db.reference(f"log_data/google_docs/revision/{contrib_id}").get)
+        tasks.append(task)
+
+    # 3. Execute all tasks concurrently
+    revision_results = await asyncio.gather(*tasks)
+
+    # 4. Process the results
     summary = {}
     timeline_map = {}
 
-    for contrib_id, contrib_data in contributions.items():
-        author = contrib_data.get("net_id", "unknown")
-        revision_ref = db.reference(f"log_data/google_docs/revision/{contrib_id}")
-        revision_data = revision_ref.get()
-
+    for contrib_data, revision_data in zip(contributions.values(), revision_results):
         if revision_data:
+            author = contrib_data.get("net_id", "unknown")
             summary[author] = summary.get(author, 0) + 1
 
             timestamp = revision_data.get("timestamp")
@@ -106,10 +125,12 @@ async def get_revisions_history(team_id: str = Query(...)):
                 if author not in timeline_map:
                     timeline_map[author] = []
                 timeline_map[author].append(timestamp)
+    
     timeline = [
         {"author": author, "timestamps": timestamps}
         for author, timestamps in timeline_map.items()
     ]
+    
     return JSONResponse(content={"summary": summary, "timeline": timeline})
 
 from scripts.post_docs_data import post_docs_to_db
@@ -121,8 +142,7 @@ class DocsIngestBody(BaseModel):
 async def post_google_docs_json(body: DocsIngestBody):
     try:
         print("Posting Google Docs data for team:", body.team_id)
-        print(body.doc)
-        post_docs_to_db(body.doc, body.team_id)
+        await run_in_threadpool(post_docs_to_db, body.doc, body.team_id)
         return {"message": "Google Docs data posted"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -151,60 +171,94 @@ async def get_team_logins(team_id: str = Query(...)):
 async def map_logins_to_net_ids(team_id: str = Query(...), Request: Request = None):
     try:
         data = await Request.json()
-        mappings = data["mappings"]
-        ref = db.reference(f'teams/{team_id}/logins')
+        mappings = data.get("mappings", {})
+        if not mappings:
+            return {"message": "No mappings provided."}
+
+        # --- Stage 1: Prepare all data updates in memory ---
+
+        # Prepare payloads for batch updates
+        team_logins_update = {}
+        contributions_update = {}
         net_ids_to_logins = defaultdict(list)
-        for login, net_id in mappings.items():
-            net_ids_to_logins[net_id].append(login)
-            ref.child(login).set({"net_id": net_id, "login": login})
-
-        students_ref = db.reference('students')
-        for net_id, new_logins in net_ids_to_logins.items():
-            student_ref = students_ref.child(net_id)
-            student_data = student_ref.get() or {
-                "net_id": net_id,
-                "team_id": team_id,
-                "contributions": [],
-                "logins": [],
-            }
-
-            # Append new logins to the existing logins
-            existing_logins = student_data.get("logins", [])
-            updated_logins = list(set(existing_logins + new_logins))  # Ensure no duplicates
-            student_data["logins"] = updated_logins
-            student_data["team_id"] = team_id  # Ensure team_id is updated
-
-            # Save the updated student data
-            student_ref.set(student_data)
-
         net_ids_to_contributions = defaultdict(list)
+
+        for login, net_id in mappings.items():
+            # Prepare the update for the team's login list
+            team_logins_update[login] = {"net_id": net_id, "login": login}
+            net_ids_to_logins[net_id].append(login)
+
+        # Fetch all contributions once
         contrib_ref = db.reference(f'contributions/{team_id}')
-        contributions = contrib_ref.get() or {}
+        contributions = await run_in_threadpool(contrib_ref.get) or {}
+        
         for contrib_id, contrib_data in contributions.items():
             author = contrib_data.get("author")
             if author in mappings:
                 net_id = mappings[author]
-                net_ids_to_contributions[net_id].append(contrib_id)
                 contrib_data["net_id"] = net_id
-                contrib_ref.child(contrib_id).set(contrib_data)
+                # Prepare the update for this specific contribution
+                contributions_update[contrib_id] = contrib_data
+                net_ids_to_contributions[net_id].append(contrib_id)
         
-        for net_id, new_contributions in net_ids_to_contributions.items():
-            student_ref = students_ref.child(net_id)
-            student_data = student_ref.get() or {
+        # --- Stage 2: Batch-update team logins and contributions ---
+        
+        update_tasks = []
+        if team_logins_update:
+            team_ref = db.reference(f'teams/{team_id}/logins')
+            update_tasks.append(run_in_threadpool(team_ref.update, team_logins_update))
+        
+        if contributions_update:
+            update_tasks.append(run_in_threadpool(contrib_ref.update, contributions_update))
+        
+        # Run these two major updates concurrently
+        if update_tasks:
+            await asyncio.gather(*update_tasks)
+
+        # --- Stage 3: Fetch all required student data in parallel ---
+
+        students_ref = db.reference('students')
+        all_net_ids_to_update = set(net_ids_to_logins.keys()) | set(net_ids_to_contributions.keys())
+        
+        if not all_net_ids_to_update:
+            return {"message": "Mappings processed, no student data to update."}
+
+        # Create a parallel fetch task for each unique student
+        fetch_tasks = [run_in_threadpool(students_ref.child(net_id).get) for net_id in all_net_ids_to_update]
+        existing_student_data_list = await asyncio.gather(*fetch_tasks)
+
+        # --- Stage 4: Consolidate updates and perform a single batch write for students ---
+
+        students_update_payload = {}
+        for net_id, existing_data in zip(all_net_ids_to_update, existing_student_data_list):
+            student_data = existing_data or {
                 "net_id": net_id,
                 "team_id": team_id,
                 "contributions": [],
                 "logins": [],
             }
+            
+            # Consolidate logins
+            new_logins = net_ids_to_logins.get(net_id, [])
+            existing_logins = student_data.get("logins", [])
+            student_data["logins"] = list(set(existing_logins + new_logins))
 
-            # Append new contributions to the existing contributions
+            # Consolidate contributions
+            new_contributions = net_ids_to_contributions.get(net_id, [])
             existing_contributions = student_data.get("contributions", [])
-            updated_contributions = list(set(existing_contributions + new_contributions))  # Ensure no duplicates
-            student_data["contributions"] = updated_contributions
-            student_data["team_id"] = team_id  # Ensure team_id is updated
+            student_data["contributions"] = list(set(existing_contributions + new_contributions))
 
-            # Save the updated student data
-            student_ref.set(student_data)
+            student_data["team_id"] = team_id # Ensure team ID is set/updated
+
+            students_update_payload[net_id] = student_data
+
+        # Perform the final, single batch update for all students
+        if students_update_payload:
+            await run_in_threadpool(students_ref.update, students_update_payload)
+            
+        return {"message": "Logins mapped and all related data updated successfully."}
 
     except Exception as e:
+        # It's good practice to log the exception here
+        # import traceback; traceback.print_exc();
         raise HTTPException(status_code=500, detail=str(e))
