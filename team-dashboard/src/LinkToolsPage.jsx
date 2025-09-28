@@ -1,26 +1,27 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 
 const LinkToolsPage = () => {
-  const [googleDocsData, setGoogleDocsData] = useState(null); 
-  const [googleDocsFileName, setGoogleDocsFileName] = useState(""); 
+  const [googleDocsData, setGoogleDocsData] = useState(null);
+  const [googleDocsFileName, setGoogleDocsFileName] = useState("");
   const [repoURL, setRepoURL] = useState("");
   const [teamId, setTeamId] = useState("");
   const [loading, setLoading] = useState(false);
   const [responseMessage, setResponseMessage] = useState("");
+  const [onlyMainBranch, setOnlyMainBranch] = useState(false);
+  const [onlyMergedPRs, setOnlyMergedPRs] = useState(false);
 
   const navigate = useNavigate();
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setGoogleDocsFileName(file.name); 
+      setGoogleDocsFileName(file.name);
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
           const parsedData = JSON.parse(event.target.result);
-          setGoogleDocsData(parsedData); 
-          console.log("Uploaded JSON Data:", parsedData);
+          setGoogleDocsData(parsedData);
         } catch (error) {
           setResponseMessage("Error: Invalid JSON file");
         }
@@ -33,195 +34,194 @@ const LinkToolsPage = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Add your logic here to handle the inputs (e.g., API call)
     // Extract owner and repo name from the URL
     const match = repoURL.match(/github\.com\/([^\/]+)\/([^\/]+)/);
     if (!match) {
-        setResponseMessage("Error: Invalid GitHub URL");
-        setLoading(false);
-        return;
+      setResponseMessage("Error: Invalid GitHub URL");
+      setLoading(false);
+      return;
     }
     const repoOwner = match[1];
     const repoName = match[2];
 
     try {
-        const response = await fetch(
-          `http://localhost:3000/api/github/post?team_id=${teamId}&owner=${repoOwner}&repo_name=${repoName}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
-
-        if (response.ok) {
-            const data = await response.json();
-            setResponseMessage("Success: " + JSON.stringify(data));
-        } else {
-            const errorData = await response.json();
-            setResponseMessage("Error: " + JSON.stringify(errorData));
+      // Create the fetch requests
+      const githubRequest = fetch(
+        `http://localhost:3000/api/github/post?team_id=${teamId}&owner=${repoOwner}&repo_name=${repoName}&main_branch_only=${onlyMainBranch}&merged_prs_only=${onlyMergedPRs}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
+      );
 
-        const googleDocsResponse = await fetch(
-          `http://localhost:3000/api/google_docs/post`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({"team_id": teamId, "doc": googleDocsData}),
-          }
-        );
-
-        if (googleDocsResponse.ok) {
-            const data = await googleDocsResponse.json();
-            setResponseMessage("Success: " + JSON.stringify(data));
-        } else {
-            const errorData = await googleDocsResponse.json();
-            setResponseMessage("Error: " + JSON.stringify(errorData));
+      const googleDocsRequest = fetch(
+        `http://localhost:3000/api/google_docs/post`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ team_id: teamId, doc: googleDocsData }),
         }
+      );
 
-        if (response.ok && googleDocsResponse.ok) {
-            navigate("/teamio/mapping", { state: { teamId: teamId } });
-        }
+      // Execute both requests in parallel
+      const [githubResponse, googleDocsResponse] = await Promise.all([
+        githubRequest,
+        googleDocsRequest,
+      ]);
 
+      // Handle GitHub response
+      if (githubResponse.ok) {
+        const data = await githubResponse.json();
+        setResponseMessage((prev) => prev + "GitHub: " + JSON.stringify(data) + "\n");
+      } else {
+        const errorData = await githubResponse.json();
+        setResponseMessage((prev) => prev + "GitHub Error: " + JSON.stringify(errorData) + "\n");
+      }
+
+      // Handle Google Docs response
+      if (googleDocsResponse.ok) {
+        const data = await googleDocsResponse.json();
+        setResponseMessage((prev) => prev + "Google Docs: " + JSON.stringify(data) + "\n");
+      } else {
+        const errorData = await googleDocsResponse.json();
+        setResponseMessage((prev) => prev + "Google Docs Error: " + JSON.stringify(errorData) + "\n");
+      }
+
+      // Navigate to the next page if both requests succeed
+      if (githubResponse.ok && googleDocsResponse.ok) {
+        navigate("/teamio/mapping", { state: { teamId: teamId } });
+      }
     } catch (error) {
-        setResponseMessage("Error: " + error.message);
+      setResponseMessage("Error: " + error.message);
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.heading}>Link Collaboration Tools</h1>
-      <form onSubmit={handleSubmit} style={styles.form}>
-        <div style={styles.inputGroup}>
-            <label htmlFor="teamId" style={styles.label}>
-                Team ID:
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+      <button
+        onClick={() => navigate("/teamio/dashboard")}
+        className="text-blue-600 hover:underline mb-6"
+      >
+        &larr; Back to Dashboard
+      </button>
+
+      <h1 className="text-2xl font-bold text-gray-800">Step 1: Link Collaboration Tools</h1>
+
+      <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
+        <p className="text-sm">
+          Link your GitHub repository and upload your Google Docs JSON file to
+          extract contributions. You can also specify additional options for
+          filtering GitHub data.
+        </p>
+      </div>
+
+      {responseMessage && (
+        <div
+          className={`mt-4 p-4 rounded-lg ${
+            responseMessage.startsWith("Error") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+          }`}
+        >
+          {responseMessage}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="mt-6 bg-white p-6 rounded-lg shadow-md">
+        <div className="space-y-4">
+          <div>
+            <label htmlFor="teamId" className="block text-sm font-medium text-gray-700">
+              Team ID
             </label>
             <input
-                type="text"
-                id="teamId"
-                value={teamId}
-                onChange={(e) => setTeamId(e.target.value)}
-                placeholder="Enter team ID"
-                style={styles.input}
-                required
+              type="text"
+              id="teamId"
+              value={teamId}
+              onChange={(e) => setTeamId(e.target.value)}
+              placeholder="Enter team ID"
+              className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
+              required
             />
-        </div>
-        <div style={styles.inputGroup}>
-          <label htmlFor="repoURL" style={styles.label}>
-            GitHub Repository URL:
-          </label>
-          <input
-            type="text"
-            id="repoURL"
-            value={repoURL}
-            onChange={(e) => setRepoURL(e.target.value)}
-            placeholder="Enter repository url"
-            style={styles.input}
-            required
-          />
+          </div>
+
+          <div>
+            <label htmlFor="repoURL" className="block text-sm font-medium text-gray-700">
+              GitHub Repository URL
+            </label>
+            <input
+              type="text"
+              id="repoURL"
+              value={repoURL}
+              onChange={(e) => setRepoURL(e.target.value)}
+              placeholder="Enter repository URL"
+              className="mt-1 w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="jsonFile" className="block text-sm font-medium text-gray-700">
+              Google Docs JSON
+            </label>
+            <div className="flex items-center space-x-4">
+              <input
+                type="file"
+                id="jsonFile"
+                accept="application/json"
+                onChange={(e) => handleFileUpload(e)}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => document.getElementById("jsonFile").click()}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
+              >
+                {googleDocsData ? googleDocsFileName : "Upload File"}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">GitHub Options</label>
+            <div className="flex items-center space-x-4 mt-2">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={onlyMainBranch}
+                  onChange={(e) => setOnlyMainBranch(e.target.checked)}
+                  className="h-4 w-4 text-blue-500 border-gray-300 rounded focus:ring-blue-200"
+                />
+                <span className="text-sm text-gray-700">Only pull commit data from the main branch</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={onlyMergedPRs}
+                  onChange={(e) => setOnlyMergedPRs(e.target.checked)}
+                  className="h-4 w-4 text-blue-500 border-gray-300 rounded focus:ring-blue-200"
+                />
+                <span className="text-sm text-gray-700">Only pull data from merged PRs</span>
+              </label>
+            </div>
+          </div>
         </div>
 
-        <div style={styles.inputGroup}>
-          <label htmlFor="jsonFile" style={styles.label}>
-            Google Docs JSON:
-          </label>
-          {/* Hidden file input */}
-          <input
-            type="file"
-            id="jsonFile"
-            accept="application/json"
-            onChange={(e) => handleFileUpload(e)}
-            style={styles.hiddenInput} // Hide the default file input
-          />
-          {/* Custom button to trigger file input */}
+        <div className="mt-6 text-center">
           <button
-            type="button"
-            onClick={() => document.getElementById("jsonFile").click()} // Trigger file input click
-            style={styles.customButton}
+            type="submit"
+            className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+            disabled={loading}
           >
-            {googleDocsData ? googleDocsFileName : "Upload File"}
+            {loading ? "Submitting..." : "Submit"}
           </button>
         </div>
-
-        <button type="submit" style={styles.button} disabled={loading}>
-          {loading ? "Submitting..." : "Submit"}
-        </button>
       </form>
-      {responseMessage && (
-        <div style={styles.responseMessage}>{responseMessage}</div>
-      )}
     </div>
   );
-};
-
-const styles = {
-  container: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "100vh",
-    backgroundColor: "#f9f9f9",
-    fontFamily: "Arial, sans-serif",
-  },
-  heading: {
-    fontSize: "2rem",
-    marginBottom: "1.5rem",
-    color: "#333",
-  },
-  form: {
-    width: "100%",
-    maxWidth: "400px",
-    backgroundColor: "#fff",
-    padding: "2rem",
-    borderRadius: "8px",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-  },
-  inputGroup: {
-    marginBottom: "1.5rem",
-  },
-  label: {
-    display: "block",
-    marginBottom: "0.5rem",
-    fontWeight: "bold",
-    color: "#555",
-  },
-  input: {
-    width: "100%",
-    padding: "0.75rem",
-    border: "1px solid #ccc",
-    borderRadius: "4px",
-    fontSize: "1rem",
-  },
-  button: {
-    width: "100%",
-    padding: "0.75rem",
-    backgroundColor: "#007bff",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "1rem",
-    cursor: "pointer",
-  },
-  hiddenInput: {
-    display: "none", // Completely hide the default file input
-  },
-  customButton: {
-    width: "100%",
-    padding: "0.75rem",
-    backgroundColor: "lightgray",
-    color: "#fff",
-    border: "none",
-    borderRadius: "4px",
-    fontSize: "1rem",
-    cursor: "pointer",
-    textAlign: "center",
-  },
 };
 
 export default LinkToolsPage;
