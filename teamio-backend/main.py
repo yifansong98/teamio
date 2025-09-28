@@ -69,8 +69,7 @@ async def get_commit_summary(team_id: str = Query(...)):
         task = run_in_threadpool(db.reference(f"log_data/github/commit/{contrib_id}").get)
         tasks.append(task)
 
-    # 3. Execute all the tasks concurrently!
-    # This is like giving the librarian the full list of books.
+    # 3. Execute all the tasks concurrently
     commit_results = await asyncio.gather(*tasks)
 
     # 4. Now process the results, which are all in memory
@@ -202,7 +201,6 @@ async def map_logins_to_net_ids(team_id: str = Query(...), Request: Request = No
                 net_ids_to_contributions[net_id].append(contrib_id)
         
         # --- Stage 2: Batch-update team logins and contributions ---
-        
         update_tasks = []
         if team_logins_update:
             team_ref = db.reference(f'teams/{team_id}/logins')
@@ -216,7 +214,6 @@ async def map_logins_to_net_ids(team_id: str = Query(...), Request: Request = No
             await asyncio.gather(*update_tasks)
 
         # --- Stage 3: Fetch all required student data in parallel ---
-
         students_ref = db.reference('students')
         all_net_ids_to_update = set(net_ids_to_logins.keys()) | set(net_ids_to_contributions.keys())
         
@@ -228,7 +225,6 @@ async def map_logins_to_net_ids(team_id: str = Query(...), Request: Request = No
         existing_student_data_list = await asyncio.gather(*fetch_tasks)
 
         # --- Stage 4: Consolidate updates and perform a single batch write for students ---
-
         students_update_payload = {}
         for net_id, existing_data in zip(all_net_ids_to_update, existing_student_data_list):
             student_data = existing_data or {
@@ -259,6 +255,4 @@ async def map_logins_to_net_ids(team_id: str = Query(...), Request: Request = No
         return {"message": "Logins mapped and all related data updated successfully."}
 
     except Exception as e:
-        # It's good practice to log the exception here
-        # import traceback; traceback.print_exc();
         raise HTTPException(status_code=500, detail=str(e))
