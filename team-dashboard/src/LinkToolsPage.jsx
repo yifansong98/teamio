@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useStepsCompletion } from "./StepsCompletionContext";
 import { useNavigate } from "react-router-dom";
 
 const LinkToolsPage = () => {
@@ -11,7 +12,35 @@ const LinkToolsPage = () => {
   const [onlyMainBranch, setOnlyMainBranch] = useState(false);
   const [onlyMergedPRs, setOnlyMergedPRs] = useState(false);
 
+  const { setStepsCompletion } = useStepsCompletion();
   const navigate = useNavigate();
+
+  // Load saved data from localStorage on page load
+  useEffect(() => {
+    const savedData = localStorage.getItem("linkToolsData");
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      setGoogleDocsData(parsedData.googleDocsData || null);
+      setGoogleDocsFileName(parsedData.googleDocsFileName || "");
+      setRepoURL(parsedData.repoURL || "");
+      setTeamId(parsedData.teamId || "");
+      setOnlyMainBranch(parsedData.onlyMainBranch || false);
+      setOnlyMergedPRs(parsedData.onlyMergedPRs || false);
+    }
+  }, []);
+
+  // Save data to localStorage whenever inputs change
+  useEffect(() => {
+    const dataToSave = {
+      googleDocsData,
+      googleDocsFileName,
+      repoURL,
+      teamId,
+      onlyMainBranch,
+      onlyMergedPRs,
+    };
+    localStorage.setItem("linkToolsData", JSON.stringify(dataToSave));
+  }, [googleDocsData, googleDocsFileName, repoURL, teamId, onlyMainBranch, onlyMergedPRs]);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -93,7 +122,8 @@ const LinkToolsPage = () => {
 
       // Navigate to the next page if both requests succeed
       if (githubResponse.ok && googleDocsResponse.ok) {
-        navigate("/teamio/mapping", { state: { teamId: teamId } });
+        setStepsCompletion((prev) => ({ ...prev, step1: true }));
+        navigate("/teamio", { state: { teamId: teamId } });
       }
     } catch (error) {
       setResponseMessage("Error: " + error.message);
@@ -105,7 +135,7 @@ const LinkToolsPage = () => {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <button
-        onClick={() => navigate("/teamio/dashboard")}
+        onClick={() => navigate("/teamio", { state: { teamId: teamId } })}
         className="text-blue-600 hover:underline mb-6"
       >
         &larr; Back to Dashboard
