@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useStepsCompletion } from "./StepsCompletionContext";
 const CURRENT_USER_ID = "ritikav2";
 const ToolIcon = ({ tool }) => {
   const icons = {
@@ -66,12 +67,13 @@ const ValuedContributionModal = ({ contributionId, onCancel }) => {
 const AttributeContributionsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const teamId = location.state?.teamId || "teamio"; // Replace with actual team ID retrieval logic
+  const teamId = location.state?.teamId;
   const [teamMembers, setTeamMembers] = useState({});
   const [userColors, setUserColor] = useState({});
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { setStepsCompletion } = useStepsCompletion();
 
   // const [editingContribution, setEditingContribution] = useState(null);
   // const [showValuedModal, setShowValuedModal] = useState(null);
@@ -127,7 +129,7 @@ const AttributeContributionsPage = () => {
   return (
   <div className="p-4 md:p-8 max-w-6xl mx-auto">
     <button
-      onClick={() => navigate("dashboard")}
+      onClick={() => navigate("/teamio", { state: { teamId: teamId } })}
       className="text-blue-600 hover:underline mb-6"
     >
       &larr; Back to Dashboard
@@ -258,10 +260,10 @@ const AttributeContributionsPage = () => {
    {/* Navigation Button to Reflections Page */}
       <div className="flex justify-center mt-4">
   <button
-    onClick={() => navigate("/teamio/reflections", { state: { teamId } })}
+    onClick={() => { setStepsCompletion((prev) => ({...prev, step2: true })) ; navigate("/teamio", { state: { teamId: teamId } })}}
     className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
   >
-    Go to Reflections
+    Submit
   </button>
 </div>
   </div>
@@ -270,121 +272,3 @@ const AttributeContributionsPage = () => {
 };
 
 export default AttributeContributionsPage;
-
-
-
-
-//   return (
-//     <div style={styles.container}>
-//       <h1 style={styles.heading}>Team Contributions</h1>
-//       {contributions.length === 0 ? (
-//         <p style={styles.noContributions}>No contributions found.</p>
-//       ) : (
-//         <div style={styles.contributionsList}>
-//           {contributions.map((contribution, index) => (
-//             <div key={index} style={styles.contributionCard}>
-//               <h2 style={styles.title}>{contribution.title}</h2>
-//               <p style={styles.author}>By: {contribution.net_id}</p>
-//               <p style={styles.timestamp}>
-//                 {new Date(contribution.timestamp).toLocaleString()}
-//               </p>
-//             </div>
-//           ))}
-//         </div>
-//       )}
-//       {/* Navigation Button to Reflections Page */}
-//       <div style={styles.buttonContainer}>
-//         <button
-//           onClick={() => navigate("/teamio/reflections", { state: { teamId } })}
-//           style={styles.button}
-//         >
-//           Go to Reflections
-//         </button>
-//       </div>
-//     </div>
-//   );
-// };
-
-// const styles = {
-//   container: {
-//     padding: "2rem",
-//     fontFamily: "Arial, sans-serif",
-//     backgroundColor: "#f9f9f9",
-//     minHeight: "100vh",
-//   },
-//   heading: {
-//     fontSize: "2rem",
-//     marginBottom: "1.5rem",
-//     textAlign: "center",
-//     color: "#333",
-//   },
-//   loading: {
-//     textAlign: "center",
-//     fontSize: "1.5rem",
-//     color: "#555",
-//   },
-//   error: {
-//     textAlign: "center",
-//     fontSize: "1.5rem",
-//     color: "red",
-//   },
-//   noContributions: {
-//     textAlign: "center",
-//     fontSize: "1.2rem",
-//     color: "#777",
-//   },
-//   contributionsList: {
-//     display: "flex",
-//     flexDirection: "column",
-//     gap: "1rem",
-//   },
-//   contributionCard: {
-//     backgroundColor: "#fff",
-//     padding: "1.5rem",
-//     borderRadius: "8px",
-//     boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-//     border: "1px solid #ddd",
-//   },
-//   title: {
-//     fontSize: "1.5rem",
-//     marginBottom: "0.5rem",
-//     color: "#007bff",
-//   },
-//   author: {
-//     fontSize: "1rem",
-//     marginBottom: "0.5rem",
-//     color: "#555",
-//   },
-//   timestamp: {
-//     fontSize: "0.9rem",
-//     color: "#777",
-//   },
-//   buttonContainer: {
-//     marginTop: "2rem",
-//     textAlign: "center",
-//   },
-//   button: {
-//     padding: "0.75rem 1.5rem",
-//     backgroundColor: "#28a745",
-//     color: "#fff",
-//     border: "none",
-//     borderRadius: "6px",
-//     fontSize: "1rem",
-//     cursor: "pointer",
-//   },
-// };
-
-
-
-
-// const AttributeContributionsPage = ({ setCurrentPage, setStepsCompletion }) => {
-//             const [contributions, setContributions] = useState(MOCK_CONTRIBUTIONS);
-//             const [editingContribution, setEditingContribution] = useState(null);
-//             const [showValuedModal, setShowValuedModal] = useState(null);
-//             const [showOfflineModal, setShowOfflineModal] = useState(false);
-//             const [showConfirmDelete, setShowConfirmDelete] = useState(null);
-//             const toggleAttribution = (contributionId, memberId) => { setContributions(contributions.map(c => { if (c.id === contributionId && c.authorId === CURRENT_USER_ID) { const isAttributed = c.attributedTo.includes(memberId); const newAttributedTo = isAttributed ? c.attributedTo.filter(id => id !== memberId) : [...c.attributedTo, memberId]; return { ...c, attributedTo: newAttributedTo }; } return c; })); };
-//             const handleAddOfflineWork = (newItem) => { const newContribution = { id: contributions.length + 100, authorId: CURRENT_USER_ID, ...newItem, tool: 'External Work', attributedTo: newItem.contributors, valuedBy: [], comments: [] }; setContributions([...contributions, newContribution]); setShowOfflineModal(false); };
-//             const handleEditOfflineWork = (updatedItem) => { setContributions(contributions.map(c => c.id === updatedItem.id ? { ...c, ...updatedItem, attributedTo: updatedItem.contributors } : c)); setEditingContribution(null); };
-//             const handleDeleteOfflineWork = (id) => { setContributions(contributions.filter(c => c.id !== id)); setShowConfirmDelete(null); };
-//             const handleDone = () => { setStepsCompletion(prev => ({...prev, step2: true})); setCurrentPage('dashboard'); }

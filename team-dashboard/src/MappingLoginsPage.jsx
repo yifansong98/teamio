@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useStepsCompletion } from "./StepsCompletionContext";
 
 const MappingLoginsPage = () => {
   const [logins, setLogins] = useState([]); // Store logins fetched from the API
@@ -10,6 +11,7 @@ const MappingLoginsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { teamId } = location.state || {}; // Get teamId from the previous page
+  const { setStepsCompletion } = useStepsCompletion();
 
   useEffect(() => {
     if (!teamId) {
@@ -41,11 +43,22 @@ const MappingLoginsPage = () => {
   }, [teamId]);
 
   const handleMappingChange = (login, netId) => {
-    setMappings((prevMappings) => ({
-      ...prevMappings,
-      [login]: netId,
-    }));
+    const updatedMappings = {
+        ...mappings,
+        [login]: netId,
+      };
+      setMappings(updatedMappings);
+      localStorage.setItem(`mappings_${teamId}`, JSON.stringify(updatedMappings)); // Save to localStorage
   };
+
+  useEffect(() => {
+    if (teamId) {
+      const savedMappings = localStorage.getItem(`mappings_${teamId}`);
+      if (savedMappings) {
+        setMappings(JSON.parse(savedMappings)); // Load from localStorage
+      }
+    }
+  }, [teamId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,7 +75,8 @@ const MappingLoginsPage = () => {
 
       if (response.ok) {
         setResponseMessage("Mappings successfully saved!");
-        navigate("/teamio/attribution", { state: { teamId: teamId } }); // Navigate to a success page or another route
+        setStepsCompletion((prev) => ({ ...prev, step1b: true }));
+        navigate("/teamio", { state: { teamId: teamId } }); // Navigate to a success page or another route
       } else {
         const errorData = await response.json();
         setResponseMessage("Error: " + JSON.stringify(errorData));
@@ -77,7 +91,7 @@ const MappingLoginsPage = () => {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <button
-        onClick={() => navigate("/teamio/dashboard")}
+        onClick={() => navigate("/teamio", { state: { teamId: teamId } })}
         className="text-blue-600 hover:underline mb-6"
       >
         &larr; Back to Dashboard
