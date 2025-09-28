@@ -80,56 +80,50 @@ const GoldStandardModal = ({ behavior, onCancel }) => {
 const ReflectionsPage = () => {
   const location = useLocation();
   const teamId = location.state?.teamId || "defaultTeamId";
-  const preloadedCommitData = location.state?.commitData || null;
-  const preloadedRevisionData = location.state?.revisionData || null;
   const [showGoldStandard, setShowGoldStandard] = useState(null);
 
-  const [commitData, setCommitData] = useState(preloadedCommitData?.summary || {});
-  const [timelineData, setTimelineData] = useState(preloadedCommitData?.timeline || []);
-  const [revisionData, setRevisionData] = useState(preloadedRevisionData?.summary || {});
+  const [commitData, setCommitData] = useState({});
+  const [timelineData, setTimelineData] = useState([]);
+  const [revisionData, setRevisionData] = useState({});
   const [timelineGDocData, setTimelineGDocData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("equitable");
 
   useEffect(() => {
-    if (!preloadedCommitData || !preloadedRevisionData) {
-      const fetchData = async () => {
-        setLoading(true);
-        try {
-          const [commitRes, revisionRes] = await Promise.all([
-            fetch(`http://localhost:3000/api/reflections/commits?team_id=${teamId}`),
-            fetch(`http://localhost:3000/api/reflections/revisions?team_id=${teamId}`),
-          ]);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [commitRes, revisionRes] = await Promise.all([
+          fetch(`http://localhost:3000/api/reflections/commits?team_id=${teamId}`),
+          fetch(`http://localhost:3000/api/reflections/revisions?team_id=${teamId}`),
+        ]);
 
-          const commitData = await commitRes.json();
-          const revisionData = await revisionRes.json();
+        const commitData = await commitRes.json();
+        const revisionData = await revisionRes.json();
 
-          if (commitRes.ok) {
-            setCommitData(commitData.summary);
-            setTimelineData(Array.isArray(commitData.timeline) ? commitData.timeline : []);
-          } else {
-            setError(commitData.error || "Failed to fetch commit data");
-          }
-
-          if (revisionRes.ok) {
-            setRevisionData(revisionData.summary);
-            setTimelineGDocData(Array.isArray(revisionData.timeline) ? revisionData.timeline : []);
-          } else {
-            setError(revisionData.error || "Failed to fetch revision data");
-          }
-        } catch (err) {
-          setError("Error fetching reflection data");
-        } finally {
-          setLoading(false);
+        if (commitRes.ok) {
+          setCommitData(commitData.summary);
+          setTimelineData(Array.isArray(commitData.timeline) ? commitData.timeline : []);
+        } else {
+          setError(commitData.error || "Failed to fetch commit data");
         }
-      };
 
-      fetchData();
-    } else {
-      setLoading(false);
-    }
-  }, [teamId, preloadedCommitData, preloadedRevisionData]);
+        if (revisionRes.ok) {
+          setRevisionData(revisionData.summary);
+          setTimelineGDocData(Array.isArray(revisionData.timeline) ? revisionData.timeline : []);
+        } else {
+          setError(revisionData.error || "Failed to fetch revision data");
+        }
+      } catch (err) {
+        setError("Error fetching reflection data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [teamId]);
 
 
   const hasPieData = Object.keys(commitData).length > 0;
