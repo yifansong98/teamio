@@ -125,7 +125,8 @@ const ReflectionsPage = () => {
 }, [teamId]);
 
   const hasPieData = Object.keys(commitData).length > 0;
-  const hasTimelineData =  Array.isArray(timelineData) && timelineData.length > 0;
+  const hasTimelineData = (Array.isArray(timelineData) && timelineData.length > 0) || 
+                         (Array.isArray(timelineGDocData) && timelineGDocData.length > 0);
   const hasGDocPieData = Object.keys(revisionData).length > 0;
   const hasGDocTimelineData =  Array.isArray(timelineGDocData) && timelineGDocData.length > 0;
 
@@ -148,12 +149,12 @@ const ReflectionsPage = () => {
     });
 
   const pieChartData = {
-    labels: Object.keys(commitData),
+    labels: Object.keys(commitData || {}),
     datasets: [
       {
         label: "Commits",
-        data: Object.values(commitData),
-        backgroundColor: Object.keys(commitData).map(
+        data: Object.values(commitData || {}),
+        backgroundColor: Object.keys(commitData || {}).map(
         (id) => userColors[id]
       ),
         borderWidth: 1,
@@ -162,12 +163,12 @@ const ReflectionsPage = () => {
   };
 
   const pieGDocChartData = {
-    labels: Object.keys(revisionData),
+    labels: Object.keys(revisionData || {}),
     datasets: [
       {
         label: "Revisions",
-        data: Object.values(revisionData),
-        backgroundColor:Object.keys(revisionData).map(
+        data: Object.values(revisionData || {}),
+        backgroundColor:Object.keys(revisionData || {}).map(
         (id) => userColors[id]
       ),
         borderWidth: 1,
@@ -175,33 +176,45 @@ const ReflectionsPage = () => {
     ],
   };
 
-  const scatterChartData = {
-  datasets: [
-    // GitHub commits
-    ...timelineData.map((entry) => ({
-      label: entry.author, // just the author
-      data: entry.timestamps.map((ts) => ({
-        x: new Date(ts),
-        y: entry.author,
-      })),
-      backgroundColor: userColors[entry.author] || "#999999",
-      pointRadius: 6,
-      pointStyle: "circle", // shape for GitHub
-    })),
+  // Group data by author and tool type
+  const allTimelineData = [
+    ...(timelineData || []).map(entry => ({ ...entry, tool: 'github' })),
+    ...(timelineGDocData || []).map(entry => ({ ...entry, tool: 'google_docs' }))
+  ];
 
-    // Google Docs revisions
-    ...timelineGDocData.map((entry) => ({
-      label: entry.author, // same author name
-      data: entry.timestamps.map((ts) => ({
-        x: new Date(ts),
-        y: entry.author,
-      })),
-      backgroundColor: userColors[entry.author] || "#999999",
-      pointRadius: 6,
-      pointStyle: "triangle", // shape for Google Docs
-    })),
-  ],
-};
+  const authorGroups = {};
+  allTimelineData.forEach(entry => {
+    const author = entry.author;
+    if (!authorGroups[author]) {
+      authorGroups[author] = { github: [], google_docs: [] };
+    }
+    authorGroups[author][entry.tool].push({
+      x: new Date(entry.timestamp),
+      y: author,
+    });
+  });
+
+  const scatterChartData = {
+    datasets: [
+      // GitHub commits
+      ...Object.entries(authorGroups).map(([author, data]) => ({
+        label: `${author} (GitHub)`,
+        data: data.github,
+        backgroundColor: userColors[author] || "#999999",
+        pointRadius: 6,
+        pointStyle: "circle",
+      })).filter(dataset => dataset.data.length > 0),
+
+      // Google Docs revisions
+      ...Object.entries(authorGroups).map(([author, data]) => ({
+        label: `${author} (Google Docs)`,
+        data: data.google_docs,
+        backgroundColor: userColors[author] || "#999999",
+        pointRadius: 6,
+        pointStyle: "triangle",
+      })).filter(dataset => dataset.data.length > 0),
+    ],
+  };
 
 const scatterOptions = {
   maintainAspectRatio: false,
@@ -212,14 +225,17 @@ const scatterOptions = {
       labels: {
         generateLabels: (chart) => {
           const datasets = chart.data.datasets;
-          const uniqueAuthors = [...new Set(datasets.map(ds => ds.label))];
+          const uniqueAuthors = [...new Set(datasets.map(ds => {
+            // Extract author name from label (remove tool suffix)
+            return ds.label.replace(' (GitHub)', '').replace(' (Google Docs)', '');
+          }))];
 
           return uniqueAuthors.map((author) => ({
             text: author,
             fillStyle: userColors[author] || "#999999", // author color
             strokeStyle: userColors[author] || "#999999",
             hidden: false,
-            datasetIndex: datasets.findIndex(ds => ds.label === author),
+            datasetIndex: datasets.findIndex(ds => ds.label.includes(author)),
           }));
         },
       },
@@ -233,7 +249,10 @@ const scatterOptions = {
     },
     y: {
       type: "category",
-      labels: timelineData.map((entry) => entry.author),
+      labels: [...new Set([
+        ...(timelineData || []).map((entry) => entry.author),
+        ...(timelineGDocData || []).map((entry) => entry.author)
+      ])],
       title: { display: true, text: "Team Member" },
     },
   },

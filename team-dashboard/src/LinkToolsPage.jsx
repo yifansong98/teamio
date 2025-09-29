@@ -33,56 +33,76 @@ const LinkToolsPage = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Add your logic here to handle the inputs (e.g., API call)
-    // Extract owner and repo name from the URL
-    const match = repoURL.match(/github\.com\/([^\/]+)\/([^\/]+)/);
-    if (!match) {
-        setResponseMessage("Error: Invalid GitHub URL");
-        setLoading(false);
-        return;
-    }
-    const repoOwner = match[1];
-    const repoName = match[2];
-
     try {
-        const response = await fetch(
-          `http://localhost:3000/api/github/post?team_id=${teamId}&owner=${repoOwner}&repo_name=${repoName}`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }
-        );
+        let githubSuccess = true;
+        let googleDocsSuccess = true;
+        let responseMessages = [];
 
-        if (response.ok) {
-            const data = await response.json();
-            setResponseMessage("Success: " + JSON.stringify(data));
-        } else {
-            const errorData = await response.json();
-            setResponseMessage("Error: " + JSON.stringify(errorData));
+        // Handle GitHub data submission (only if URL is provided)
+        if (repoURL.trim()) {
+            // Extract owner and repo name from the URL
+            const match = repoURL.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+            if (!match) {
+                setResponseMessage("Error: Invalid GitHub URL format");
+                setLoading(false);
+                return;
+            }
+            const repoOwner = match[1];
+            const repoName = match[2];
+
+            const response = await fetch(
+              `http://localhost:3000/api/github/post`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                  "repo_owner": repoOwner,
+                  "repo_name": repoName,
+                  "team_id": teamId
+                }),
+              }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                responseMessages.push("GitHub: " + JSON.stringify(data));
+            } else {
+                const errorData = await response.json();
+                responseMessages.push("GitHub Error: " + JSON.stringify(errorData));
+                githubSuccess = false;
+            }
         }
 
-        const googleDocsResponse = await fetch(
-          `http://localhost:3000/api/google_docs/post`,
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({"team_id": teamId, "doc": googleDocsData}),
-          }
-        );
+        // Handle Google Docs data submission (only if data is provided)
+        if (googleDocsData) {
+            const googleDocsResponse = await fetch(
+              `http://localhost:3000/api/google_docs/post`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({"team_id": teamId, "doc": googleDocsData}),
+              }
+            );
 
-        if (googleDocsResponse.ok) {
-            const data = await googleDocsResponse.json();
-            setResponseMessage("Success: " + JSON.stringify(data));
-        } else {
-            const errorData = await googleDocsResponse.json();
-            setResponseMessage("Error: " + JSON.stringify(errorData));
+            if (googleDocsResponse.ok) {
+                const data = await googleDocsResponse.json();
+                responseMessages.push("Google Docs: " + JSON.stringify(data));
+            } else {
+                const errorData = await googleDocsResponse.json();
+                responseMessages.push("Google Docs Error: " + JSON.stringify(errorData));
+                googleDocsSuccess = false;
+            }
         }
 
-        if (response.ok && googleDocsResponse.ok) {
+        // Set combined response message
+        setResponseMessage(responseMessages.join(" | "));
+
+        // Navigate if at least one submission was successful
+        if (githubSuccess || googleDocsSuccess) {
             navigate("/teamio/mapping", { state: { teamId: teamId } });
         }
 
@@ -113,16 +133,15 @@ const LinkToolsPage = () => {
         </div>
         <div style={styles.inputGroup}>
           <label htmlFor="repoURL" style={styles.label}>
-            GitHub Repository URL:
+            GitHub Repository URL (Optional):
           </label>
           <input
             type="text"
             id="repoURL"
             value={repoURL}
             onChange={(e) => setRepoURL(e.target.value)}
-            placeholder="Enter repository url"
+            placeholder="Enter repository url (optional)"
             style={styles.input}
-            required
           />
         </div>
 

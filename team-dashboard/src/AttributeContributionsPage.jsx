@@ -66,7 +66,7 @@ const ValuedContributionModal = ({ contributionId, onCancel }) => {
 const AttributeContributionsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const teamId = location.state?.teamId || "teamio"; // Replace with actual team ID retrieval logic
+  const teamId = location.state?.teamId || "test10"; // Replace with actual team ID retrieval logic
   const [teamMembers, setTeamMembers] = useState({});
   const [userColors, setUserColor] = useState({});
   const [contributions, setContributions] = useState([]);
@@ -86,7 +86,7 @@ const AttributeContributionsPage = () => {
           const data = await response.json();
           console.log("Fetched contributions:", data);
           setContributions(data);
-          const uniqueNetIds = Array.from(new Set(data.map(c => c.net_id)));
+          const uniqueNetIds = Array.from(new Set(data.map(c => c.author)));
           setTeamMembers(uniqueNetIds)
           const members = {};
           uniqueNetIds.forEach((net_id, i) => {
@@ -189,7 +189,7 @@ const AttributeContributionsPage = () => {
         <div className="min-w-full bg-white rounded-lg shadow">
           {contributions.map((contribution, index) => {
             
-            const isCurrentUserAuthor = contribution.net_id === CURRENT_USER_ID;
+            const isCurrentUserAuthor = contribution.author === CURRENT_USER_ID;
 
             return (
               <div
@@ -203,7 +203,7 @@ const AttributeContributionsPage = () => {
                     <div>
                       <h2 className="font-semibold text-gray-800">{contribution.title}</h2>
                       <p className="text-sm text-gray-500">
-                        Logged by {contribution.net_id} on{" "}
+                        Logged by {contribution.author} on{" "}
                         {new Date(contribution.timestamp).toLocaleDateString()}
                       </p>
                     </div>
@@ -219,20 +219,20 @@ const AttributeContributionsPage = () => {
                     
                       <span className="text-sm font-medium text-gray-600">Attributed to:</span>
                       <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${userColors[contribution.net_id].color || "bg-gray-400"} ring-2 ring-offset-1 ring-blue-500`}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm ${userColors[contribution.author].color || "bg-gray-400"} ring-2 ring-offset-1 ring-blue-500`}
                       >
-                      {userColors[contribution.net_id].initials}
+                      {userColors[contribution.author].initials}
                     </div>
                   <div className="border-l h-6 border-gray-300 mx-3"></div>
                   {/* Other team members
                   {Object.values(teamMembers)
-                    .filter((member) => member.net_id !== contribution.net_id)
+                    .filter((member) => member.net_id !== contribution.author)
                     .map((member) => {
                       const isAttributed = contribution.attributedTo?.includes(member.net_id);
                       return (
                         <button
                           key={member.net_id}
-                          onClick={() => toggleAttribution(c.id, member.net_id)}
+                          onClick={() => toggleAttribution(contribution.contribution_id, member.net_id)}
                           disabled={!isCurrentUserAuthor}
                           className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm transition-all duration-200 mx-1 ${
                             isAttributed
