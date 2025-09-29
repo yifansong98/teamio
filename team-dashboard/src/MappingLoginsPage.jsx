@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useStepsCompletion } from "./StepsCompletionContext";
 
 const MappingLoginsPage = () => {
   const [logins, setLogins] = useState([]); // Store logins fetched from the API
@@ -10,6 +11,7 @@ const MappingLoginsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { teamId } = location.state || {}; // Get teamId from the previous page
+  const { setStepsCompletion } = useStepsCompletion();
 
   useEffect(() => {
     if (!teamId) {
@@ -41,11 +43,22 @@ const MappingLoginsPage = () => {
   }, [teamId]);
 
   const handleMappingChange = (login, netId) => {
-    setMappings((prevMappings) => ({
-      ...prevMappings,
-      [login]: netId,
-    }));
+    const updatedMappings = {
+        ...mappings,
+        [login]: netId,
+      };
+      setMappings(updatedMappings);
+      localStorage.setItem(`mappings_${teamId}`, JSON.stringify(updatedMappings)); // Save to localStorage
   };
+
+  useEffect(() => {
+    if (teamId) {
+      const savedMappings = localStorage.getItem(`mappings_${teamId}`);
+      if (savedMappings) {
+        setMappings(JSON.parse(savedMappings)); // Load from localStorage
+      }
+    }
+  }, [teamId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -62,7 +75,8 @@ const MappingLoginsPage = () => {
 
       if (response.ok) {
         setResponseMessage("Mappings successfully saved!");
-        navigate("/teamio/attribution", { state: { teamId: teamId } }); // Navigate to a success page or another route
+        setStepsCompletion((prev) => ({ ...prev, step1b: true }));
+        navigate("/teamio", { state: { teamId: teamId } }); // Navigate to a success page or another route
       } else {
         const errorData = await response.json();
         setResponseMessage("Error: " + JSON.stringify(errorData));
@@ -75,107 +89,77 @@ const MappingLoginsPage = () => {
   };
 
   return (
-    <div style={styles.container}>
-      <h1 style={styles.heading}>Map Logins to NetIDs</h1>
-      {responseMessage && <div style={styles.responseMessage}>{responseMessage}</div>}
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+      <button
+        onClick={() => navigate("/teamio", { state: { teamId: teamId } })}
+        className="text-blue-600 hover:underline mb-6"
+      >
+        &larr; Back to Dashboard
+      </button>
+
+      <h1 className="text-2xl font-bold text-gray-800">Step 1b: Map Logins to User IDs</h1>
+
+      <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
+        <p className="text-sm">
+          Below is a list of logins extracted from your linked tools. Please map each login to the
+          corresponding UserID for your team members. This mapping ensures that contributions are
+          correctly attributed to the right individuals.
+        </p>
+      </div>
+
+      {responseMessage && (
+        <div
+          className={`mt-4 p-4 rounded-lg ${
+            responseMessage.startsWith("Error") ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+          }`}
+        >
+          {responseMessage}
+        </div>
+      )}
+
       {loading ? (
-        <p>Loading...</p>
+        <p className="text-center text-gray-500 text-lg mt-6">Loading...</p>
       ) : (
-        <form onSubmit={handleSubmit} style={styles.form}>
-        {logins.map((login, index) => (
-            <div key={`${login}-${index}`} style={styles.inputGroup}>
-            <label htmlFor={`netId-${login}`} style={styles.label}>
-                <span style={styles.loginText}>{login}</span>
-            </label>
-            <input
-                type="text"
-                id={`netId-${login}`}
-                placeholder="Enter NetID"
-                value={mappings[login] || ""}
-                onChange={(e) => handleMappingChange(login, e.target.value)}
-                style={styles.input}
-                required
-            />
-            </div>
-        ))}
-        <button type="submit" style={styles.button} disabled={loading}>
-            {loading ? "Submitting..." : "Submit"}
-        </button>
+        <form onSubmit={handleSubmit} className="mt-6 bg-white p-6 rounded-lg shadow-md">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {logins.map((login, index) => (
+              <div key={`${login}-${index}`} className="flex items-center space-x-4">
+                <div className="relative group w-1/3">
+                  <label
+                    className="text-sm font-medium text-gray-700 truncate block"
+                  >
+                    {login}
+                  </label>
+                  {/* Tooltip */}
+                  <div className="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
+                    {login}
+                  </div>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Enter UserID"
+                  value={mappings[login] || ""}
+                  onChange={(e) => handleMappingChange(login, e.target.value)}
+                  className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
+                  required
+                />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-6 text-center">
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
+              disabled={loading}
+            >
+              {loading ? "Submitting..." : "Submit"}
+            </button>
+          </div>
         </form>
       )}
     </div>
   );
 };
-
-const styles = {
-    container: {
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      height: "100vh",
-      backgroundColor: "#f9f9f9",
-      fontFamily: "Arial, sans-serif",
-      padding: "1rem",
-    },
-    inputGroup: {
-      display: "flex",
-      flexDirection: "row", // Arrange items side by side
-      alignItems: "center", // Align items vertically in the center
-      justifyContent: "space-between", // Add space between login and input
-      marginBottom: "1rem",
-      gap: "1rem", // Add spacing between the label and input
-      width: "100%", // Ensure the input group takes up the full width
-    },
-    label: {
-      fontWeight: "bold",
-      color: "#555",
-      flex: "2", // Allow the label to take up proportional space
-      whiteSpace: "nowrap", // Prevent the login text from wrapping
-      overflow: "hidden", // Hide overflowing text if necessary
-      textOverflow: "ellipsis", // Add ellipsis for long text
-    },
-    loginText: {
-      fontSize: "1rem",
-      color: "#333",
-      wordBreak: "normal", // Prevent wrapping
-    },
-    input: {
-      flex: "1", // Allow the input to take up more space
-      padding: "0.75rem",
-      border: "1px solid #ccc",
-      borderRadius: "4px",
-      fontSize: "1rem",
-    },
-    heading: {
-      fontSize: "2rem",
-      marginBottom: "1.5rem",
-      color: "#333",
-      textAlign: "center",
-    },
-    form: {
-      width: "100%",
-      maxWidth: "600px", // Increase the max width of the form
-      backgroundColor: "#fff",
-      padding: "2rem",
-      borderRadius: "8px",
-      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
-    },
-    button: {
-      width: "100%",
-      padding: "0.75rem",
-      backgroundColor: "#007bff",
-      color: "#fff",
-      border: "none",
-      borderRadius: "4px",
-      fontSize: "1rem",
-      cursor: "pointer",
-    },
-    responseMessage: {
-      marginBottom: "1rem",
-      color: "#d9534f",
-      textAlign: "center",
-    },
-  };
 
 export default MappingLoginsPage;

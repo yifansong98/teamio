@@ -2,26 +2,17 @@ import uuid
 import os
 from typing import Dict, Any, List
 from firebase_admin import db
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 def _uuid5(key: str) -> str:
-    # content-derived stable id (idempotent)
     return str(uuid.uuid5(uuid.NAMESPACE_URL, key))
 
 def _author_to_email(author: str) -> str:
-    """
-    Your docs JSON may give 'author' as an email or a name.
-    If it's not an email, you can map it later; for now keep as-is.
-    """
     if not author:
         return "unknown@example.com"
     return author
 
-def _email_to_net_id(email: str) -> str:
-    # Same convention as your GitHub path (email -> net_id)
-    return (email.split("@")[0] if "@" in email else email).strip().lower()
-
 def sanitize_key(key):
-    """Sanitize a string to make it a valid Firebase path key."""
     return key.replace('.', '_').replace('$', '_').replace('#', '_').replace('[', '_').replace(']', '_')
 
 def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -37,19 +28,16 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         ts = b.get("timestamp", "")
         typ = b.get("type", "unknown")
         title = (b.get("finalText") or b.get("text") or "").strip()
-        # Stable ID: file + rev + timestamp + index + type + first64 chars
         cid = _uuid5(f"{file_id}:rev:{ts}:{idx}:{typ}:{title[:64]}")
         out.append({
             "contribution_id": cid,
-            "login": sanitize_key(author_email),                   # keep same key as GitHub path expects
+            "login": sanitize_key(author_email),
             "timestamp": ts,
             "tool": "google_docs",
             "metric": "revision",
-            "team_id": None,                         # filled later
             "title": title[:140] or f"{typ} @ {ts}",
             "file": {"id": file_id, "name": file_name, "url": file_url},
             "type": typ,
-            # Keep the full block for log_data
             "raw": b,
         })
     return out
@@ -63,129 +51,122 @@ def process_docs_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     out = []
     for t in threads:
-        # Prefer email if present; else fall back to a name
         author_email = _author_to_email(t.get("authorEmail") or t.get("author") or t.get("authorName"))
         created = t.get("createdTime", "")
         thread_id = str(t.get("id", ""))
         title = (t.get("content") or "").strip().splitlines()[0][:140] if t.get("content") else f"Comment {thread_id}"
-
-        # Stable ID: file + comment-thread id + created
         cid = _uuid5(f"{file_id}:cmt:{thread_id}:{created}")
-
         out.append({
             "contribution_id": cid,
-            "login": sanitize_key(author_email),                   # align with GitHub pipeline
+            "login": sanitize_key(author_email),
             "timestamp": created,
             "tool": "google_docs",
             "metric": "comment",
-            "team_id": None,                         # filled later
             "title": title,
             "file": {"id": file_id, "name": file_name, "url": file_url},
             "raw": t,
         })
     return out
 
-def post_to_contributions_generic(contributions: List[Dict[str, Any]], team_id: str):
+# --- NEW BATCH-ORIENTED POSTING FUNCTIONS ---
+
+def batch_post_to_contributions(contributions: List[Dict[str, Any]], team_id: str):
+    """Prepares and posts all contributions in a single batch update."""
+    if not contributions:
+        return
+    
+    payload = {}
     for c in contributions:
-        c["team_id"] = team_id
-        ref = db.reference(f'contributions/{team_id}/{c["contribution_id"]}')
-        ref.set({
+        # The contribution_id becomes the key in the update payload
+        payload[c["contribution_id"]] = {
             "contribution_id": c["contribution_id"],
-            "author": c["login"],                      # same as GH
+            "author": c["login"],
             "timestamp": c.get("timestamp", ""),
             "tool": c.get("tool", "google_docs"),
             "metric": c.get("metric", ""),
             "team_id": team_id,
             "title": c.get("title", ""),
-        })
+        }
+    
+    if payload:
+        ref = db.reference(f'contributions/{team_id}')
+        ref.update(payload)
+    print(f"Batch-posted {len(payload)} contribution(s).")
 
-def post_to_log_data_docs(contributions: List[Dict[str, Any]]):
-    """
-    Writes full raw payloads under:
-      log_data/google_docs/revision/{id}
-      log_data/google_docs/comment/{id}
-    """
+def batch_post_to_log_data(contributions: List[Dict[str, Any]]):
+    """Prepares and posts all raw log data in two batch updates."""
+    if not contributions:
+        return
+
+    revisions_payload = {}
+    comments_payload = {}
+
     for c in contributions:
-        metric = c.get("metric")  # 'revision' or 'comment'
-        ref = db.reference(f'log_data/google_docs/{metric}/{c["contribution_id"]}')
-        ref.set(c)  # store full record (includes 'raw')
-    print(f"Posted {len(contributions)} item(s) to log_data/google_docs/*.")
+        if c.get("metric") == "revision":
+            revisions_payload[c["contribution_id"]] = c
+        elif c.get("metric") == "comment":
+            comments_payload[c["contribution_id"]] = c
 
-# def post_to_students_and_team(contributions: List[Dict[str, Any]], team_id: str):
-#     # upsert students + team membership
-#     members = set()
-#     for c in contributions:
-#         email = c["login"]
-#         net_id = _email_to_net_id(email)
-#         members.add(net_id)
+    # Run these two updates in a small parallel executor
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        if revisions_payload:
+            ref = db.reference('log_data/google_docs/revision')
+            executor.submit(ref.update, revisions_payload)
+        if comments_payload:
+            ref = db.reference('log_data/google_docs/comment')
+            executor.submit(ref.update, comments_payload)
+            
+    print(f"Batch-posted {len(revisions_payload)} revision(s) and {len(comments_payload)} comment(s) to log_data.")
 
-#         sref = db.reference(f"students/{net_id}")
-#         student = sref.get() or {
-#             "net_id": net_id,
-#             "email": email,
-#             "first_name": "John",
-#             "last_name": "Doe",
-#             "team_id": team_id,
-#             "contributions": [],
-#         }
-#         if c["contribution_id"] not in student.get("contributions", []):
-#             student["contributions"].append(c["contribution_id"])
-#         student["team_id"] = team_id  # ensure latest
-#         sref.set(student)
-
-#     tref = db.reference(f"teams/{team_id}")
-#     team_data = tref.get() or {"team_id": team_id, "members": []}
-#     team_data["team_id"] = team_id
-#     tref.set(team_data)
-
-#     mref = db.reference(f"teams/{team_id}/members")
-#     existing = mref.get() or []
-#     updated = list(set(existing) | members)
-#     mref.set(updated)
 
 def post_to_teams(contributions: List[Dict[str, Any]], team_id: str):
-    # upsert students + team membership
-    team_logins = set(contribution['login'] for contribution in contributions)
-
-    ref = db.reference(f'teams/{team_id}')
-    if not ref.get():
-        ref.set({'team_id': team_id, 'logins': []})
+    team_logins = set(c['login'] for c in contributions)
+    if not team_logins:
+        return
 
     ref = db.reference(f'teams/{team_id}/logins')
-    existing_logins = ref.get() or []
+    existing_logins_data = ref.get() or {}
+    existing_logins_set = set(existing_logins_data.keys())
 
-    updates = {}
-    for login in team_logins:
-        sanitized_login = login
-        if sanitized_login not in existing_logins:
-            updates[sanitized_login] = {
-                'login': login,
-                'net_id': login,
-            }
+    new_logins_to_add = team_logins - existing_logins_set
+    
+    updates = {
+        login: {'login': login, 'net_id': login}
+        for login in new_logins_to_add
+    }
     
     if updates:
         ref.update(updates)
-    
-    print(f"Updated team {team_id} members.")
+    print(f"Updated team {team_id} with {len(updates)} new member(s).")
 
+
+# --- REFACTORED MAIN ORCHESTRATOR FUNCTION ---
 
 def post_docs_to_db(doc_json: Dict[str, Any], team_id: str):
-    # build contributions
+    """Processes docs data and posts it to Firebase efficiently in parallel batches."""
+    # 1. Process data in memory (this is fast)
     revs = process_docs_revisions(doc_json)
     cmts = process_docs_comments(doc_json)
+    all_contributions = revs + cmts
+    
+    if not all_contributions:
+        print("No revisions or comments found to post.")
+        return
 
-    # write contributions (summary)
-    post_to_contributions_generic(revs, team_id)
-    post_to_contributions_generic(cmts, team_id)
-
-    # write detailed log data (raw)
-    post_to_log_data_docs(revs)
-    post_to_log_data_docs(cmts)
-
-    # update students + team
-    # post_to_students_and_team(revs + cmts, team_id)
-    post_to_teams(contributions=revs + cmts, team_id=team_id)
+    # 2. Run all database write operations in parallel
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futures = [
+            executor.submit(batch_post_to_contributions, all_contributions, team_id),
+            executor.submit(batch_post_to_log_data, all_contributions),
+            executor.submit(post_to_teams, all_contributions, team_id)
+        ]
+        
+        # Wait for all parallel tasks to complete and check for errors
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"A database posting operation failed: {e}")
+                raise
 
     print("Successfully posted Google Docs data to Firebase.")
-
-
