@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Pie, Scatter } from "react-chartjs-2";
+import { useStepsCompletion } from "./StepsCompletionContext";
 import { Chart as ChartJS, CategoryScale, TimeScale, ArcElement, Tooltip, Legend, PointElement, LinearScale, Title } from "chart.js";
 import "chartjs-adapter-date-fns"; // make sure to install this
 
@@ -89,40 +90,43 @@ const ReflectionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("equitable");
+  const { setStepsCompletion } = useStepsCompletion();
 
   useEffect(() => {
-  const fetchData = async () => {
-    try {
-      const [commitRes, revisionRes] = await Promise.all([
-        fetch(`http://localhost:3000/api/reflections/commits?team_id=${teamId}`),
-        fetch(`http://localhost:3000/api/reflections/revisions?team_id=${teamId}`)
-      ]);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [commitRes, revisionRes] = await Promise.all([
+          fetch(`http://localhost:3000/api/reflections/commits?team_id=${teamId}`),
+          fetch(`http://localhost:3000/api/reflections/revisions?team_id=${teamId}`),
+        ]);
 
-      const commitData = await commitRes.json();
-      const revisionData = await revisionRes.json();
+        const commitData = await commitRes.json();
+        const revisionData = await revisionRes.json();
 
-      if (commitRes.ok) {
-        setCommitData(commitData.summary);
-        setTimelineData(Array.isArray(commitData.timeline) ? commitData.timeline : []);
-      } else {
-        setError(commitData.error || "Failed to fetch commit data");
+        if (commitRes.ok) {
+          setCommitData(commitData.summary);
+          setTimelineData(Array.isArray(commitData.timeline) ? commitData.timeline : []);
+        } else {
+          setError(commitData.error || "Failed to fetch commit data");
+        }
+
+        if (revisionRes.ok) {
+          setRevisionData(revisionData.summary);
+          setTimelineGDocData(Array.isArray(revisionData.timeline) ? revisionData.timeline : []);
+        } else {
+          setError(revisionData.error || "Failed to fetch revision data");
+        }
+      } catch (err) {
+        setError("Error fetching reflection data");
+      } finally {
+        setLoading(false);
       }
+    };
 
-      if (revisionRes.ok) {
-        setRevisionData(revisionData.summary);
-        setTimelineGDocData(Array.isArray(revisionData.timeline) ? revisionData.timeline : []);
-      } else {
-        setError(revisionData.error || "Failed to fetch revision data");
-      }
-    } catch (err) {
-      setError("Error fetching reflection data");
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchData();
+  }, [teamId]);
 
-  fetchData();
-}, [teamId]);
 
   const hasPieData = Object.keys(commitData).length > 0;
   const hasTimelineData =  Array.isArray(timelineData) && timelineData.length > 0;
@@ -247,9 +251,11 @@ const scatterOptions = {
     { id: "valued", label: "Valued Contributions" },
   ]; 
   
+  const navigate = useNavigate();
+
 return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
-            <button onClick={() => setCurrentPage('dashboard')} className="text-blue-600 hover:underline mb-6">&larr; Back to Dashboard</button>
+            <button onClick={() => navigate("/teamio", { state: { teamId: teamId } })} className="text-blue-600 hover:underline mb-6">&larr; Back to Dashboard</button>
             <h1 className="text-2xl font-bold text-gray-800">Step 3: Team Reflection</h1>
             <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
                 <p className="text-sm">
