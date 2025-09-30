@@ -173,7 +173,7 @@ const MainDashboardPage = () => {
           </div>
           {stepsCompletion.step1 && !stepsCompletion.step2 && (
             <button
-              onClick={() => navigate("/teamio/attribution", { state: { teamId: teamId } })}
+              onClick={() => navigate("/teamio/annotation", { state: { teamId: teamId } })}
               className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
             >
               Start Step 2
@@ -181,7 +181,7 @@ const MainDashboardPage = () => {
           )}
           {stepsCompletion.step2 && (
             <button
-              onClick={() => navigate("/teamio/attribution", { state: { teamId: teamId } })}
+              onClick={() => navigate("/teamio/annotation", { state: { teamId: teamId } })}
               className="mt-4 text-sm text-blue-600 hover:underline"
             >
               View/Edit Annotations

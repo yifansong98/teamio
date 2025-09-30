@@ -4,7 +4,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainDashboardPage from "./MainDashboardPage";
 import LinkToolsPage from "./LinkToolsPage";
 import MappingLoginsPage from "./MappingLoginsPage";
-import AttributeContributionsPage from "./AttributeContributionsPage"; 
+import AnnotateContributionsPage from "./AnnotateContributionsPage"; 
 import ReflectionsPage from "./ReflectionsPage";
 import { StepsCompletionProvider } from "./StepsCompletionContext"; // Import the provider
 import './index.css';
@@ -20,7 +20,7 @@ root.render(
         <Route path="/teamio" element={<MainDashboardPage />} />
         <Route path="/teamio/link" element={<LinkToolsPage />} />
         <Route path="/teamio/mapping" element={<MappingLoginsPage />} />
-        <Route path="/teamio/attribution" element={<AttributeContributionsPage />} />
+        <Route path="/teamio/annotation" element={<AnnotateContributionsPage />} />
         <Route path="/teamio/reflections" element={<ReflectionsPage />} />
       </Routes>
     </BrowserRouter>
