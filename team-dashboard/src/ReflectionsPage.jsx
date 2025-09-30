@@ -1,13 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo} from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Pie, Scatter } from "react-chartjs-2";
 import { useStepsCompletion } from "./StepsCompletionContext";
+import Chart from "chart.js/auto";
+import { MatrixController, MatrixElement } from "chartjs-chart-matrix";
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { Chart as ChartJS, CategoryScale, TimeScale, ArcElement, Tooltip, Legend, PointElement, LinearScale, Title } from "chart.js";
 import "chartjs-adapter-date-fns"; // make sure to install this
 
 
 
-ChartJS.register(TimeScale,CategoryScale, ArcElement, Tooltip, Legend, PointElement,LinearScale,Title);
+ChartJS.register(TimeScale, ChartDataLabels, CategoryScale, ArcElement, Tooltip, Legend, PointElement,LinearScale,Title, MatrixController, MatrixElement);
 
 const WordCountTextArea = ({ maxWords = 200 }) => {
   const [text, setText] = useState("");
@@ -33,6 +36,61 @@ const WordCountTextArea = ({ maxWords = 200 }) => {
     </div>
   );
 };
+
+
+import { useRef } from "react";
+
+const FeedbackHeatmap = ({ matrixData, options }) => {
+        const canvasRef = useRef(null);
+        const chartRef = useRef(null);
+
+        useEffect(() => {
+            if (!canvasRef.current || !matrixData) return;
+            const ctx = canvasRef.current.getContext("2d");
+
+            if (chartRef.current) {
+                chartRef.current.destroy();
+            }
+
+            chartRef.current = new Chart(ctx, {
+                type: "matrix",
+                data: {
+                    datasets: [{
+                        label: "Feedback Matrix",
+                        data: matrixData,
+                        backgroundColor: (ctx) => ctx.raw?.backgroundColor || 'rgba(0,0,0,0.05)',
+                        borderColor: 'white',
+                        borderWidth: 2,
+                        hoverBorderColor: '#333',
+                        width: ({ chart }) => (chart.chartArea || {}).width / chart.scales.x.ticks.length - 1,
+                        height: ({ chart }) => (chart.chartArea || {}).height / chart.scales.y.ticks.length - 1,
+                    }],
+                },
+                options: options,
+            });
+
+            return () => {
+                chartRef.current?.destroy();
+            };
+        }, [matrixData, options]);
+
+        return (
+            <div className="relative w-full h-full">
+                <canvas ref={canvasRef} />
+            </div>
+        );
+    };
+
+
+
+function hexToRgb(hex) {
+  hex = hex.replace("#", "");
+  const bigint = parseInt(hex, 16);
+  const r = (bigint >> 16) & 255;
+  const g = (bigint >> 8) & 255;
+  const b = bigint & 255;
+  return `${r}, ${g}, ${b}`;
+}
 
 const GoldStandardModal = ({ behavior, onCancel }) => {
   const content = {
@@ -90,19 +148,24 @@ const ReflectionsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState("equitable");
+  const [githubMetric, setGithubMetric] = useState("commits"); 
+  const [gdocMetric, setGDocMetric] = useState("revisions");   
+  const [feedbackData, setFeedbackData] = useState({});
   const { setStepsCompletion } = useStepsCompletion();
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const [commitRes, revisionRes] = await Promise.all([
+        const [commitRes, revisionRes, feedbackRes] = await Promise.all([
           fetch(`http://localhost:3000/api/reflections/commits?team_id=${teamId}`),
           fetch(`http://localhost:3000/api/reflections/revisions?team_id=${teamId}`),
+          fetch(`http://localhost:3000/api/reflections/feedback?team_id=${teamId}`)
         ]);
 
         const commitData = await commitRes.json();
         const revisionData = await revisionRes.json();
+        const feedbackData = await feedbackRes.json();
 
         if (commitRes.ok) {
           setCommitData(commitData.summary);
@@ -116,6 +179,12 @@ const ReflectionsPage = () => {
           setTimelineGDocData(Array.isArray(revisionData.timeline) ? revisionData.timeline : []);
         } else {
           setError(revisionData.error || "Failed to fetch revision data");
+        }
+        if (feedbackRes.ok) {
+          setFeedbackData(feedbackData.feedback_counts);
+          
+        } else {
+          setError(feedbackData.error || "Failed to fetch feedback data");
         }
       } catch (err) {
         setError("Error fetching reflection data");
@@ -133,6 +202,9 @@ const ReflectionsPage = () => {
   const hasGDocPieData = Object.keys(revisionData).length > 0;
   const hasGDocTimelineData =  Array.isArray(timelineGDocData) && timelineGDocData.length > 0;
 
+
+  
+
   const colors = [
   "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0",
   "#9966FF", "#FF9F40", "#8E44AD", "#2ECC71",
@@ -143,6 +215,8 @@ const ReflectionsPage = () => {
       new Set([
         ...Object.keys(commitData || {}),
         ...Object.keys(revisionData || {}),
+        ...Object.keys(feedbackData || {}),
+        ...Object.values(feedbackData || {}).flatMap(obj => Object.keys(obj))
       ])
     );
 
@@ -151,12 +225,91 @@ const ReflectionsPage = () => {
       userColors[net_id] = colors[idx % colors.length];
     });
 
+
+
+  const allParticipants = allNetIds;
+  const maxCount = useMemo(() => Math.max(
+      1, ...Object.values(feedbackData).flatMap(v => Object.values(v))
+  ), [feedbackData]);
+
+  const matrixData = useMemo(() => {
+      return allParticipants.flatMap(giver =>
+          allParticipants.map(receiver => {
+              const value = feedbackData[giver]?.[receiver] || 0;
+              const baseColor = userColors[giver] || "#d7e0e8ff";;
+              const rgbColor = hexToRgb(baseColor);
+              const alpha =  value > 0 ? 0.15 + (value / maxCount) * 0.85 : 0.05;
+              const backgroundColor =`rgba(${rgbColor}, ${alpha})`;
+              return {
+                  x: receiver,
+                  y: giver,
+                  v: value,
+                  backgroundColor
+              };
+          })
+      );
+  }, [allParticipants, maxCount]);
+
+      
+
+    const prettyHeatmapOptions = useMemo(() => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'category',
+                        labels: allParticipants,
+                        position: 'top',
+                        title: { display: true, text: 'Feedback Receiver', font: { size: 18, weight: 'bold' }, padding: 10 },
+                        grid: { display: false },
+                        ticks: { padding: 5, font: { size: 12 } }
+                    },
+                    y: {
+                        type: 'category',
+                        labels: allParticipants,
+                        offset: true,
+                        title: { display: true, text: 'Feedback Giver', font: { size: 18, weight: 'bold' }, padding: 10 },
+                        grid: { display: false },
+                        ticks: { font: { size: 12 } }
+                    },
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#2d3748', // Dark gray
+                        titleFont: { size: 14, weight: 'bold' },
+                        bodyFont: { size: 12 },
+                        displayColors: false,
+                        callbacks: {
+                            title: () => '',
+                            label: (ctx) => `${ctx.raw.y} gave ${ctx.raw.v} feedback to ${ctx.raw.x}`,
+                        },
+                    },
+                    datalabels: {
+                        
+                        display: (context) => context.raw && context.raw.v > 0,
+                        font: { size: 17 },
+                        color: (context) => {
+                            
+                            if (!context.raw) return '#1f2937';
+                            const alpha = (context.raw.v > 0) ? 0.15 + (context.raw.v / maxCount) * 0.85 : 0;
+                            return alpha > 0.65 ? 'white' : '#1f2937'; // Dark gray text
+                        },
+                        // FIX: Check if the value exists before formatting
+                        formatter: (value) => value ? value.v : '',
+                    }
+                },
+                layout: { padding: 10 }
+            }), [allParticipants, maxCount]);
+
   const pieChartData = {
     labels: Object.keys(commitData),
     datasets: [
       {
-        label: "Commits",
-        data: Object.values(commitData),
+        label: githubMetric === "commits" ? "Commits" : "Lines of Code",
+        data: Object.values(commitData).map((item) =>
+          githubMetric === "commits" ? item.commits : item.lines
+        ),
         backgroundColor: Object.keys(commitData).map(
         (id) => userColors[id]
       ),
@@ -169,6 +322,10 @@ const ReflectionsPage = () => {
     labels: Object.keys(revisionData),
     datasets: [
       {
+        // label: gdocMetric === "revisions" ? "Revisions" : "Word Count",
+        // data: Object.values(revisionData).map((item) =>
+        //   gdocMetric === "revisions" ? item.revisions : item.word_count
+        // ),
         label: "Revisions",
         data: Object.values(revisionData),
         backgroundColor:Object.keys(revisionData).map(
@@ -211,6 +368,7 @@ const scatterOptions = {
   maintainAspectRatio: false,
   
   plugins: {
+    datalabels: { display: false },
     legend: {
       onClick: () => null,
       labels: {
@@ -242,6 +400,7 @@ const scatterOptions = {
     },
   },
 };
+
 
 
  const tabs = [
@@ -330,6 +489,20 @@ return (
           <h2 className="text-lg font-semibold text-gray-700 mb-4">
             GitHub
           </h2>
+          {/* Dropdown for GitHub metric */}
+          {hasPieData && (
+            <div className="mb-2 flex items-center space-x-2">
+              <label className="text-sm font-medium">Metric:</label>
+              <select
+                value={githubMetric}
+                onChange={(e) => setGithubMetric(e.target.value)}
+                className="border rounded px-2 py-1 text-sm"
+              >
+                <option value="commits">Commits</option>
+                <option value="lines">Lines of Code</option>
+              </select>
+            </div>
+          )}
           <div className="w-full h-full">
             {hasPieData ? (
               <Pie
@@ -338,6 +511,7 @@ return (
                   maintainAspectRatio: false,
                   responsive: true,
                   plugins: {
+                    datalabels: { display: false },
                     legend: {
                       position: "bottom",
                       align: "start",
@@ -360,7 +534,22 @@ return (
                 <h2 className="text-lg font-semibold text-gray-700 mb-4">
                   Google Docs
                 </h2>
+                {/* Dropdown for GDoc metric */}
+              {hasGDocPieData && (
+                <div className="mb-2 flex items-center space-x-2">
+                  <label className="text-sm font-medium">Metric:</label>
+                  <select
+                    value={gdocMetric}
+                    onChange={(e) => setGDocMetric(e.target.value)}
+                    className="border rounded px-2 py-1 text-sm"
+                  >
+                    <option value="revisions">Revisions</option>
+                    <option value="word_count">Word Count</option>
+                  </select>
+                </div>
+              )}
                 <div className="w-full h-full">
+
                   {hasGDocPieData ? (
                     <Pie
                       data={pieGDocChartData}
@@ -368,6 +557,7 @@ return (
                         maintainAspectRatio: false,
                         responsive: true,
                         plugins: {
+                          datalabels: { display: false },
                           legend: {
                             position: "bottom",
                             align: "start",
@@ -450,9 +640,42 @@ return (
         )}
 
         {activeTab === "support" && (
-          <p className="text-gray-600 italic">
-            Mutual Support visualization coming soon.
-          </p>
+          <div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              Mutual Support
+            </h3>
+            <button
+              onClick={() => setShowGoldStandard("support")}
+              className="text-sm text-blue-600 hover:underline mb-4"
+            >
+              Why is mutual support important?
+            </button>
+            {showGoldStandard && (
+              <GoldStandardModal
+                behavior={showGoldStandard}
+                onCancel={() => setShowGoldStandard(null)}
+              />
+            )}
+            
+            <div className="p-6 bg-white rounded-lg shadow-md">
+                        <div style={{ height: '600px' }}>
+                            <FeedbackHeatmap
+                                matrixData={matrixData}
+                                options={prettyHeatmapOptions}
+                            />
+                        </div>
+                    </div>
+
+            <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reflection Prompt:
+              </label>
+              <p className="text-sm text-gray-600 mb-2">
+              What patterns do you notice in how support is given and received? Is the support reciprocal among team members? Are there individuals who might benefit from more support?              </p>
+              <WordCountTextArea />
+            </div>
+
+          </div>
         )}
 
         {activeTab === "valued" && (
