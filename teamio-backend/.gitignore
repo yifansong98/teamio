@@ -1,0 +1,4 @@
+env.py
+TEAMIO_FIREBASE_SERVICE_CREDENTIALS.json
+__pycache__/
+.venv/
