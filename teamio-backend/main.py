@@ -62,25 +62,19 @@ async def get_contributions(team_id: str = Query(...)):
 
 @app.get("/api/reflections/commits")
 async def get_commit_summary(team_id: str = Query(...)):
-    # 1. Make the first blocking call to get all contributions
     contrib_ref = await run_in_threadpool(db.reference, f"contributions/{team_id}")
     contributions = await run_in_threadpool(contrib_ref.get) or {}
 
-    # 2. Prepare a list of asynchronous tasks, one for each commit lookup
     tasks = []
     for contrib_id in contributions.keys():
-        # Create a coroutine for each database call but DON'T run it yet
         task = run_in_threadpool(db.reference(f"log_data/github/commit/{contrib_id}").get)
         tasks.append(task)
 
-    # 3. Execute all the tasks concurrently
     commit_results = await asyncio.gather(*tasks)
 
-    # 4. Now process the results, which are all in memory
     summary = {}
     timeline_map = {}
     
-    # We iterate through the original contributions and the results together
     for contrib_data, commit_data in zip(contributions.values(), commit_results):
         if commit_data:
             author = contrib_data.get("net_id", "unknown")
@@ -89,16 +83,20 @@ async def get_commit_summary(team_id: str = Query(...)):
             summary[author]["commits"] += 1
 
             additions = commit_data.get("additions", 0)
-            deletions = commit_data.get("deletions", 0)
-            summary[author]["lines"] += additions + deletions
+            #deletions = commit_data.get("deletions", 0)
+            summary[author]["lines"] += additions #+ deletions
             timestamp = commit_data.get("timestamp")
+            size =  contrib_data.get("quantity")
             if timestamp:
                 if author not in timeline_map:
                     timeline_map[author] = []
-                timeline_map[author].append(timestamp)
+                timeline_map[author].append({
+                    "ts": timestamp,
+                    "size": size
+                })
 
     timeline = [
-        {"author": author, "timestamps": timestamps}
+        {"author": author, "contributions": timestamps}
         for author, timestamps in timeline_map.items()
     ]
     
@@ -216,10 +214,10 @@ async def get_revisions_history(team_id: str = Query(...)):
             if timestamp:
                 if author not in timeline_map:
                     timeline_map[author] = []
-                timeline_map[author].append(timestamp)
+                timeline_map[author].append({"ts": timestamp, "size" : 0})
     
     timeline = [
-        {"author": author, "timestamps": timestamps}
+        {"author": author, "contributions": timestamps}
         for author, timestamps in timeline_map.items()
     ]
     
