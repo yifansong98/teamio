@@ -81,7 +81,31 @@ const FeedbackHeatmap = ({ matrixData, options }) => {
         );
     };
 
+const ScatterChart = ({ data, options }) => {
+            const canvasRef = useRef(null);
+            const chartRef = useRef(null);
 
+            useEffect(() => {
+                if (!canvasRef.current) return;
+                const ctx = canvasRef.current.getContext("2d");
+
+                if (chartRef.current) {
+                    chartRef.current.destroy();
+                }
+
+                chartRef.current = new Chart(ctx, {
+                    type: 'scatter',
+                    data: data,
+                    options: options,
+                });
+
+                return () => {
+                    chartRef.current?.destroy();
+                };
+            }, [data, options]);
+
+            return <canvas ref={canvasRef} />;
+        };
 
 function hexToRgb(hex) {
   hex = hex.replace("#", "");
@@ -336,40 +360,130 @@ const ReflectionsPage = () => {
     ],
   };
 
-  const scatterChartData = {
-  datasets: [
-    // GitHub commits
-    ...timelineData.map((entry) => ({
-      label: entry.author, // just the author
-      data: entry.timestamps.map((ts) => ({
-        x: new Date(ts),
-        y: entry.author,
-      })),
-      backgroundColor: userColors[entry.author] || "#999999",
-      pointRadius: 6,
-      pointStyle: "circle", // shape for GitHub
-    })),
+//   const scatterChartData = {
+//   datasets: [
+//     // GitHub commits
+//     ...timelineData.map((entry) => ({
+//       label: entry.author, // just the author
+//       data: entry.timestamps.map((ts) => ({
+//         x: new Date(ts),
+//         y: entry.author,
+//       })),
+//       backgroundColor: userColors[entry.author] || "#999999",
+//       pointRadius: 6,
+//       pointStyle: "circle", // shape for GitHub
+//     })),
 
-    // Google Docs revisions
-    ...timelineGDocData.map((entry) => ({
-      label: entry.author, // same author name
-      data: entry.timestamps.map((ts) => ({
-        x: new Date(ts),
-        y: entry.author,
-      })),
-      backgroundColor: userColors[entry.author] || "#999999",
-      pointRadius: 6,
-      pointStyle: "triangle", // shape for Google Docs
-    })),
-  ],
-};
+//     // Google Docs revisions
+//     ...timelineGDocData.map((entry) => ({
+//       label: entry.author, // same author name
+//       data: entry.timestamps.map((ts) => ({
+//         x: new Date(ts),
+//         y: entry.author,
+//       })),
+//       backgroundColor: userColors[entry.author] || "#999999",
+//       pointRadius: 6,
+//       pointStyle: "triangle", // shape for Google Docs
+//     })),
+//   ],
+// };
+  const allAuthors = allNetIds;
+    const paddedYAxisLabels = useMemo(() => 
+                    ['', ...allAuthors, ''],
+                    [allAuthors]
+                );
 
-const scatterOptions = {
-  maintainAspectRatio: false,
+
+    const mapSizeToRadius = (size) => {
+      if (size < 50) return 5;
+      if (size < 200) return 7;
+      if (size < 1500) return 10;
+      if (size < 1000) return 12;
+      return 14
+    };
+
+const scatterChartData = useMemo(() => {
+    const datasets = [
+        ...timelineData.map((entry) => {
+            const authorIndex = paddedYAxisLabels.indexOf(entry.author);
+            return {
+                label: entry.author,
+                datalabels: { display: false },
+                data: entry.contributions.map(c => ({
+                    x: new Date(c.ts),
+                    y: authorIndex + 0.2, // Offset above the integer
+                    v: c.size,
+                })),
+                backgroundColor: userColors[entry.author] || "#999999",
+                pointStyle: 'circle',
+                radius: entry.contributions.map(c => mapSizeToRadius(c.size)),
+            };
+        }),
+        // Google Docs Data (Triangles) - Positioned slightly BELOW the line
+        ...timelineGDocData.map((entry) => {
+            const authorIndex = paddedYAxisLabels.indexOf(entry.author);
+            return {
+                label: entry.author,
+                datalabels: { display: false },
+                data: entry.contributions.map(c => ({
+                    x: new Date(c.ts),
+                    y: authorIndex - 0.2, // Offset below the integer
+                    v: c.size,
+                })),
+                backgroundColor: userColors[entry.author] || "#999999",
+                pointStyle: 'triangle',
+                radius: entry.contributions.map(c => mapSizeToRadius(c.size)),
+            };
+        }),
+    ];
+    return { datasets };
+}, [timelineData, timelineGDocData, paddedYAxisLabels]);
+
+
+
+// const scatterOptions = {
+//   maintainAspectRatio: false,
   
-  plugins: {
-    datalabels: { display: false },
-    legend: {
+//   plugins: {
+//     datalabels: { display: false },
+//     legend: {
+//       onClick: () => null,
+//       labels: {
+//         generateLabels: (chart) => {
+//           const datasets = chart.data.datasets;
+//           const uniqueAuthors = [...new Set(datasets.map(ds => ds.label))];
+
+//           return uniqueAuthors.map((author) => ({
+//             text: author,
+//             fillStyle: userColors[author] || "#999999", // author color
+//             strokeStyle: userColors[author] || "#999999",
+//             hidden: false,
+//             datasetIndex: datasets.findIndex(ds => ds.label === author),
+//           }));
+//         },
+//       },
+//     },
+//   },
+//   scales: {
+//     x: {
+//       type: "time",
+//       time: { unit: "day" },
+//       title: { display: true, text: "Date" },
+//     },
+//     y: {
+//       type: "category",
+//       labels: timelineData.map((entry) => entry.author),
+//       title: { display: true, text: "Team Member" },
+//     },
+//   },
+// };
+
+const scatterOptions = useMemo(() => ({
+    maintainAspectRatio: false,
+    responsive: true,
+    plugins: {
+      datalabels: { display: false },
+      legend: {
       onClick: () => null,
       labels: {
         generateLabels: (chart) => {
@@ -386,22 +500,57 @@ const scatterOptions = {
         },
       },
     },
-  },
-  scales: {
-    x: {
-      type: "time",
-      time: { unit: "day" },
-      title: { display: true, text: "Date" },
+      tooltip: {
+          backgroundColor: '#1F2937',
+          titleFont: { size: 14 },
+          bodyFont: { size: 12 },
+          displayColors: false,
+          callbacks: {
+              title: (ctx) => {
+                  const yValue = ctx[0].raw.y;
+                  const authorIndex = Math.round(yValue); 
+                  return paddedYAxisLabels[authorIndex];
+              },
+              label: (ctx) => {
+                  const size = ctx.raw.v;
+                  const source = ctx.dataset.pointStyle === 'triangle' ? 'Google Docs' : 'GitHub';
+                  return `${source} contribution of size ${size}.`;
+              }
+          }
+      }
     },
-    y: {
-      type: "category",
-      labels: timelineData.map((entry) => entry.author),
-      title: { display: true, text: "Team Member" },
+    scales: {
+      x: {
+        type: "time",
+        time: { unit: "day", displayFormats: { day: 'MMM d' } },
+        title: { display: true, text: "Date of Contribution", font: {size: 14} },
+        grid: { color: '#e5e7eb' }
+      },
+      y: {
+        type: "linear", 
+        min: 0, 
+        max: paddedYAxisLabels.length - 1, 
+        title: { display: true, text: "Team Member", font: {size: 14} },
+        grid: { 
+          drawOnChartArea: true,
+          color: (context) => {
+            const label = paddedYAxisLabels[context.tick.value];
+            return label === '' ? 'transparent' : '#e5e7eb';
+          }
+        },
+        ticks: {
+          stepSize: 1, 
+          callback: function(value, index, ticks) {
+              
+              if (Math.floor(value) === value) {
+                  return paddedYAxisLabels[value];
+              }
+              return ''; 
+          }
+        }
+      },
     },
-  },
-};
-
-
+  }), [paddedYAxisLabels]);
 
  const tabs = [
     { id: "equitable", label: "Equitable Contribution" },
@@ -608,35 +757,52 @@ return (
               onCancel={() => setShowGoldStandard(null)}
             />
           )}
-            <div className="p-6 bg-white rounded-lg shadow-md flex flex-col items-center">
-            {hasTimelineData ? (
-              <div className="w-full h-[400px]">
-              <Scatter
-                data={scatterChartData}
-                options={{ ...scatterOptions, maintainAspectRatio: false }}
-              />
-              </div>
-            ) : (
-              <p className="text-gray-500">No timeline data available.</p>
-            )}
-             <div className="flex space-x-6 mb-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-3 h-3 rounded-full bg-gray-500"></div>
-                <span className="text-sm">GitHub</span>
-              </div>
-              <div className="flex items-center space-x-2">
-  <div className="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[12px] border-l-transparent border-r-transparent border-b-gray-500"></div>
-                <span className="text-sm">Google Docs</span>
-              </div>
+            <div className="p-6 bg-white rounded-lg shadow-md">
+      {hasTimelineData ? (
+        <>
+          {}
+          <div className="w-full h-[500px]">
+            <ScatterChart
+              data={scatterChartData}
+              options={scatterOptions}
+            />
+          </div>
+
+          {}
+          <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 border-t pt-4 w-full justify-center">
+            <div className="flex items-center space-x-2">
+              <div
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+              ></div>
+              <span className="text-sm text-gray-600">GitHub</span>
             </div>
-            </div>
-            
-            <div className="mt-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
-                <p className="text-sm text-gray-600 mb-2">How well did you and your team manage deadlines and complete tasks on time? Were there any patterns of last-minute work or early completion? How did this affect the team’s progress and collaboration?</p>
-                <WordCountTextArea />
+            <div className="flex items-center space-x-2">
+              <div
+                style={{
+                  width: 0,
+                  height: 0,
+                  borderLeft: '12px solid transparent',
+                  borderRight: '12px solid transparent',
+                  borderTop: '16px solid rgba(0,0,0,0.5)',
+                  transform: 'rotate(180deg)',
+                }}
+              ></div>
+              <span className="text-sm text-gray-600">Google Docs</span>
             </div>
           </div>
+        </>
+      ) : (
+        <p className="text-gray-500 text-center">No timeline data available.</p>
+      )}
+    </div>
+    
+    <div className="mt-6">
+        <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
+        <p className="text-sm text-gray-600 mb-2">How well did you and your team manage deadlines and complete tasks on time? Were there any patterns of last-minute work or early completion? How did this affect the team’s progress and collaboration?</p>
+        <WordCountTextArea />
+    </div>
+  </div>
         )}
 
         {activeTab === "support" && (
