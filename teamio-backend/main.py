@@ -29,29 +29,31 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-cred = credentials.Certificate("TEAMIO_FIREBASE_SERVICE_CREDENTIALS.json")  # your Firebase service account JSON
-firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://teamio-test-default-rtdb.firebaseio.com'
-})
+# Initialize Firebase with error handling
+try:
+    cred = credentials.Certificate("TEAMIO_FIREBASE_SERVICE_CREDENTIALS.json")
+    firebase_admin.initialize_app(cred, {
+        'databaseURL': 'https://teamio-test-default-rtdb.firebaseio.com'
+    })
+    print("Firebase initialized successfully")
+except Exception as e:
+    print(f"Firebase initialization failed: {e}")
+    raise
 
 # Summary: Fetch GitHub data for a given owner and repo, then post it to Firebase under a specific team.
 # Request body example: {"owner": "octocat", "repo_name": "Hello-World", "team_id": "your_team_id"}
 # Returns: Success message or error.
+
+class GitHubDataRequest(BaseModel):
+    repo_owner: str
+    repo_name: str
+    team_id: str
+
 @app.post("/api/github/post")
-async def fetch_github_data(request: Request):
-    body = await request.json()
-    owner = body.get('repo_owner', None)
-    repo_name = body.get('repo_name', None)
-    team_id = body.get('team_id', None)
-
-    if not owner or not repo_name:
-        return {"error": "repo_owner and repo_name are required"}
-
-    if not team_id:
-        return {"error": "team_id is required"}
-
-    if not owner or not repo_name:
-        return {"error": "owner and repo_name are required"}
+async def fetch_github_data(body: GitHubDataRequest):
+    owner = body.repo_owner
+    repo_name = body.repo_name
+    team_id = body.team_id
 
     from scripts.fetch_github_data import fetch_data
     commit_data, pr_data = fetch_data(owner, repo_name, GITHUB_TOKEN)
@@ -119,5 +121,59 @@ async def get_log_data(tool: str, metric: str, contribution_id: str):
         return data
     except HTTPException:
         raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Summary: Fetch commit data for reflections page
+@app.get("/api/reflections/commits")
+async def get_commits_for_reflections(team_id: str):
+    try:
+        ref = db.reference(f'contributions/{team_id}')
+        raw = ref.get() or {}
+        contributions = list(raw.values()) if isinstance(raw, dict) else []
+        
+        # Filter for GitHub commits only
+        commits = [c for c in contributions if c.get('tool') == 'github' and c.get('metric') == 'commit']
+        commits.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        # Create summary data
+        summary = {}
+        for commit in commits:
+            author = commit.get('author', 'Unknown')
+            if author not in summary:
+                summary[author] = 0
+            summary[author] += 1
+        
+        return {
+            "summary": summary,
+            "timeline": commits
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# Summary: Fetch revision data for reflections page
+@app.get("/api/reflections/revisions")
+async def get_revisions_for_reflections(team_id: str):
+    try:
+        ref = db.reference(f'contributions/{team_id}')
+        raw = ref.get() or {}
+        contributions = list(raw.values()) if isinstance(raw, dict) else []
+        
+        # Filter for Google Docs revisions only
+        revisions = [c for c in contributions if c.get('tool') == 'google_docs' and c.get('metric') == 'revision']
+        revisions.sort(key=lambda x: x.get('timestamp', ''), reverse=True)
+        
+        # Create summary data
+        summary = {}
+        for revision in revisions:
+            author = revision.get('author', 'Unknown')
+            if author not in summary:
+                summary[author] = 0
+            summary[author] += 1
+        
+        return {
+            "summary": summary,
+            "timeline": revisions
+        }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

@@ -9,7 +9,7 @@ const MappingLoginsPage = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const { teamId } = location.state || {}; // Get teamId from the previous page
+  const { teamId } = "testingggg"; // Get teamId from the previous page
 
   useEffect(() => {
     if (!teamId) {
@@ -21,7 +21,7 @@ const MappingLoginsPage = () => {
     const fetchLogins = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:3000/api/teams/logins?team_id=${teamId}`);
+        const response = await fetch(`http://localhost:3000/api/teams/?team_id=${teamId}`);
         if (response.ok) {
           const data = await response.json();
           console.log("Fetched Logins:", data);
@@ -52,7 +52,7 @@ const MappingLoginsPage = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/teams/map-logins?team_id=${teamId}`, {
+      const response = await fetch(`http://localhost:3000/api/teams/?team_id=${teamId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
