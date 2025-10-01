@@ -208,6 +208,7 @@ const ReflectionsPage = () => {
         }
         if (feedbackRes.ok) {
           setFeedbackData(feedbackData.feedback_counts);
+          
           setFeedbackGitHubData(feedbackData.feedback_counts_github);
           setFeedbackGDocData(feedbackData.feedback_counts_gdoc);
         } else {
