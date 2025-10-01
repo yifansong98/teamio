@@ -130,6 +130,8 @@ async def get_feedback_matrix(team_id: str = Query(...)):
 
         # 4. Aggregate feedback counts: giver → receiver → count
         feedback_counts = {}
+        feedback_counts_github = {}
+        feedback_counts_gdoc = {}
 
         for (pr_id, pr_info), comments in zip(pr_list, comments_results):
             author = pr_info.get("login", "unknown")
@@ -147,11 +149,14 @@ async def get_feedback_matrix(team_id: str = Query(...)):
 
                 if commenter_netid not in feedback_counts:
                     feedback_counts[commenter_netid] = {}
+                    feedback_counts_github[commenter_netid] = {}
 
                 if author_netid not in feedback_counts[commenter_netid]:
                     feedback_counts[commenter_netid][author_netid] = 0
+                    feedback_counts_github[commenter_netid][author_netid] = 0
 
                 feedback_counts[commenter_netid][author_netid] += len(comment_entries)  # count all comments
+                feedback_counts_github[commenter_netid][author_netid] += len(comment_entries)
 
         gdoc_comments_ref = await run_in_threadpool(
             db.reference,
@@ -175,12 +180,15 @@ async def get_feedback_matrix(team_id: str = Query(...)):
 
             if giver_netid not in feedback_counts:
                 feedback_counts[giver_netid] = {}
+                feedback_counts_gdoc[giver_netid] = {}
             if receiver_netid not in feedback_counts[giver_netid]:
                 feedback_counts[giver_netid][receiver_netid] = 0
+                feedback_counts_gdoc[giver_netid][receiver_netid] = 0
 
             feedback_counts[giver_netid][receiver_netid] += 1
+            feedback_counts_gdoc[giver_netid][receiver_netid] += 1
 
-        return JSONResponse(content={"feedback_counts": feedback_counts})
+        return JSONResponse(content={"feedback_counts": feedback_counts, "feedback_counts_github": feedback_counts_github, "feedback_counts_gdoc": feedback_counts_gdoc})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
