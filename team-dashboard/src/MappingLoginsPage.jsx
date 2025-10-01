@@ -23,10 +23,11 @@ const MappingLoginsPage = () => {
     const fetchLogins = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:3000/api/teams/logins?team_id=${teamId}`);
+        const response = await fetch(`http://localhost:3000/api/teams/map-logins?team_id=${teamId}`);
         if (response.ok) {
           const data = await response.json();
           console.log("Fetched Logins:", data);
+          console.log("Team ID:", teamId);
           setLogins(data || []);
         } else {
           const errorData = await response.json();
@@ -119,6 +120,12 @@ const MappingLoginsPage = () => {
 
       {loading ? (
         <p className="text-center text-gray-500 text-lg mt-6">Loading...</p>
+      ) : logins.length === 0 ? (
+        <div className="mt-6 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <p className="text-yellow-800">
+            No logins found for team "{teamId}". Make sure you've completed Step 1 (Link Tools) first.
+          </p>
+        </div>
       ) : (
         <form onSubmit={handleSubmit} className="mt-6 bg-white p-6 rounded-lg shadow-md">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
