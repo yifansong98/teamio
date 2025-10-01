@@ -175,6 +175,8 @@ const ReflectionsPage = () => {
   const [githubMetric, setGithubMetric] = useState("commits"); 
   const [gdocMetric, setGDocMetric] = useState("revisions");   
   const [feedbackData, setFeedbackData] = useState({});
+  const [feedbackGitHubData, setFeedbackGitHubData] = useState({});
+  const [feedbackGDocData, setFeedbackGDocData] = useState({});
   const { setStepsCompletion } = useStepsCompletion();
 
   useEffect(() => {
@@ -207,6 +209,8 @@ const ReflectionsPage = () => {
         if (feedbackRes.ok) {
           setFeedbackData(feedbackData.feedback_counts);
           
+          setFeedbackGitHubData(feedbackData.feedback_counts_github);
+          setFeedbackGDocData(feedbackData.feedback_counts_gdoc);
         } else {
           setError(feedbackData.error || "Failed to fetch feedback data");
         }
@@ -226,7 +230,28 @@ const ReflectionsPage = () => {
   const hasGDocPieData = Object.keys(revisionData).length > 0;
   const hasGDocTimelineData =  Array.isArray(timelineGDocData) && timelineGDocData.length > 0;
 
-
+  const content = {
+    equitable: {
+      title: "Why is equitable contribution important?",
+      description:
+        "Equitable contribution doesn't mean everyone does the exact same amount of work, but that the workload is distributed fairly and agreed upon by the team. A 'gold-standard' team often shows a relatively balanced pie chart, with no single member dominating or contributing very little.",
+    },
+    timeliness: {
+      title: "Why is timeliness important?",
+      description:
+        "Timeliness involves completing work on schedule and avoiding last-minute rushes. A 'gold-standard' team shows consistent progress throughout the project timeline, rather than a large cluster of activity right before the deadline.",
+    },
+    support: {
+      title: "Why is mutual support important?",
+      description:
+        "Mutual support is about helping teammates, providing constructive feedback, and acknowledging valuable contributions. A 'gold-standard' team shows reciprocal support, where all members are engaged in helping each other succeed.",
+    },
+    valued: {
+      title: "Why are valued contributions important?",
+      description:
+        "Valued contributions are pieces of work that teammates identify as particularly high-quality, creative, or helpful. In a 'gold-standard' team, all members both give and receive recognition, showing that high-quality work is distributed and appreciated across the team.",
+    },
+  };
   
 
   const colors = [
@@ -251,14 +276,13 @@ const ReflectionsPage = () => {
 
 
 
-  const allParticipants = allNetIds;
   const maxCount = useMemo(() => Math.max(
       1, ...Object.values(feedbackData).flatMap(v => Object.values(v))
   ), [feedbackData]);
 
   const matrixData = useMemo(() => {
-      return allParticipants.flatMap(giver =>
-          allParticipants.map(receiver => {
+      return allNetIds.flatMap(giver =>
+          allNetIds.map(receiver => {
               const value = feedbackData[giver]?.[receiver] || 0;
               const baseColor = userColors[giver] || "#d7e0e8ff";;
               const rgbColor = hexToRgb(baseColor);
@@ -272,9 +296,9 @@ const ReflectionsPage = () => {
               };
           })
       );
-  }, [allParticipants, maxCount]);
+  }, [allNetIds, maxCount]);
 
-      
+    const reversedNetIds = useMemo(() => [...allNetIds].reverse(), [allNetIds]);
 
     const prettyHeatmapOptions = useMemo(() => ({
                 responsive: true,
@@ -282,7 +306,7 @@ const ReflectionsPage = () => {
                 scales: {
                     x: {
                         type: 'category',
-                        labels: allParticipants,
+                        labels: reversedNetIds,
                         position: 'top',
                         title: { display: true, text: 'Feedback Receiver', font: { size: 18, weight: 'bold' }, padding: 10 },
                         grid: { display: false },
@@ -290,7 +314,7 @@ const ReflectionsPage = () => {
                     },
                     y: {
                         type: 'category',
-                        labels: allParticipants,
+                        labels: allNetIds,
                         offset: true,
                         title: { display: true, text: 'Feedback Giver', font: { size: 18, weight: 'bold' }, padding: 10 },
                         grid: { display: false },
@@ -300,15 +324,27 @@ const ReflectionsPage = () => {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
-                        backgroundColor: '#2d3748', // Dark gray
-                        titleFont: { size: 14, weight: 'bold' },
-                        bodyFont: { size: 12 },
-                        displayColors: false,
-                        callbacks: {
-                            title: () => '',
-                            label: (ctx) => `${ctx.raw.y} gave ${ctx.raw.v} feedback to ${ctx.raw.x}`,
-                        },
+                    backgroundColor: '#2d3748',
+                    titleFont: { size: 14, weight: 'bold' },
+                    bodyFont: { size: 12 },
+                    displayColors: false,
+                    callbacks: {
+                      title: () => '',
+                      label: (ctx) => {
+                        const giver = ctx.raw.y;
+                        const receiver = ctx.raw.x;
+
+                        const githubCount = feedbackGitHubData[giver]?.[receiver] || 0;
+                        const gdocCount = feedbackGDocData[giver]?.[receiver] || 0;
+      
+                        return [
+                          `GitHub: ${giver} left ${githubCount} comment(s) on ${receiver}'s PRs `,
+                          `GoogleDoc: ${giver} left ${gdocCount} comment(s) on ${receiver}'s content`,
+                
+                        ];
+                      },
                     },
+                  },
                     datalabels: {
                         
                         display: (context) => context.raw && context.raw.v > 0,
@@ -319,12 +355,11 @@ const ReflectionsPage = () => {
                             const alpha = (context.raw.v > 0) ? 0.15 + (context.raw.v / maxCount) * 0.85 : 0;
                             return alpha > 0.65 ? 'white' : '#1f2937'; // Dark gray text
                         },
-                        // FIX: Check if the value exists before formatting
                         formatter: (value) => value ? value.v : '',
                     }
                 },
                 layout: { padding: 10 }
-            }), [allParticipants, maxCount]);
+            }), [allNetIds, reversedNetIds, maxCount]);
 
   const pieChartData = {
     labels: Object.keys(commitData),
@@ -349,7 +384,7 @@ const ReflectionsPage = () => {
         // label: gdocMetric === "revisions" ? "Revisions" : "Word Count",
         // data: Object.values(revisionData).map((item) =>
         //   gdocMetric === "revisions" ? item.revisions : item.word_count
-        // ),
+        // ), uncomment once you get word count data
         label: "Revisions",
         data: Object.values(revisionData),
         backgroundColor:Object.keys(revisionData).map(
@@ -360,38 +395,12 @@ const ReflectionsPage = () => {
     ],
   };
 
-//   const scatterChartData = {
-//   datasets: [
-//     // GitHub commits
-//     ...timelineData.map((entry) => ({
-//       label: entry.author, // just the author
-//       data: entry.timestamps.map((ts) => ({
-//         x: new Date(ts),
-//         y: entry.author,
-//       })),
-//       backgroundColor: userColors[entry.author] || "#999999",
-//       pointRadius: 6,
-//       pointStyle: "circle", // shape for GitHub
-//     })),
 
-//     // Google Docs revisions
-//     ...timelineGDocData.map((entry) => ({
-//       label: entry.author, // same author name
-//       data: entry.timestamps.map((ts) => ({
-//         x: new Date(ts),
-//         y: entry.author,
-//       })),
-//       backgroundColor: userColors[entry.author] || "#999999",
-//       pointRadius: 6,
-//       pointStyle: "triangle", // shape for Google Docs
-//     })),
-//   ],
-// };
-  const allAuthors = allNetIds;
+  
     const paddedYAxisLabels = useMemo(() => 
-                    ['', ...allAuthors, ''],
-                    [allAuthors]
-                );
+                ['', ...allNetIds.flatMap(author => [`${author}-github`, `${author}-gdoc`]), ''],
+                [allNetIds]
+            );
 
 
     const mapSizeToRadius = (size) => {
@@ -402,16 +411,24 @@ const ReflectionsPage = () => {
       return 14
     };
 
+    const mapGDocSizeToRadius = (size) => {
+      if (size < 50) return 10;
+      if (size < 200) return 12;
+      if (size < 1500) return 14;
+      if (size < 1000) return 16;
+      return 20
+    };
+
 const scatterChartData = useMemo(() => {
     const datasets = [
         ...timelineData.map((entry) => {
-            const authorIndex = paddedYAxisLabels.indexOf(entry.author);
+            //const authorIndex = paddedYAxisLabels.indexOf(entry.author);
             return {
                 label: entry.author,
                 datalabels: { display: false },
                 data: entry.contributions.map(c => ({
                     x: new Date(c.ts),
-                    y: authorIndex + 0.2, // Offset above the integer
+                    y: `${entry.author}-github`, 
                     v: c.size,
                 })),
                 backgroundColor: userColors[entry.author] || "#999999",
@@ -419,20 +436,19 @@ const scatterChartData = useMemo(() => {
                 radius: entry.contributions.map(c => mapSizeToRadius(c.size)),
             };
         }),
-        // Google Docs Data (Triangles) - Positioned slightly BELOW the line
         ...timelineGDocData.map((entry) => {
-            const authorIndex = paddedYAxisLabels.indexOf(entry.author);
+            //const authorIndex = paddedYAxisLabels.indexOf(entry.author);
             return {
                 label: entry.author,
                 datalabels: { display: false },
                 data: entry.contributions.map(c => ({
                     x: new Date(c.ts),
-                    y: authorIndex - 0.2, // Offset below the integer
+                    y: `${entry.author}-gdoc`, 
                     v: c.size,
                 })),
                 backgroundColor: userColors[entry.author] || "#999999",
                 pointStyle: 'triangle',
-                radius: entry.contributions.map(c => mapSizeToRadius(c.size)),
+                radius: entry.contributions.map(c => mapGDocSizeToRadius(c.size)),
             };
         }),
     ];
@@ -441,116 +457,54 @@ const scatterChartData = useMemo(() => {
 
 
 
-// const scatterOptions = {
-//   maintainAspectRatio: false,
-  
-//   plugins: {
-//     datalabels: { display: false },
-//     legend: {
-//       onClick: () => null,
-//       labels: {
-//         generateLabels: (chart) => {
-//           const datasets = chart.data.datasets;
-//           const uniqueAuthors = [...new Set(datasets.map(ds => ds.label))];
-
-//           return uniqueAuthors.map((author) => ({
-//             text: author,
-//             fillStyle: userColors[author] || "#999999", // author color
-//             strokeStyle: userColors[author] || "#999999",
-//             hidden: false,
-//             datasetIndex: datasets.findIndex(ds => ds.label === author),
-//           }));
-//         },
-//       },
-//     },
-//   },
-//   scales: {
-//     x: {
-//       type: "time",
-//       time: { unit: "day" },
-//       title: { display: true, text: "Date" },
-//     },
-//     y: {
-//       type: "category",
-//       labels: timelineData.map((entry) => entry.author),
-//       title: { display: true, text: "Team Member" },
-//     },
-//   },
-// };
 
 const scatterOptions = useMemo(() => ({
-    maintainAspectRatio: false,
-    responsive: true,
-    plugins: {
-      datalabels: { display: false },
-      legend: {
-      onClick: () => null,
-      labels: {
-        generateLabels: (chart) => {
-          const datasets = chart.data.datasets;
-          const uniqueAuthors = [...new Set(datasets.map(ds => ds.label))];
-
-          return uniqueAuthors.map((author) => ({
-            text: author,
-            fillStyle: userColors[author] || "#999999", // author color
-            strokeStyle: userColors[author] || "#999999",
-            hidden: false,
-            datasetIndex: datasets.findIndex(ds => ds.label === author),
-          }));
-        },
-      },
-    },
-      tooltip: {
-          backgroundColor: '#1F2937',
-          titleFont: { size: 14 },
-          bodyFont: { size: 12 },
-          displayColors: false,
-          callbacks: {
-              title: (ctx) => {
-                  const yValue = ctx[0].raw.y;
-                  const authorIndex = Math.round(yValue); 
-                  return paddedYAxisLabels[authorIndex];
-              },
-              label: (ctx) => {
-                  const size = ctx.raw.v;
-                  const source = ctx.dataset.pointStyle === 'triangle' ? 'Google Docs' : 'GitHub';
-                  return `${source} contribution of size ${size}.`;
-              }
-          }
-      }
-    },
-    scales: {
-      x: {
-        type: "time",
-        time: { unit: "day", displayFormats: { day: 'MMM d' } },
-        title: { display: true, text: "Date of Contribution", font: {size: 14} },
-        grid: { color: '#e5e7eb' }
-      },
-      y: {
-        type: "linear", 
-        min: 0, 
-        max: paddedYAxisLabels.length - 1, 
-        title: { display: true, text: "Team Member", font: {size: 14} },
-        grid: { 
-          drawOnChartArea: true,
-          color: (context) => {
-            const label = paddedYAxisLabels[context.tick.value];
-            return label === '' ? 'transparent' : '#e5e7eb';
-          }
-        },
-        ticks: {
-          stepSize: 1, 
-          callback: function(value, index, ticks) {
-              
-              if (Math.floor(value) === value) {
-                  return paddedYAxisLabels[value];
-              }
-              return ''; 
-          }
+      maintainAspectRatio: false,
+      responsive: true,
+      plugins: {
+        datalabels: { display: false },
+        legend: { display: false },
+        tooltip: {
+            backgroundColor: '#1F2937',
+            titleFont: { size: 14 },
+            bodyFont: { size: 12 },
+            displayColors: false,
+            callbacks: {
+                title: (ctx) => ctx[0].raw.y.replace('-gdoc', '').replace('-github', ''),
+                label: (ctx) => {
+                    const size = ctx.raw.v;
+                    const source = ctx.dataset.pointStyle === 'triangle' ? 'Google Docs' : 'GitHub';
+                    return `${source} contribution of size ${size}.`;
+                }
+            }
         }
-      },
-    },
-  }), [paddedYAxisLabels]);
+        },
+        scales: {
+          x: {
+            type: "time",
+            time: { unit: "day", displayFormats: { day: 'MMM d' } },
+            title: { display: true, text: "Date of Contribution", font: {size: 14} },
+            grid: {
+              display: false   // ✅ Hides vertical grid lines
+            }
+          },
+          y: {
+            type: "category",
+            labels: paddedYAxisLabels,
+            title: { display: true, text: "Team Member", font: {size: 14} },
+            grid: { 
+              drawOnChartArea: true,
+              color: (context) => {
+              const rawLabel = context.tick.label; // safer than using paddedYAxisLabels
+              return rawLabel === '' ? 'transparent' : '#e5e7eb';
+            }
+            },
+            ticks: {
+              // No callback needed, will display full labels like 'rohan23-github'
+            }
+          },
+        },
+      }), [paddedYAxisLabels]);
 
  const tabs = [
     { id: "equitable", label: "Equitable Contribution" },
@@ -619,39 +573,29 @@ return (
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               Equitable Contribution
             </h3>
-            <button
-              onClick={() => setShowGoldStandard("equitable")}
-              className="text-sm text-blue-600 hover:underline mb-4"
-            >
-              Why is equitable contribution important?
-            </button>
-            {showGoldStandard && (
-            <GoldStandardModal
-              behavior={showGoldStandard}
-              onCancel={() => setShowGoldStandard(null)}
-            />
-          )}
-          <div className="p-6 bg-white rounded-lg shadow-md">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Commits Pie */}
-        <div className="w-full h-[400px] flex flex-col items-center">
-          <h2 className="text-lg font-semibold text-gray-700 mb-4">
-            GitHub
-          </h2>
-          {/* Dropdown for GitHub metric */}
-          {hasPieData && (
-            <div className="mb-2 flex items-center space-x-2">
-              <label className="text-sm font-medium">Metric:</label>
-              <select
-                value={githubMetric}
-                onChange={(e) => setGithubMetric(e.target.value)}
-                className="border rounded px-2 py-1 text-sm"
-              >
-                <option value="commits">Commits</option>
-                <option value="lines">Lines of Code</option>
-              </select>
-            </div>
-          )}
+            <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
+            <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
+            <div className="p-6 bg-white rounded-lg shadow-md">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Commits Pie */}
+              <div className="w-full h-[400px] flex flex-col items-center">
+                <h2 className="text-lg font-semibold text-gray-700 mb-4">
+                  GitHub
+                </h2>
+                {/* Dropdown for GitHub metric */}
+                {hasPieData && (
+                  <div className="mb-2 flex items-center space-x-2">
+                    <label className="text-sm font-medium">Metric:</label>
+                    <select
+                      value={githubMetric}
+                      onChange={(e) => setGithubMetric(e.target.value)}
+                      className="border rounded px-2 py-1 text-sm"
+                    >
+                      <option value="commits">Commits</option>
+                      <option value="lines">Lines of Code</option>
+                    </select>
+                  </div>
+              )}
           <div className="w-full h-full">
             {hasPieData ? (
               <Pie
@@ -745,18 +689,8 @@ return (
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               Timeliness
             </h3>
-            <button
-              onClick={() => setShowGoldStandard("timeliness")}
-              className="text-sm text-blue-600 hover:underline mb-4"
-            >
-              Why is timeliness important?
-            </button>
-            {showGoldStandard && (
-            <GoldStandardModal
-              behavior={showGoldStandard}
-              onCancel={() => setShowGoldStandard(null)}
-            />
-          )}
+            <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
+            <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
             <div className="p-6 bg-white rounded-lg shadow-md">
       {hasTimelineData ? (
         <>
@@ -810,18 +744,8 @@ return (
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               Mutual Support
             </h3>
-            <button
-              onClick={() => setShowGoldStandard("support")}
-              className="text-sm text-blue-600 hover:underline mb-4"
-            >
-              Why is mutual support important?
-            </button>
-            {showGoldStandard && (
-              <GoldStandardModal
-                behavior={showGoldStandard}
-                onCancel={() => setShowGoldStandard(null)}
-              />
-            )}
+            <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
+            <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
             
             <div className="p-6 bg-white rounded-lg shadow-md">
                         <div style={{ height: '600px' }}>
@@ -845,9 +769,22 @@ return (
         )}
 
         {activeTab === "valued" && (
-          <p className="text-gray-600 italic">
-            Valued Contributions visualization coming soon.
-          </p>
+          <div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">
+              Valued Contributions
+            </h3>
+            <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
+            <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
+            
+          <div className="mt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Reflection Prompt:
+              </label>
+              <p className="text-sm text-gray-600 mb-2">
+                What patterns do you notice in how support is given and received? Is the support reciprocal among team members? Are there individuals who might benefit from more support? </p>
+              <WordCountTextArea />
+            </div>
+            </div>
         )}
       </div>
 

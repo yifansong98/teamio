@@ -40,8 +40,7 @@ async def fetch_github_data(team_id: str = Query(...), owner: str = Query(...), 
         commit_data, pr_data = await run_in_threadpool(fetch_data, owner, repo_name, main_branch_only, merged_prs_only, GITHUB_TOKEN)
 
         from scripts.post_github_data import post_to_db
-        print("Commit data:", commit_data)
-        print("PR data:", pr_data)
+       
         await run_in_threadpool(post_to_db, commit_data, pr_data, team_id)
     except Exception as e:
         traceback.print_exc()
@@ -108,7 +107,7 @@ async def get_feedback_matrix(team_id: str = Query(...)):
         # 1. Fetch all PRs for the team
         pr_ref = await run_in_threadpool(db.reference, f"log_data/github/pull_request")
         pr_data = await run_in_threadpool(pr_ref.get) or {}
-        print(f"Total PRs fetched: {len(pr_data)}")  #
+         #
         team_data = await run_in_threadpool(db.reference(f"teams/{team_id}/logins").get) or {}
 
         team_students = {
@@ -116,7 +115,7 @@ async def get_feedback_matrix(team_id: str = Query(...)):
             for login, info in team_data.items()
             if info.get("net_id")  # only include if net_id exists
         }
-        print(f"Team students (github_login -> netid): {team_students}")
+       
         # 2. Prepare async tasks for fetching comments under each PR
         tasks = []
         pr_list = list(pr_data.items())
@@ -130,6 +129,8 @@ async def get_feedback_matrix(team_id: str = Query(...)):
 
         # 4. Aggregate feedback counts: giver → receiver → count
         feedback_counts = {}
+        feedback_counts_github = {}
+        feedback_counts_gdoc = {}
 
         for (pr_id, pr_info), comments in zip(pr_list, comments_results):
             author = pr_info.get("login", "unknown")
@@ -145,20 +146,26 @@ async def get_feedback_matrix(team_id: str = Query(...)):
                 if not commenter_netid:
                     continue
 
-                if commenter_netid not in feedback_counts:
-                    feedback_counts[commenter_netid] = {}
+                feedback_counts.setdefault(commenter_netid, {})
+                feedback_counts_github.setdefault(commenter_netid, {})
+
+                feedback_counts[commenter_netid].setdefault(author_netid, 0)
+                feedback_counts_github[commenter_netid].setdefault(author_netid, 0)
 
                 if author_netid not in feedback_counts[commenter_netid]:
                     feedback_counts[commenter_netid][author_netid] = 0
+                    feedback_counts_github[commenter_netid][author_netid] = 0
 
-                feedback_counts[commenter_netid][author_netid] += len(comment_entries)  # count all comments
+                count = len(comment_entries)
+                feedback_counts[commenter_netid][author_netid] += count
+                feedback_counts_github[commenter_netid][author_netid] += count
 
         gdoc_comments_ref = await run_in_threadpool(
             db.reference,
             "log_data/google_docs/comment"
         )
         gdoc_comments = await run_in_threadpool(gdoc_comments_ref.get) or {}
-        print(gdoc_comments)
+        
         for comment_id, comment_info in gdoc_comments.items():
             giver_login = comment_info.get("login")
             raw_attr = comment_info.get("raw", {}).get("attribution", {})
@@ -173,14 +180,18 @@ async def get_feedback_matrix(team_id: str = Query(...)):
             if not giver_netid or not receiver_netid:
                 continue
 
-            if giver_netid not in feedback_counts:
-                feedback_counts[giver_netid] = {}
-            if receiver_netid not in feedback_counts[giver_netid]:
-                feedback_counts[giver_netid][receiver_netid] = 0
+            feedback_counts.setdefault(giver_netid, {})
+            feedback_counts_gdoc.setdefault(giver_netid, {})
+
+            feedback_counts[giver_netid].setdefault(receiver_netid, 0)
+            feedback_counts_gdoc[giver_netid].setdefault(receiver_netid, 0)
 
             feedback_counts[giver_netid][receiver_netid] += 1
-
-        return JSONResponse(content={"feedback_counts": feedback_counts})
+            feedback_counts_gdoc[giver_netid][receiver_netid] += 1
+            
+        print(feedback_counts_gdoc)
+        print(feedback_counts_github)
+        return JSONResponse(content={"feedback_counts": feedback_counts, "feedback_counts_github": feedback_counts_github, "feedback_counts_gdoc": feedback_counts_gdoc})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
