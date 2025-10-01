@@ -1,9 +1,14 @@
 import firebase_admin
 from firebase_admin import credentials, db
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import uuid
 
 TEAM_ID = None
 FIREBASE_SERVICE_CREDENTIALS = None
+
+def _uuid5(key: str) -> str:
+    # content-derived stable id (idempotent)
+    return str(uuid.uuid5(uuid.NAMESPACE_URL, key))
 
 def process_commit_data(commit_data):
     processed_data = []
@@ -13,7 +18,7 @@ def process_commit_data(commit_data):
         sha = commit['sha']
         if sha not in sha_set:
             sha_set.add(sha)
-            commit['contribution_id'] = str(uuid.uuid4())
+            commit['contribution_id'] = _uuid5(sha)
             processed_data.append(commit)
         else:
             dupe_count += 1
@@ -44,7 +49,7 @@ def process_pr_data(pr_data):
         pr_number = pr['pr_number']
         if pr_number not in pr_number_set:
             pr_number_set.add(pr_number)
-            pr['contribution_id'] = str(uuid.uuid4())
+            pr['contribution_id'] = _uuid5(f"{TEAM_ID}, pr-{pr_number}")
             processed_data.append(pr)
         else:
             dupe_count += 1
@@ -65,70 +70,117 @@ def process_pr_data(pr_data):
 
     return processed_data
 
-def post_to_contributions(github_data, metric):
-    for contribution in github_data:
-        ref = db.reference(f'contributions/{TEAM_ID}/{contribution["contribution_id"]}')
-        ref.set({
-            'contribution_id': contribution['contribution_id'],
-            'author': contribution['login'],
-            'timestamp': contribution['timestamp'],
+def batch_post_to_contributions(commit_data, pr_data):
+    """Prepares and posts all contributions in a single batch."""
+    if not commit_data and not pr_data:
+        return
+
+    contributions_payload = {}
+    
+    # Prepare commit contributions
+    for c in commit_data:
+        path = c['contribution_id']
+        contributions_payload[path] = {
+            'contribution_id': c['contribution_id'],
+            'author': c['login'],
+            'timestamp': c['timestamp'],
             'tool': 'github',
-            'metric': metric,
+            'metric': 'commit',
             'team_id': TEAM_ID,
-            'title': contribution.get('title', contribution.get('message', ''))
-        })
-
-def post_to_log_data(github_data, metric):
-    for contribution in github_data:
-        ref = db.reference(f'log_data/github/{metric}/{contribution["contribution_id"]}')
-        ref.set(contribution)
-    print(f"Posted {len(github_data)} {metric}(s) to log_data/github/{metric}.")
-
-def post_to_students(github_data):
-
-    # Needs to be updated to use a mapping of GitHub logins to student info
-    team_members = set()
-    for contribution in github_data:
-        email = contribution['login']
-        net_id = email.split('@')[0]
-        team_members.add(net_id)
-        ref = db.reference(f'students/{net_id}')
-        student_data = ref.get() or {
-            'net_id': net_id,
-            'email': email,
-            'first_name': 'John',
-            'last_name': 'Doe',
-            'team_id': TEAM_ID,
-            'contributions': []
+            'title': c.get('message', ''),
+            'quantity': c.get('lines_changed', 0)
         }
-        if contribution['contribution_id'] not in student_data['contributions']:
-            student_data['contributions'].append(contribution['contribution_id'])
-        ref.set(student_data)
-    print(f"Updated student records for {len(github_data)} contributions.")
+        
+    # Prepare PR contributions
+    for pr in pr_data:
+        path = pr['contribution_id']
+        contributions_payload[path] = {
+            'contribution_id': pr['contribution_id'],
+            'author': pr['login'],
+            'timestamp': pr['timestamp'],
+            'tool': 'github',
+            'metric': 'pull_request',
+            'team_id': TEAM_ID,
+            'title': pr.get('title', ''),
+            'quantity': 0 # PRs don't have a simple quantity metric here
+        }
 
-    ref = db.reference(f'teams/{TEAM_ID}')
-    team_data = ref.get() or {'team_id': TEAM_ID, 'members': []}
-    team_data['team_id'] = TEAM_ID
-    ref.set(team_data)
+    if contributions_payload:
+        ref = db.reference(f'contributions/{TEAM_ID}')
+        ref.update(contributions_payload)
+    print("Batch-posted all contributions to the database.")
 
-    ref = db.reference(f'teams/{TEAM_ID}/members')
-    existing_members = ref.get() or []
-    updated_members = list(set(existing_members) | team_members)
-    ref.set(updated_members)
-    print(f"Updated team {TEAM_ID} members.")
+def batch_post_to_log_data(data, metric):
+    """Prepares and posts all log data for a given metric in a single batch."""
+    if not data:
+        return
+        
+    log_data_payload = {item['contribution_id']: item for item in data}
+    
+    if log_data_payload:
+        ref = db.reference(f'log_data/github/{metric}')
+        ref.update(log_data_payload)
+    print(f"Batch-posted {len(data)} {metric}(s) to log_data.")
+
+
+def batch_post_to_teams(all_logins):
+    """Updates team logins in a single batch."""
+    if not TEAM_ID:
+        raise ValueError("TEAM_ID is not set.")
+    if not all_logins:
+        return
+
+    ref = db.reference(f'teams/{TEAM_ID}/logins')
+    existing_logins_data = ref.get() or {}
+    existing_logins_set = set(existing_logins_data.keys())
+
+    new_logins_to_add = all_logins - existing_logins_set
+    
+    updates = {}
+    for login in new_logins_to_add:
+        sanitized_key = login.replace('.', '_').replace('$', '_') # etc.
+        updates[sanitized_key] = {
+            'login': login,
+            'net_id': login, # Placeholder
+        }
+
+    if updates:
+        ref.update(updates)
+    print(f"Updated team {TEAM_ID} with {len(updates)} new members.")
+
+
+# --- REFACTORED MAIN ORCHESTRATOR FUNCTION ---
 
 def post_to_db(commit_data, pr_data, team_id=None):
     global TEAM_ID
     TEAM_ID = team_id
 
-    clean_commit_data = process_commit_data(commit_data)
-    post_to_contributions(clean_commit_data, 'commit')
-    post_to_log_data(clean_commit_data, 'commit')
-    post_to_students(clean_commit_data)
-    print("Successfully posted commit data to the database.")
+    # Stage 1: Process and clean data in parallel (unchanged)
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        future_commits = executor.submit(process_commit_data, commit_data)
+        future_prs = executor.submit(process_pr_data, pr_data)
+        clean_commit_data = future_commits.result()
+        clean_pr_data = future_prs.result()
 
-    clean_pr_data = process_pr_data(pr_data)
-    post_to_contributions(clean_pr_data, 'pull_request')
-    post_to_log_data(clean_pr_data, 'pull_request')
-    post_to_students(clean_pr_data)
-    print("Successfully posted pull request data to the database.")
+    # Stage 2: Submit all batch database writes to run in parallel
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        # Consolidate all unique logins from both data sources first
+        all_logins = {c['login'] for c in clean_commit_data} | {p['login'] for p in clean_pr_data}
+
+        # Submit all batch operations
+        futures = [
+            executor.submit(batch_post_to_contributions, clean_commit_data, clean_pr_data),
+            executor.submit(batch_post_to_log_data, clean_commit_data, 'commit'),
+            executor.submit(batch_post_to_log_data, clean_pr_data, 'pull_request'),
+            executor.submit(batch_post_to_teams, all_logins)
+        ]
+
+        # Wait for all posting to complete and handle any exceptions
+        for future in as_completed(futures):
+            try:
+                future.result()
+            except Exception as e:
+                print(f"A database posting operation failed: {e}")
+                raise
+    
+    print("All database operations completed successfully.")

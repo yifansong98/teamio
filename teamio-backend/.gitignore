@@ -1,10 +1,22 @@
+# Environment files
+.env
+.env.*
+env.py
+
+# Firebase credentials
 TEAMIO_FIREBASE_SERVICE_CREDENTIALS.json
+
+# Python cache
 __pycache__/
 *.py[cod]
+*.pyc
+
+# Virtual environment
 .venv/
-.env.*
+venv/
+
+# Logs
 *.log
-.DS_StoreTEAMIO_FIREBASE_SERVICE_CREDENTIALS.json
-TEAMIO_FIREBASE_SERVICE_CREDENTIALS.json
-.env
-.env
+
+# OS files
+.DS_Store
