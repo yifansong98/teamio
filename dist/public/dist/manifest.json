@@ -27,15 +27,6 @@
       ],
       "js": ["content.js"],
       "run_at": "document_idle"
-    },
-    {
-      "matches": [
-        "http://localhost/*",
-        "https://localhost/*",
-        "http://127.0.0.1/*"
-      ],
-      "js": ["bridge.js"],
-      "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [

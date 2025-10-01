@@ -11,6 +11,7 @@ const OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.readonly';
 
 // Include deleted comments? Set to true if you want them.
 const INCLUDE_DELETED_COMMENTS = true;
+const INCLUDE_RESOLVED_COMMENTS = true;
 
 // ============================
 // Utilities: broadcast & fan-out
@@ -236,6 +237,7 @@ function normThread(c) {
 }
 
 async function fetchCommentsBundle(fileId, token) {
+  console.log('[background] fetchCommentsBundle called with fileId:', fileId, 'token length:', token?.length);
   // 1) File name (for nicer output)
   const meta = await driveGet(
     `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(
@@ -243,6 +245,7 @@ async function fetchCommentsBundle(fileId, token) {
     )}?fields=id,name&supportsAllDrives=true`,
     token
   );
+  console.log('[background] file meta:', meta);
 
   // 2) Comments list with pagination
   const fields =
@@ -252,21 +255,25 @@ async function fetchCommentsBundle(fileId, token) {
   let pageToken = undefined;
 
   do {
+    console.log('[background] fetching comments page, pageToken:', pageToken);
     const qs = new URLSearchParams({
       fields,
       pageSize: '100',
       supportsAllDrives: 'true',
       includeDeleted: INCLUDE_DELETED_COMMENTS ? 'true' : 'false',
+      includeResolved: INCLUDE_RESOLVED_COMMENTS ? 'true' : 'false',
       ...(pageToken ? { pageToken } : {})
     });
     const data = await driveGet(
       `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/comments?${qs}`,
       token
     );
+    console.log('[background] comments response:', data);
     all.push(...(data.comments || []));
     pageToken = data.nextPageToken || undefined;
   } while (pageToken);
 
+  console.log('[background] total comments found:', all.length);
   return {
     fileId,
     name: meta?.name || undefined,
@@ -287,12 +294,11 @@ function parseDocIdFromUrl(url) {
   return m ? m[1] : null;
 }
 
-async function getActiveDocsTab() {
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (!tab || !tab.id || !tab.url) throw new Error('No active tab');
-  if (!/^https:\/\/docs\.google\.com\/document\/(?:u\/\d+\/)?d\//.test(tab.url)) {
-    throw new Error('Active tab is not a Google Doc');
-  }
+async function getAnyDocsTab() {
+  const DOC_URLS = ['https://docs.google.com/document/d/*', 'https://docs.google.com/document/u/*/d/*'];
+  const tabs = await chrome.tabs.query({ url: DOC_URLS });
+  const tab = tabs && tabs[0];
+  if (!tab || !tab.id || !tab.url) throw new Error('No Google Doc tab found');
   return tab;
 }
 
@@ -308,7 +314,9 @@ function waitForNextScrapeResult(tabId, timeoutMs = 90000) {
 
 async function handleScrapeAndComments(sendResponse) {
   try {
-    const tab = await getActiveDocsTab();
+    // Clear previous result so consumers don't read stale payloads
+    try { await chrome.storage.local.remove('lastPayload'); } catch (_) {}
+    const tab = await getAnyDocsTab();
     const tabId = tab.id;
     const docId = parseDocIdFromUrl(tab.url);
     if (!docId) throw new Error('Could not parse file ID from URL');
@@ -318,6 +326,131 @@ async function handleScrapeAndComments(sendResponse) {
 
     // 2) Trigger revision scrape (reuse existing injection logic)
     // Pass a no-op sendResponse because we don't need the early "ok" here.
+    sendScrapeToTab(tabId, () => {});
+
+    // 3) Start OAuth + comments in parallel
+    const commentsPromise = (async () => {
+      try {
+        console.log('[background] Starting OAuth flow for comments...');
+        const token = await getAccessTokenInteractive();
+        console.log('[background] OAuth token obtained, length:', token?.length);
+        const result = await fetchCommentsBundle(docId, token);
+        console.log('[background] Comments fetch completed:', result);
+        return result;
+      } catch (e) {
+        console.error('[background] Comments fetch failed:', e);
+        return { error: String(e && e.message ? e.message : e) };
+      }
+    })();
+
+    // 4) Await both
+    const revPayload = await revPromise.catch((e) => ({ error: String(e) }));
+    const comments = await commentsPromise;
+    console.log('[background] Comments result:', comments);
+
+    // 5) Compose combined JSON + attach comment attribution
+    const rev = revPayload || {};
+    const revision = {
+      ok: !(rev && rev.error),
+      error: rev && rev.error ? String(rev.error) : null,
+
+      // pass through all fields your content script returns
+      tiles: Array.isArray(rev.tiles) ? rev.tiles
+           : Array.isArray(rev.blocks) ? rev.blocks
+           : [],
+      blocks: Array.isArray(rev.blocks) ? rev.blocks : [],  // legacy
+      deletions: Array.isArray(rev.deletions) ? rev.deletions : [],
+      totalsByUser: rev.totalsByUser || {}
+    };
+
+    let commentsObj = {
+      ok: !(comments && comments.error),
+      error: comments && comments.error ? String(comments.error) : null,
+      count: comments && typeof comments.count === 'number' ? comments.count : 0,
+      threads: comments && Array.isArray(comments.threads) ? comments.threads : []
+    };
+
+    // Attach attribution per thread using revision tiles
+    commentsObj = _attachAttributionToComments(revision, commentsObj);
+
+    const combined = {
+      file: { id: docId, name: comments?.name || undefined, url: tab.url },
+      generatedAt: new Date().toISOString(),
+      revision,
+      comments: commentsObj
+    };
+
+    // 6) Persist + broadcast once
+    await chrome.storage.local.set({ lastPayload: combined });
+    await fanOutToWebsiteTabs(combined);
+    broadcast('POPUP_RESULT', combined);
+
+    // 7) Respond to the sender (popup)
+    sendResponse({ ok: true });
+  } catch (err) {
+    sendResponse({ ok: false, error: String(err && err.message ? err.message : err) });
+  }
+}
+
+// Combined flow but for a specific Doc URL, opening the tab if needed
+async function handleScrapeAndCommentsForUrl(url, sendResponse) {
+  try {
+    const targetUrl = String(url || '').trim().replace(/^@+/, '');
+    const docId = parseDocIdFromUrl(targetUrl);
+    if (!docId) throw new Error('Could not parse file ID from URL');
+    // Clear previous result so consumers don't read stale payloads
+    try { await chrome.storage.local.remove('lastPayload'); } catch (_) {}
+
+    // Find a tab with this docId (URL may vary with params/u/N), else open
+    const DOC_URLS = ['https://docs.google.com/document/d/*', 'https://docs.google.com/document/u/*/d/*'];
+    const tabs = await chrome.tabs.query({ url: DOC_URLS });
+    const match = (tabs || []).find(t => t.url && parseDocIdFromUrl(t.url) === docId);
+    let tabId;
+    if (match && match.id) {
+      tabId = match.id;
+      try {
+        // If the existing tab URL differs (e.g., different /u/N or query), navigate to the exact target
+        if ((match.url || '') !== targetUrl) {
+          await new Promise((resolve) => {
+            chrome.tabs.update(tabId, { url: targetUrl, active: true }, () => resolve(null));
+          });
+          await new Promise((resolve) => {
+            const onUpdated = (updatedTabId, changeInfo) => {
+              if (updatedTabId === tabId && changeInfo.status === 'complete') {
+                chrome.tabs.onUpdated.removeListener(onUpdated);
+                resolve(null);
+              }
+            };
+            chrome.tabs.onUpdated.addListener(onUpdated);
+          });
+        } else {
+          await chrome.tabs.update(tabId, { active: true });
+        }
+      } catch (_) {}
+    } else {
+      const created = await new Promise((resolve, reject) => {
+        chrome.tabs.create({ url: targetUrl, active: true }, (tab) => {
+          if (chrome.runtime.lastError) { reject(new Error(chrome.runtime.lastError.message)); return; }
+          resolve(tab);
+        });
+      });
+      if (!created || !created.id) throw new Error('Failed to create tab');
+      tabId = created.id;
+      await new Promise((resolve) => {
+        const onUpdated = (updatedTabId, changeInfo) => {
+          if (updatedTabId === tabId && changeInfo.status === 'complete') {
+            chrome.tabs.onUpdated.removeListener(onUpdated);
+            resolve(null);
+          }
+        };
+        chrome.tabs.onUpdated.addListener(onUpdated);
+      });
+    }
+
+    // 1) Prepare to capture the next SCRAPE_RESULT for this tab
+    const revPromise = waitForNextScrapeResult(tabId);
+
+    // 2) Trigger revision scrape
     sendScrapeToTab(tabId, () => {});
 
     // 3) Start OAuth + comments in parallel
@@ -334,33 +467,149 @@ async function handleScrapeAndComments(sendResponse) {
     const revPayload = await revPromise.catch((e) => ({ error: String(e) }));
     const comments = await commentsPromise;
 
-    // 5) Compose combined JSON
-    const combined = {
-      file: { id: docId, name: comments?.name || undefined, url: tab.url },
-      generatedAt: new Date().toISOString(),
-      revision: {
-        ok: !(revPayload && revPayload.error),
-        error: revPayload && revPayload.error ? String(revPayload.error) : null,
-        blocks: revPayload && revPayload.blocks ? revPayload.blocks : []
-      },
-      comments: {
-        ok: !(comments && comments.error),
-        error: comments && comments.error ? String(comments.error) : null,
-        count: comments && typeof comments.count === 'number' ? comments.count : 0,
-        threads: comments && Array.isArray(comments.threads) ? comments.threads : []
-      }
+    // 5) Compose combined JSON + attach comment attribution
+    const rev = revPayload || {};
+    const revision = {
+      ok: !(rev && rev.error),
+      error: rev && rev.error ? String(rev.error) : null,
+      tiles: Array.isArray(rev.tiles) ? rev.tiles
+           : Array.isArray(rev.blocks) ? rev.blocks
+           : [],
+      blocks: Array.isArray(rev.blocks) ? rev.blocks : [],
+      deletions: Array.isArray(rev.deletions) ? rev.deletions : [],
+      totalsByUser: rev.totalsByUser || {}
     };
 
-    // 6) Persist + broadcast once
+    let commentsObj = {
+      ok: !(comments && comments.error),
+      error: comments && comments.error ? String(comments.error) : null,
+      count: comments && typeof comments.count === 'number' ? comments.count : 0,
+      threads: comments && Array.isArray(comments.threads) ? comments.threads : []
+    };
+
+    commentsObj = _attachAttributionToComments(revision, commentsObj);
+
+    const combined = {
+      file: { id: docId, name: comments?.name || undefined, url: targetUrl },
+      generatedAt: new Date().toISOString(),
+      revision,
+      comments: commentsObj
+    };
+
     await chrome.storage.local.set({ lastPayload: combined });
     await fanOutToWebsiteTabs(combined);
     broadcast('POPUP_RESULT', combined);
 
-    // 7) Respond to the sender (popup)
     sendResponse({ ok: true });
   } catch (err) {
     sendResponse({ ok: false, error: String(err && err.message ? err.message : err) });
   }
+}
+
+// ============================
+// Attribution helpers (pure)
+// ============================
+
+function _norm(s) {
+  return String(s || '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function _stripHtml(html) {
+  if (!html) return '';
+  const tmp = html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n');
+  return _norm(tmp.replace(/<[^>]+>/g, ' '));
+}
+
+function _quoteFromThread(th) {
+  // Prefer Drive "quotedFileContent.value", else html, else plain content
+  const q = _norm(th.quoted || '');
+  if (q) return q;
+  const html = _stripHtml(th.htmlContent || '');
+  if (html) return html;
+  return _norm(th.content || '');
+}
+
+function _bestTileForQuote(tiles, quoteNorm, commentTs) {
+  if (!quoteNorm || quoteNorm.length < 3) return null;
+
+  const qWords = new Set(quoteNorm.split(' '));
+  let best = null;
+
+  for (const t of tiles || []) {
+    const tTextNorm = _norm(t.text);
+    if (!tTextNorm) continue;
+
+    // Exact-substring score (best)
+    let score = 0;
+    if (tTextNorm.includes(quoteNorm)) {
+      // full match: weight by length to prefer longer quotes
+      score = 1 + Math.min(quoteNorm.length / Math.max(10, tTextNorm.length), 1);
+    } else {
+      // Soft overlap score as fallback
+      const tWords = new Set(tTextNorm.split(' '));
+      let overlap = 0;
+      for (const w of qWords) if (tWords.has(w)) overlap++;
+      score = overlap / Math.max(qWords.size, 1); // 0..1
+    }
+
+    if (score <= 0) continue;
+
+    // Prefer tiles close to the comment time
+    const tTs = new Date(t.timestamp).getTime();
+    const dt = Math.abs((commentTs || tTs) - tTs);
+
+    const candidate = {
+      score,
+      dt,
+      author: t.author,
+      authorId: t.authorId,
+      tileTimestamp: t.timestamp,
+      tileTitle: t.title,
+      tileIndexHint: t.segments?.[0]?.index ?? null
+    };
+
+    if (!best || candidate.score > best.score || (candidate.score === best.score && candidate.dt < best.dt)) {
+      best = candidate;
+    }
+  }
+
+  if (!best) return null;
+
+  const confidence =
+    best.score >= 1 ? 'high'
+    : best.score >= 0.4 ? 'medium'
+    : 'low';
+
+  return { ...best, confidence, method: 'quote' };
+}
+
+function _attributeThreadsToTiles(tiles, threads) {
+  const out = [];
+  for (const th of threads || []) {
+    const quote = _quoteFromThread(th);
+    const cTs = new Date(th.createdTime || th.modifiedTime || Date.now()).getTime();
+    const best = _bestTileForQuote(tiles, quote, cTs);
+    out.push(best || { method: 'none', confidence: 'low' });
+  }
+  return out;
+}
+
+function _attachAttributionToComments(revision, comments) {
+  const tiles = Array.isArray(revision.tiles) ? revision.tiles
+             : Array.isArray(revision.blocks) ? revision.blocks
+             : [];
+  const threads = Array.isArray(comments?.threads) ? comments.threads : [];
+  const atts = _attributeThreadsToTiles(tiles, threads);
+
+  const withAttr = threads.map((th, i) => ({
+    ...th,
+    attribution: atts[i] || { method: 'none', confidence: 'low' }
+  }));
+
+  return { ...comments, threads: withAttr };
 }
 
 // ============================
@@ -369,9 +618,15 @@ async function handleScrapeAndComments(sendResponse) {
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   try {
+    // remove WAKE handler; revert to previous working minimal router
     // NEW: one-click flow
     if (msg?.type === 'SCRAPE_AND_COMMENTS') {
-      handleScrapeAndComments(sendResponse);
+      const url = msg?.payload?.url;
+      if (url) {
+        handleScrapeAndCommentsForUrl(url, sendResponse);
+      } else {
+        handleScrapeAndComments(sendResponse);
+      }
       return true; // async
     }
 
