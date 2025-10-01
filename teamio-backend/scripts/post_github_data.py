@@ -83,6 +83,7 @@ def batch_post_to_contributions(commit_data, pr_data):
         contributions_payload[path] = {
             'contribution_id': c['contribution_id'],
             'author': c['login'],
+            'net_id': c['login'],  # Use login as net_id for GitHub data
             'timestamp': c['timestamp'],
             'tool': 'github',
             'metric': 'commit',
@@ -97,6 +98,7 @@ def batch_post_to_contributions(commit_data, pr_data):
         contributions_payload[path] = {
             'contribution_id': pr['contribution_id'],
             'author': pr['login'],
+            'net_id': pr['login'],  # Use login as net_id for GitHub data
             'timestamp': pr['timestamp'],
             'tool': 'github',
             'metric': 'pull_request',

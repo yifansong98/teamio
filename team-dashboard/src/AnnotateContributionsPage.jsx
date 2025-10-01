@@ -134,48 +134,72 @@ const AnnotateContributionsPage = () => {
   const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
-    const fetchContributions = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       try {
-        const response = await fetch("http://localhost:3000/api/contributions/all?team_id=" + teamId);
-        if (response.ok) {
-          const data = await response.json();
-          const initializedData = data.map(c => ({ ...c, attributedTo: c.attributedTo || [c.net_id], valuedBy: c.valuedBy || [] }));
-          setContributions(initializedData);
-
-          const members = {};
-          initializedData.forEach(c => {
-            if (!members[c.net_id]) {
-                members[c.net_id] = { net_id: c.net_id, initials: c.net_id.charAt(0).toUpperCase() };
-            }
-          });
-
-          const sortedNetIds = Object.keys(members).sort();
-          const determinedUser = sortedNetIds.includes('yifan') ? 'yifan' : sortedNetIds[0];
-          setCurrentUser(determinedUser);
-
-          if (determinedUser && !members[determinedUser]) {
-              members[determinedUser] = { net_id: determinedUser, initials: determinedUser.charAt(0).toUpperCase() };
-          }
-
-          const avatarColors = ["bg-pink-500", "bg-blue-500", "bg-yellow-400", "bg-teal-400", "bg-purple-500", "bg-orange-400"];
-          Object.keys(members).forEach((net_id, i) => {
-            members[net_id].color = avatarColors[i % avatarColors.length];
-          });
-
-          setTeamMembers(members);
-        } else {
-          const errorData = await response.json();
+        // Fetch contributions
+        const contributionsResponse = await fetch("http://localhost:3000/api/contributions/all?team_id=" + teamId);
+        if (!contributionsResponse.ok) {
+          const errorData = await contributionsResponse.json();
           setError(errorData.error || "Failed to fetch contributions");
+          return;
         }
+        const contributionsData = await contributionsResponse.json();
+        console.log("Fetched contributions:", contributionsData);
+        
+        // Fetch mapped users
+        const mappedUsersResponse = await fetch(`http://localhost:3000/api/teams/mapped-users?team_id=${teamId}`);
+        if (!mappedUsersResponse.ok) {
+          const errorData = await mappedUsersResponse.json();
+          setError(errorData.error || "Failed to fetch mapped users");
+          return;
+        }
+        const mappedUsers = await mappedUsersResponse.json();
+        console.log("Mapped users:", mappedUsers);
+        
+        // Process contributions with mapped net_ids
+        const processedContributions = contributionsData.map(c => {
+          // Map the author/login to net_id using the mapping
+          const mappedNetId = mappedUsers[c.author] || c.author;
+          return {
+            ...c,
+            net_id: mappedNetId,
+            attributedTo: c.attributedTo || [mappedNetId],
+            valuedBy: c.valuedBy || []
+          };
+        });
+        
+        setContributions(processedContributions);
+        
+        // Create team members from mapped users
+        const members = {};
+        Object.values(mappedUsers).forEach((netId, i) => {
+          if (!members[netId]) {
+            members[netId] = { 
+              net_id: netId, 
+              initials: netId.charAt(0).toUpperCase(),
+              color: ["bg-pink-500", "bg-blue-500", "bg-yellow-400", "bg-teal-400", "bg-purple-500", "bg-orange-400"][i % 6]
+            };
+          }
+        });
+        
+        setTeamMembers(members);
+        
+        // Set current user (use first mapped user or default)
+        const sortedNetIds = Object.values(mappedUsers).sort();
+        const determinedUser = sortedNetIds.includes('yifan') ? 'yifan' : sortedNetIds[0] || 'default_user';
+        setCurrentUser(determinedUser);
+        
       } catch (err) {
-        setError("An error occurred while fetching contributions");
+        console.error("Error details:", err);
+        setError(`An error occurred while fetching data: ${err.message}`);
       } finally {
         setLoading(false);
       }
     };
 
     if (teamId) {
-        fetchContributions();
+        fetchData();
     }
   }, [teamId]);
   
@@ -186,7 +210,7 @@ const AnnotateContributionsPage = () => {
   const handleDeleteExternalWork = (idToDelete) => { if (window.confirm("Are you sure?")) { setContributions(contributions.filter(c => c.id !== idToDelete)); } };
   const handleValuedContribution = (tag, comment) => { setContributions(contributions.map(c => { if (c.id === showValuedModal) { const alreadyValued = c.valuedBy.some(v => v.net_id === currentUser); if (alreadyValued) { return { ...c, valuedBy: c.valuedBy.filter(v => v.net_id !== currentUser) }; } else { const newValuation = { net_id: currentUser, tag, comment }; return { ...c, valuedBy: [...c.valuedBy, newValuation] }; } } return c; })); setShowValuedModal(null); };
 
-  if (loading || !currentUser) {
+  if (loading) {
     return <div className="p-8 text-center text-gray-600 text-lg">Loading contributions...</div>;
   }
 
