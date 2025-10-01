@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request, Response, Query
+from fastapi.responses import JSONResponse
 import firebase_admin
 from firebase_admin import credentials, db
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,6 +14,10 @@ import json
 from collections import defaultdict
 import asyncio
 from fastapi.concurrency import run_in_threadpool
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI()
 app.add_middleware(
@@ -47,7 +52,7 @@ class GitHubDataRequest(BaseModel):
 async def fetch_github_data(team_id: str = Query(...), owner: str = Query(...), repo_name: str = Query(...), main_branch_only: bool = Query(False), merged_prs_only: bool = Query(False)):
     try:
         from scripts.fetch_github_data import fetch_data
-        from env import GITHUB_TOKEN
+        GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 
         commit_data, pr_data = await run_in_threadpool(fetch_data, owner, repo_name, main_branch_only, merged_prs_only, GITHUB_TOKEN)
 
