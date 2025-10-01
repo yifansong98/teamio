@@ -53,6 +53,7 @@ async def fetch_github_data(team_id: str = Query(...), owner: str = Query(...), 
     try:
         from scripts.fetch_github_data import fetch_data
         GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
+        print(f"GitHub token loaded: {GITHUB_TOKEN[:10]}..." if GITHUB_TOKEN else "No token found!")
 
         commit_data, pr_data = await run_in_threadpool(fetch_data, owner, repo_name, main_branch_only, merged_prs_only, GITHUB_TOKEN)
 
@@ -80,10 +81,67 @@ async def get_contributions(team_id: str = Query(...)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+@app.get("/api/teams/map-logins")
+async def get_team_logins(team_id: str = Query(...)):
+    try:
+        ref = db.reference(f'teams/{team_id}/logins')
+        logins_data = ref.get() or {}
+        # Convert to array format expected by frontend
+        logins = list(logins_data.keys())
+        return JSONResponse(content=logins)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.get("/api/teams/mapped-users")
+async def get_mapped_users(team_id: str = Query(...)):
+    try:
+        ref = db.reference(f'teams/{team_id}/logins')
+        logins_data = ref.get() or {}
+        # Return the mapping of logins to net_ids
+        mapped_users = {}
+        for login_key, login_info in logins_data.items():
+            if isinstance(login_info, dict) and 'net_id' in login_info:
+                mapped_users[login_info['login']] = login_info['net_id']
+        return JSONResponse(content=mapped_users)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+@app.post("/api/teams/map-logins")
+async def update_team_logins(team_id: str = Query(...), request: Request = None):
+    try:
+        if not request:
+            return JSONResponse(status_code=400, content={"error": "No request body"})
+        
+        body = await request.json()
+        mappings = body.get("mappings", {})
+        
+        if not mappings:
+            return JSONResponse(status_code=400, content={"error": "No mappings provided"})
+        
+        # Update the team logins with the mappings
+        ref = db.reference(f'teams/{team_id}/logins')
+        updates = {}
+        for login, net_id in mappings.items():
+            updates[login] = {"login": login, "net_id": net_id}
+        
+        ref.update(updates)
+        return JSONResponse(content={"message": "Mappings updated successfully"})
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 @app.get("/api/reflections/commits")
 async def get_commit_summary(team_id: str = Query(...)):
     contrib_ref = await run_in_threadpool(db.reference, f"contributions/{team_id}")
     contributions = await run_in_threadpool(contrib_ref.get) or {}
+
+    # Get mapped users from logins
+    logins_ref = await run_in_threadpool(db.reference, f"teams/{team_id}/logins")
+    logins_data = await run_in_threadpool(logins_ref.get) or {}
+    mapped_users = {}
+    for login_key, login_info in logins_data.items():
+        if isinstance(login_info, dict) and 'net_id' in login_info:
+            mapped_users[login_info['login']] = login_info['net_id']
+    print(f"Commits mapped_users: {mapped_users}")
 
     tasks = []
     for contrib_id in contributions.keys():
@@ -97,7 +155,10 @@ async def get_commit_summary(team_id: str = Query(...)):
     
     for contrib_data, commit_data in zip(contributions.values(), commit_results):
         if commit_data:
-            author = contrib_data.get("net_id", "unknown")
+            # Use mapped net_id if available, otherwise fall back to author
+            original_author = contrib_data.get("author", "unknown")
+            author = mapped_users.get(original_author, original_author)
+            print(f"GitHub timeline: {original_author} -> {author}")
             if author not in summary:
                 summary[author] =  {"commits": 0, "lines": 0}
             summary[author]["commits"] += 1
@@ -181,8 +242,7 @@ async def get_feedback_matrix(team_id: str = Query(...)):
         print(gdoc_comments)
         for comment_id, comment_info in gdoc_comments.items():
             giver_login = comment_info.get("login")
-            raw_attr = comment_info.get("raw", {}).get("attribution", {})
-            receiver_name = raw_attr.get("author")
+            receiver_name = comment_info.get("comment_target_author")
 
             if not giver_login or not receiver_name:
                 continue
@@ -212,6 +272,15 @@ async def get_revisions_history(team_id: str = Query(...)):
     contrib_ref = await run_in_threadpool(db.reference, f"contributions/{team_id}")
     contributions = await run_in_threadpool(contrib_ref.get) or {}
 
+    # Get mapped users from logins
+    logins_ref = await run_in_threadpool(db.reference, f"teams/{team_id}/logins")
+    logins_data = await run_in_threadpool(logins_ref.get) or {}
+    mapped_users = {}
+    for login_key, login_info in logins_data.items():
+        if isinstance(login_info, dict) and 'net_id' in login_info:
+            mapped_users[login_info['login']] = login_info['net_id']
+    print(f"Revisions mapped_users: {mapped_users}")
+
     # 2. Prepare a list of asynchronous tasks
     tasks = []
     for contrib_id in contributions.keys():
@@ -227,7 +296,10 @@ async def get_revisions_history(team_id: str = Query(...)):
 
     for contrib_data, revision_data in zip(contributions.values(), revision_results):
         if revision_data:
-            author = contrib_data.get("net_id", "unknown")
+            # Use mapped net_id if available, otherwise fall back to author
+            original_author = contrib_data.get("author", "unknown")
+            author = mapped_users.get(original_author, original_author)
+            print(f"Google Docs timeline: {original_author} -> {author}")
             summary[author] = summary.get(author, 0) + 1
 
             timestamp = revision_data.get("timestamp")

@@ -163,36 +163,27 @@ def post_to_log_data_docs(contributions: List[Dict[str, Any]]):
     print(f"Posted {len(contributions)} item(s) to log_data/google_docs/*.")
 
 def post_to_students_and_team(contributions: List[Dict[str, Any]], team_id: str):
-    # Update student records and team membership
-    members = set()
+    # Collect all logins for team storage
+    all_logins = set()
+    
     for c in contributions:
         email = c["login"]
-        net_id = _email_to_net_id(email)
-        members.add(net_id)
+        all_logins.add(email)  # Add email as login
 
-        sref = db.reference(f"students/{net_id}")
-        student = sref.get() or {
-            "net_id": net_id,
-            "email": email,
-            "first_name": "John",
-            "last_name": "Doe",
-            "team_id": team_id,
-            "contributions": [],
-        }
-        if c["contribution_id"] not in student.get("contributions", []):
-            student["contributions"].append(c["contribution_id"])
-        student["team_id"] = team_id  # ensure latest
-        sref.set(student)
-
-    tref = db.reference(f"teams/{team_id}")
-    team_data = tref.get() or {"team_id": team_id, "members": []}
-    team_data["team_id"] = team_id
-    tref.set(team_data)
-
-    mref = db.reference(f"teams/{team_id}/members")
-    existing = mref.get() or []
-    updated = list(set(existing) | members)
-    mref.set(updated)
+    # Store all logins in teams/{team_id}/logins for mapping
+    logins_ref = db.reference(f"teams/{team_id}/logins")
+    existing_logins = logins_ref.get() or {}
+    logins_updates = {}
+    for login in all_logins:
+        if login not in existing_logins:
+            sanitized_key = login.replace('.', '_').replace('$', '_').replace('#', '_').replace('[', '_').replace(']', '_')
+            logins_updates[sanitized_key] = {
+                'login': login,
+                'net_id': login  # Placeholder until mapped
+            }
+    if logins_updates:
+        logins_ref.update(logins_updates)
+        print(f"Updated team {team_id} with {len(logins_updates)} new logins from Google Docs.")
 
 def post_docs_to_db(doc_json: Dict[str, Any], team_id: str):
     # Process document data into contributions
