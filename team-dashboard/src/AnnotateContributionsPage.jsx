@@ -114,7 +114,17 @@ const ValuedContributionModal = ({ onSubmit, onCancel }) => {
 const AnnotateContributionsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const teamId = location.state?.teamId || "teamio";
+  // Get team ID from location state or localStorage
+  let teamId = location.state?.teamId;
+  if (!teamId) {
+    const savedData = localStorage.getItem("linkToolsData");
+    if (savedData) {
+      const parsedData = JSON.parse(savedData);
+      teamId = parsedData.teamId || "teamio";
+    } else {
+      teamId = "teamio"; // fallback
+    }
+  }
   const [teamMembers, setTeamMembers] = useState({});
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -234,8 +244,26 @@ const AnnotateContributionsPage = () => {
 
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      <button onClick={() => navigate(-1)} className="text-blue-600 hover:underline mb-6">&larr; Back to Dashboard</button>
-      <h1 className="text-2xl font-bold text-gray-800">Step 2: Annotate Contributions</h1>
+      <button 
+        onClick={() => {
+          // Get team ID from localStorage if not already available
+          let currentTeamId = teamId;
+          if (!currentTeamId) {
+            const savedData = localStorage.getItem("linkToolsData");
+            if (savedData) {
+              const parsedData = JSON.parse(savedData);
+              currentTeamId = parsedData.teamId || "teamio";
+            } else {
+              currentTeamId = "teamio";
+            }
+          }
+          navigate("/teamio", { state: { teamId: currentTeamId } });
+        }} 
+        className="text-blue-600 hover:underline mb-6"
+      >
+        &larr; Back to Dashboard
+      </button>
+      <h1 className="text-2xl font-bold text-gray-800">Step 5: Annotate Contributions</h1>
       <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
           <p className="text-sm">From the resources you linked, the system has extracted the following contribution history. Please review each item with your team and use the options below to create a more complete and accurate picture of your work.</p>
           <ul className="list-disc list-inside text-sm space-y-2 mt-2">
@@ -347,7 +375,21 @@ const AnnotateContributionsPage = () => {
       </div>
       <div className="flex justify-center mt-4">
         <button
-          onClick={() => { setStepsCompletion((prev) => ({...prev, step2: true })) ; navigate("/teamio", { state: { teamId: teamId } })}}
+          onClick={() => { 
+            setStepsCompletion((prev) => ({...prev, step5: true })); 
+            // Get team ID from localStorage if not already available
+            let currentTeamId = teamId;
+            if (!currentTeamId) {
+              const savedData = localStorage.getItem("linkToolsData");
+              if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                currentTeamId = parsedData.teamId || "teamio";
+              } else {
+                currentTeamId = "teamio";
+              }
+            }
+            navigate("/teamio", { state: { teamId: currentTeamId } });
+          }}
           className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
         >
           Submit

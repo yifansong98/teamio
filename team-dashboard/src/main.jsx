@@ -6,6 +6,8 @@ import LinkToolsPage from "./LinkToolsPage";
 import MappingLoginsPage from "./MappingLoginsPage";
 import AnnotateContributionsPage from "./AnnotateContributionsPage"; 
 import ReflectionsPage from "./ReflectionsPage";
+import ProveAuthPage from "./ProveAuthPage";
+import ScrapeDocumentsPage from "./ScrapeDocumentsPage";
 import { StepsCompletionProvider } from "./StepsCompletionContext"; // Import the provider
 import './index.css';
 
@@ -22,6 +24,8 @@ root.render(
         <Route path="/teamio/mapping" element={<MappingLoginsPage />} />
         <Route path="/teamio/annotation" element={<AnnotateContributionsPage />} />
         <Route path="/teamio/reflections" element={<ReflectionsPage />} />
+        <Route path="/teamio/auth" element={<ProveAuthPage />} />
+        <Route path="/teamio/scrape" element={<ScrapeDocumentsPage />} />
       </Routes>
     </BrowserRouter>
   </StepsCompletionProvider>

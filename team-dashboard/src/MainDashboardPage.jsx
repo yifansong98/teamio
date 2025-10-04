@@ -48,7 +48,7 @@ const MainDashboardPage = () => {
               </div>
               <div className="ml-4">
                 <h2 className="text-xl font-semibold text-gray-800">
-                  Link Collaboration Tools
+                  Link GitHub Repository
                 </h2>
                 <p
                   className={`text-sm ${
@@ -59,7 +59,7 @@ const MainDashboardPage = () => {
                 >
                   {stepsCompletion.step1
                     ? "Status: Done"
-                    : "Connect your team's tools"}
+                    : "Connect your team's GitHub repository"}
                 </p>
               </div>
             </div>
@@ -82,63 +82,11 @@ const MainDashboardPage = () => {
           )}
         </div>
 
-        {/* Step 1b: Map Logins to UserIDs */}
+
+        {/* Step 2: Google Docs Authentication */}
         <div
           className={`p-6 rounded-lg shadow-md transition-all ${
             !stepsCompletion.step1 ? "opacity-50 cursor-not-allowed" : ""
-          } ${stepsCompletion.step1b ? "bg-green-50" : "bg-white"}`}
-        >
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <div
-                className={`flex items-center justify-center w-10 h-10 rounded-full ${
-                  stepsCompletion.step1b
-                    ? "bg-green-500 text-white"
-                    : "bg-gray-200 text-gray-600"
-                }`}
-              >
-                <span className="font-bold text-lg">1b</span>
-              </div>
-              <div className="ml-4">
-                <h2 className="text-xl font-semibold text-gray-800">
-                  Map Logins to UserIDs
-                </h2>
-                <p
-                  className={`text-sm ${
-                    stepsCompletion.step1b
-                      ? "text-green-700"
-                      : "text-gray-500"
-                  }`}
-                >
-                  {stepsCompletion.step1b
-                    ? "Status: Done"
-                    : "Ensure contributions are attributed"}
-                </p>
-              </div>
-            </div>
-            {stepsCompletion.step1b && <IconCheck />}
-          </div>
-          {stepsCompletion.step1b ? (
-            <button
-              onClick={() => navigate("/teamio/mapping", { state: { teamId: teamId } })}
-              className="mt-4 text-sm text-blue-600 hover:underline"
-            >
-              View/Edit Mapping
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate("/teamio/mapping", { state: { teamId: teamId } })}
-              className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              Start Step 1b
-            </button>
-          )}
-        </div>
-
-        {/* Step 2: Annotate Contributions */}
-        <div
-          className={`p-6 rounded-lg shadow-md transition-all ${
-            !stepsCompletion.step1b ? "opacity-50 cursor-not-allowed" : ""
           } ${stepsCompletion.step2 ? "bg-green-50" : "bg-white"}`}
         >
           <div className="flex justify-between items-center">
@@ -154,7 +102,7 @@ const MainDashboardPage = () => {
               </div>
               <div className="ml-4">
                 <h2 className="text-xl font-semibold text-gray-800">
-                  Annotate Contributions
+                  Google Docs Authentication
                 </h2>
                 <p
                   className={`text-sm ${
@@ -165,7 +113,7 @@ const MainDashboardPage = () => {
                 >
                   {stepsCompletion.step2
                     ? "Status: Done"
-                    : "Attribute work to team members"}
+                    : "Authenticate with Google to access documents"}
                 </p>
               </div>
             </div>
@@ -173,23 +121,23 @@ const MainDashboardPage = () => {
           </div>
           {stepsCompletion.step1 && !stepsCompletion.step2 && (
             <button
-              onClick={() => navigate("/teamio/annotation", { state: { teamId: teamId } })}
-              className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+              onClick={() => navigate("/teamio/auth")}
+              className="mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-colors"
             >
               Start Step 2
             </button>
           )}
           {stepsCompletion.step2 && (
             <button
-              onClick={() => navigate("/teamio/annotation", { state: { teamId: teamId } })}
-              className="mt-4 text-sm text-blue-600 hover:underline"
+              onClick={() => navigate("/teamio/auth")}
+              className="mt-4 text-sm text-green-600 hover:underline"
             >
-              View/Edit Annotations
+              View/Edit Authentication
             </button>
           )}
         </div>
 
-        {/* Step 3: Team Reflection */}
+        {/* Step 3: Scrape Google Docs */}
         <div
           className={`p-6 rounded-lg shadow-md transition-all ${
             !stepsCompletion.step2 ? "opacity-50 cursor-not-allowed" : ""
@@ -208,7 +156,7 @@ const MainDashboardPage = () => {
               </div>
               <div className="ml-4">
                 <h2 className="text-xl font-semibold text-gray-800">
-                  Team Reflection
+                  Scrape Google Docs
                 </h2>
                 <p
                   className={`text-sm ${
@@ -219,13 +167,175 @@ const MainDashboardPage = () => {
                 >
                   {stepsCompletion.step3
                     ? "Status: Done"
-                    : "Review and discuss teamwork patterns"}
+                    : "Extract revision history and comments from Google Docs"}
                 </p>
               </div>
             </div>
             {stepsCompletion.step3 ? <IconCheck /> : !stepsCompletion.step2 && <IconLock />}
           </div>
-          {stepsCompletion.step2 && (
+          {stepsCompletion.step2 && !stepsCompletion.step3 && (
+            <button
+              onClick={() => navigate("/teamio/scrape")}
+              className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Start Step 3
+            </button>
+          )}
+          {stepsCompletion.step3 && (
+            <button
+              onClick={() => navigate("/teamio/scrape")}
+              className="mt-4 text-sm text-blue-600 hover:underline"
+            >
+              View/Edit Scraping
+            </button>
+          )}
+        </div>
+
+        {/* Step 4: Map All Logins to UserIDs */}
+        <div
+          className={`p-6 rounded-lg shadow-md transition-all ${
+            !stepsCompletion.step3 ? "opacity-50 cursor-not-allowed" : ""
+          } ${stepsCompletion.step4 ? "bg-green-50" : "bg-white"}`}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  stepsCompletion.step4
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                <span className="font-bold text-lg">4</span>
+              </div>
+              <div className="ml-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Map All Logins to UserIDs
+                </h2>
+                <p
+                  className={`text-sm ${
+                    stepsCompletion.step4
+                      ? "text-green-700"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {stepsCompletion.step4
+                    ? "Status: Done"
+                    : "Map GitHub and Google Docs logins to team member IDs"}
+                </p>
+              </div>
+            </div>
+            {stepsCompletion.step4 ? <IconCheck /> : !stepsCompletion.step3 && <IconLock />}
+          </div>
+          {stepsCompletion.step3 && !stepsCompletion.step4 && (
+            <button
+              onClick={() => navigate("/teamio/mapping", { state: { teamId: teamId } })}
+              className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Start Step 4
+            </button>
+          )}
+          {stepsCompletion.step4 && (
+            <button
+              onClick={() => navigate("/teamio/mapping", { state: { teamId: teamId } })}
+              className="mt-4 text-sm text-blue-600 hover:underline"
+            >
+              View/Edit Mapping
+            </button>
+          )}
+        </div>
+
+        {/* Step 5: Annotate Contributions */}
+        <div
+          className={`p-6 rounded-lg shadow-md transition-all ${
+            !stepsCompletion.step4 ? "opacity-50 cursor-not-allowed" : ""
+          } ${stepsCompletion.step5 ? "bg-green-50" : "bg-white"}`}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  stepsCompletion.step5
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                <span className="font-bold text-lg">5</span>
+              </div>
+              <div className="ml-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Annotate Contributions
+                </h2>
+                <p
+                  className={`text-sm ${
+                    stepsCompletion.step5
+                      ? "text-green-700"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {stepsCompletion.step5
+                    ? "Status: Done"
+                    : "Attribute work to team members"}
+                </p>
+              </div>
+            </div>
+            {stepsCompletion.step5 ? <IconCheck /> : !stepsCompletion.step4 && <IconLock />}
+          </div>
+          {stepsCompletion.step4 && !stepsCompletion.step5 && (
+            <button
+              onClick={() => navigate("/teamio/annotation", { state: { teamId: teamId } })}
+              className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Start Step 5
+            </button>
+          )}
+          {stepsCompletion.step5 && (
+            <button
+              onClick={() => navigate("/teamio/annotation", { state: { teamId: teamId } })}
+              className="mt-4 text-sm text-blue-600 hover:underline"
+            >
+              View/Edit Annotations
+            </button>
+          )}
+        </div>
+
+        {/* Step 6: Team Reflection */}
+        <div
+          className={`p-6 rounded-lg shadow-md transition-all ${
+            !stepsCompletion.step5 ? "opacity-50 cursor-not-allowed" : ""
+          } ${stepsCompletion.step6 ? "bg-green-50" : "bg-white"}`}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  stepsCompletion.step6
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                <span className="font-bold text-lg">6</span>
+              </div>
+              <div className="ml-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Team Reflection
+                </h2>
+                <p
+                  className={`text-sm ${
+                    stepsCompletion.step6
+                      ? "text-green-700"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {stepsCompletion.step6
+                    ? "Status: Done"
+                    : "Review and discuss teamwork patterns"}
+                </p>
+              </div>
+            </div>
+            {stepsCompletion.step6 ? <IconCheck /> : !stepsCompletion.step5 && <IconLock />}
+          </div>
+          {stepsCompletion.step5 && (
             <button
               onClick={() => navigate("/teamio/reflections", { state: { teamId: teamId } })}
               className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"

@@ -3,8 +3,6 @@ import { useStepsCompletion } from "./StepsCompletionContext";
 import { useNavigate } from "react-router-dom";
 
 const LinkToolsPage = () => {
-  const [googleDocsData, setGoogleDocsData] = useState(null);
-  const [googleDocsFileName, setGoogleDocsFileName] = useState("");
   const [repoURL, setRepoURL] = useState("");
   const [teamId, setTeamId] = useState("");
   const [loading, setLoading] = useState(false);
@@ -20,8 +18,6 @@ const LinkToolsPage = () => {
     const savedData = localStorage.getItem("linkToolsData");
     if (savedData) {
       const parsedData = JSON.parse(savedData);
-      setGoogleDocsData(parsedData.googleDocsData || null);
-      setGoogleDocsFileName(parsedData.googleDocsFileName || "");
       setRepoURL(parsedData.repoURL || "");
       setTeamId(parsedData.teamId || "");
       setOnlyMainBranch(parsedData.onlyMainBranch || false);
@@ -32,32 +28,14 @@ const LinkToolsPage = () => {
   // Save data to localStorage whenever inputs change
   useEffect(() => {
     const dataToSave = {
-      googleDocsData,
-      googleDocsFileName,
       repoURL,
       teamId,
       onlyMainBranch,
       onlyMergedPRs,
     };
     localStorage.setItem("linkToolsData", JSON.stringify(dataToSave));
-  }, [googleDocsData, googleDocsFileName, repoURL, teamId, onlyMainBranch, onlyMergedPRs]);
+  }, [repoURL, teamId, onlyMainBranch, onlyMergedPRs]);
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setGoogleDocsFileName(file.name);
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const parsedData = JSON.parse(event.target.result);
-          setGoogleDocsData(parsedData);
-        } catch (error) {
-          setResponseMessage("Error: Invalid JSON file");
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -85,45 +63,18 @@ const LinkToolsPage = () => {
         }
       );
 
-      const googleDocsRequest = fetch(
-        `http://localhost:3000/api/google_docs/post`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ team_id: teamId, doc: googleDocsData }),
-        }
-      );
-
-      // Execute both requests in parallel
-      const [githubResponse, googleDocsResponse] = await Promise.all([
-        githubRequest,
-        googleDocsRequest,
-      ]);
+      // Execute GitHub request
+      const githubResponse = await githubRequest;
 
       // Handle GitHub response
       if (githubResponse.ok) {
         const data = await githubResponse.json();
-        setResponseMessage((prev) => prev + "GitHub: " + JSON.stringify(data) + "\n");
-      } else {
-        const errorData = await githubResponse.json();
-        setResponseMessage((prev) => prev + "GitHub Error: " + JSON.stringify(errorData) + "\n");
-      }
-
-      // Handle Google Docs response
-      if (googleDocsResponse.ok) {
-        const data = await googleDocsResponse.json();
-        setResponseMessage((prev) => prev + "Google Docs: " + JSON.stringify(data) + "\n");
-      } else {
-        const errorData = await googleDocsResponse.json();
-        setResponseMessage((prev) => prev + "Google Docs Error: " + JSON.stringify(errorData) + "\n");
-      }
-
-      // Navigate to the next page if both requests succeed
-      if (githubResponse.ok && googleDocsResponse.ok) {
+        setResponseMessage("GitHub: " + JSON.stringify(data) + "\n");
         setStepsCompletion((prev) => ({ ...prev, step1: true }));
         navigate("/teamio", { state: { teamId: teamId } });
+      } else {
+        const errorData = await githubResponse.json();
+        setResponseMessage("GitHub Error: " + JSON.stringify(errorData) + "\n");
       }
     } catch (error) {
       setResponseMessage("Error: " + error.message);
@@ -141,13 +92,11 @@ const LinkToolsPage = () => {
         &larr; Back to Dashboard
       </button>
 
-      <h1 className="text-2xl font-bold text-gray-800">Step 1: Link Collaboration Tools</h1>
+      <h1 className="text-2xl font-bold text-gray-800">Step 1: Link GitHub Repository</h1>
 
       <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
         <p className="text-sm">
-          Link your GitHub repository and upload your Google Docs JSON file to
-          extract contributions. You can also specify additional options for
-          filtering GitHub data.
+          Link your GitHub repository to extract contributions. You can specify additional options for GitHub data extraction.
         </p>
       </div>
 
@@ -193,27 +142,6 @@ const LinkToolsPage = () => {
             />
           </div>
 
-          <div>
-            <label htmlFor="jsonFile" className="block text-sm font-medium text-gray-700">
-              Google Docs JSON
-            </label>
-            <div className="flex items-center space-x-4">
-              <input
-                type="file"
-                id="jsonFile"
-                accept="application/json"
-                onChange={(e) => handleFileUpload(e)}
-                className="hidden"
-              />
-              <button
-                type="button"
-                onClick={() => document.getElementById("jsonFile").click()}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
-              >
-                {googleDocsData ? googleDocsFileName : "Upload File"}
-              </button>
-            </div>
-          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700">GitHub Options</label>
