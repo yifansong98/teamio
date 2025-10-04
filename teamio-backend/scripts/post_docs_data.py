@@ -37,6 +37,63 @@ def _fmt_title_from_ts(ts: str, type_str: str) -> str:
     except Exception:
         return f"{type_str} — {ts or 'Unknown'}"
 
+def process_server_format(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Process server format: {meta: {...}, users: {...}, events: [...], finalText: "..."}
+    """
+    meta = doc.get("meta", {}) or {}
+    file_id = meta.get("docId", "unknown_file")
+    file_url = meta.get("url", "")
+    
+    users = doc.get("users", {}) or {}
+    events = doc.get("events", []) or []
+    
+    def get_user_name(user_id):
+        user_info = users.get(str(user_id), {}) or {}
+        return user_info.get("name", f"User_{user_id}")
+    
+    out = []
+    for idx, event in enumerate(events):
+        if not isinstance(event, dict):
+            continue
+            
+        event_type = event.get("type", "")
+        if event_type not in ["insert", "delete"]:
+            continue
+            
+        author_id = event.get("authorId", "")
+        author_name = get_user_name(author_id)
+        timestamp = event.get("timestamp", "")
+        text = event.get("text", "")
+        
+        # Count words
+        word_count = len(re.findall(r"\b\w+\b", text)) if text else 0
+        
+        # Generate title
+        title = _fmt_title_from_ts(timestamp, "Contribution")
+        
+        # Generate stable ID
+        cid = _uuid5(f"{file_id}:event:{idx}:{event_type}:{text[:64]}")
+        
+        out.append({
+            "contribution_id": cid,
+            "login": author_name,  # Use name as login
+            "timestamp": timestamp,
+            "tool": "google_docs",
+            "metric": "revision",
+            "team_id": None,
+            "action": event_type,
+            "title": title,
+            "text": text,
+            "word_count": word_count,
+            "file_id": file_id,
+            "file_name": "Document",  # Server doesn't provide name
+            "file_url": file_url,
+            "author_id": author_id
+        })
+    
+    return out
+
 def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Process document revisions into contribution records.
@@ -46,34 +103,52 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
       - action: normalized action type ('insert'/'delete')
       - word_count: word count from stats or computed from text
     """
+    # Handle server format: {meta: {...}, users: {...}, events: [...], finalText: "..."}
+    if "events" in doc and "meta" in doc:
+        return process_server_format(doc)
+    
+    # Handle Chrome extension format: {file: {...}, revision: {tiles: [...]}, comments: {...}}
     file = doc.get("file", {}) or {}
     file_id = file.get("id", "unknown_file")
     file_name = file.get("name", "Untitled")
     file_url = file.get("url", "")
 
-    blocks: List[Dict[str, Any]] = (doc.get("revision") or {}).get("blocks", []) or []
+    # Handle both old format (blocks) and new format (tiles)
+    revision = doc.get("revision", {}) or {}
+    tiles = revision.get("tiles", []) or []
+    blocks = revision.get("blocks", []) or []
+    
+    # Use tiles if available, otherwise fall back to blocks
+    items = tiles if tiles else blocks
 
     out: List[Dict[str, Any]] = []
-    for idx, b in enumerate(blocks):
-        author_email = _author_to_email(b.get("author"))
-        ts = b.get("timestamp", "") or ""
-        raw_type = (b.get("type") or "revision").strip()
-        typ = raw_type.lower()
-        if typ == "insert_tile":
-            typ = "insert"
-        elif typ == "deletion":
-            typ = "delete"
-
-        final_text = (b.get("finalText") or b.get("text") or "").strip()
+    for idx, item in enumerate(items):
+        # Handle both tile format and block format
+        if tiles:  # New format with tiles
+            author_email = _author_to_email(item.get("author"))
+            ts = item.get("timestamp", "") or ""
+            typ = "insert"  # tiles are always insertions
+            final_text = (item.get("text") or "").strip()
+            title = item.get("title", _fmt_title_from_ts(ts, "Contribution"))
+        else:  # Old format with blocks
+            author_email = _author_to_email(item.get("author"))
+            ts = item.get("timestamp", "") or ""
+            raw_type = (item.get("type") or "revision").strip()
+            typ = raw_type.lower()
+            if typ == "insert_tile":
+                typ = "insert"
+            elif typ == "deletion":
+                typ = "delete"
+            final_text = (item.get("finalText") or item.get("text") or "").strip()
+            title = _fmt_title_from_ts(ts, "Contribution")
 
         # Get word count from stats if available, otherwise compute from text
-        stats = b.get("stats") or {}
+        stats = item.get("stats") or {}
         wc = stats.get("totalWords")
         if not isinstance(wc, int):
             # Fallback: count words using regex pattern
             wc = len(re.findall(r"\b\w+\b", final_text))
 
-        title = _fmt_title_from_ts(ts, "Revision")
         # Generate stable ID from file, revision details, and text sample
         cid = _uuid5(f"{file_id}:rev:{ts}:{idx}:{typ}:{final_text[:64]}")
 
@@ -93,6 +168,11 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     return out
 
 def process_docs_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    # Handle server format: server doesn't provide comments, return empty list
+    if "events" in doc and "meta" in doc:
+        return []
+    
+    # Handle Chrome extension format: {file: {...}, revision: {tiles: [...]}, comments: {...}}
     file = doc.get("file", {})
     file_id = file.get("id", "unknown_file")
     file_name = file.get("name", "Untitled")
@@ -101,7 +181,7 @@ def process_docs_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     out = []
     for t in threads:
-        # Get commenter email from various possible fields
+        # Get commenter email from various possible fields (handle both old and new formats)
         commenter_email = _author_to_email(
             t.get("authorEmail") or t.get("author") or t.get("authorName")
         )
@@ -113,7 +193,7 @@ def process_docs_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         quoted = (t.get("quoted") or "").strip()  # Quoted text from document, if present
         title = _fmt_title_from_ts(created, "Comment")
 
-        # Extract attribution info for the text being commented on
+        # Extract attribution info for the text being commented on (handle both old and new formats)
         att = t.get("attribution") or {}
         target_author = att.get("author") or att.get("authorName")
 
@@ -186,9 +266,14 @@ def post_to_students_and_team(contributions: List[Dict[str, Any]], team_id: str)
         print(f"Updated team {team_id} with {len(logins_updates)} new logins from Google Docs.")
 
 def post_docs_to_db(doc_json: Dict[str, Any], team_id: str):
+    print(f"Processing Google Docs data for team {team_id}")
+    print(f"Document structure keys: {list(doc_json.keys())}")
+    
     # Process document data into contributions
     revs = process_docs_revisions(doc_json)
     cmts = process_docs_comments(doc_json)
+    
+    print(f"Found {len(revs)} revisions and {len(cmts)} comments")
 
     # Store summary data in contributions table
     post_to_contributions_generic(revs, team_id)

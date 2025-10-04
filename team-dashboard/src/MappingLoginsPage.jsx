@@ -14,8 +14,18 @@ const MappingLoginsPage = () => {
   const { setStepsCompletion } = useStepsCompletion();
 
   useEffect(() => {
-    if (!teamId) {
-      setResponseMessage("Error: Team ID is missing.");
+    // Load team ID from localStorage if not provided in state
+    let currentTeamId = teamId;
+    if (!currentTeamId) {
+      const savedData = localStorage.getItem("linkToolsData");
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        currentTeamId = parsedData.teamId || "";
+      }
+    }
+
+    if (!currentTeamId) {
+      setResponseMessage("Error: Team ID is missing. Please complete Step 1 (Link GitHub Repository) first.");
       return;
     }
 
@@ -23,11 +33,11 @@ const MappingLoginsPage = () => {
     const fetchLogins = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`http://localhost:3000/api/teams/map-logins?team_id=${teamId}`);
+        const response = await fetch(`http://localhost:3000/api/teams/map-logins?team_id=${currentTeamId}`);
         if (response.ok) {
           const data = await response.json();
           console.log("Fetched Logins:", data);
-          console.log("Team ID:", teamId);
+          console.log("Team ID:", currentTeamId);
           setLogins(data || []);
         } else {
           const errorData = await response.json();
@@ -64,9 +74,26 @@ const MappingLoginsPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setResponseMessage("");
+
+    // Get team ID from localStorage if not provided in state
+    let currentTeamId = teamId;
+    if (!currentTeamId) {
+      const savedData = localStorage.getItem("linkToolsData");
+      if (savedData) {
+        const parsedData = JSON.parse(savedData);
+        currentTeamId = parsedData.teamId || "";
+      }
+    }
+
+    if (!currentTeamId) {
+      setResponseMessage("Error: Team ID is missing. Please complete Step 1 (Link GitHub Repository) first.");
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await fetch(`http://localhost:3000/api/teams/map-logins?team_id=${teamId}`, {
+      const response = await fetch(`http://localhost:3000/api/teams/map-logins?team_id=${currentTeamId}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -76,8 +103,8 @@ const MappingLoginsPage = () => {
 
       if (response.ok) {
         setResponseMessage("Mappings successfully saved!");
-        setStepsCompletion((prev) => ({ ...prev, step1b: true }));
-        navigate("/teamio", { state: { teamId: teamId } }); // Navigate to a success page or another route
+        setStepsCompletion((prev) => ({ ...prev, step4: true }));
+        navigate("/teamio", { state: { teamId: currentTeamId } }); // Navigate to a success page or another route
       } else {
         const errorData = await response.json();
         setResponseMessage("Error: " + JSON.stringify(errorData));
@@ -92,17 +119,28 @@ const MappingLoginsPage = () => {
   return (
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
       <button
-        onClick={() => navigate("/teamio", { state: { teamId: teamId } })}
+        onClick={() => {
+          // Get team ID from localStorage if not provided in state
+          let currentTeamId = teamId;
+          if (!currentTeamId) {
+            const savedData = localStorage.getItem("linkToolsData");
+            if (savedData) {
+              const parsedData = JSON.parse(savedData);
+              currentTeamId = parsedData.teamId || "";
+            }
+          }
+          navigate("/teamio", { state: { teamId: currentTeamId } });
+        }}
         className="text-blue-600 hover:underline mb-6"
       >
         &larr; Back to Dashboard
       </button>
 
-      <h1 className="text-2xl font-bold text-gray-800">Step 1b: Map Logins to User IDs</h1>
+      <h1 className="text-2xl font-bold text-gray-800">Step 4: Map All Logins to User IDs</h1>
 
       <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
         <p className="text-sm">
-          Below is a list of logins extracted from your linked tools. Please map each login to the
+          Below is a list of logins extracted from your GitHub repository and Google Docs. Please map each login to the
           corresponding UserID for your team members. This mapping ensures that contributions are
           correctly attributed to the right individuals.
         </p>
