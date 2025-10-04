@@ -381,12 +381,12 @@ const ReflectionsPage = () => {
     labels: Object.keys(revisionData),
     datasets: [
       {
-        // label: gdocMetric === "revisions" ? "Revisions" : "Word Count",
-        // data: Object.values(revisionData).map((item) =>
-        //   gdocMetric === "revisions" ? item.revisions : item.word_count
-        // ), uncomment once you get word count data
-        label: "Revisions",
-        data: Object.values(revisionData),
+        label: gdocMetric === "revisions" ? "Revisions" : "Word Count",
+        data: Object.values(revisionData).map((item) =>
+          gdocMetric === "revisions" ? item.revisions : item.word_count
+        ),
+        // label: "Revisions",
+        // data: Object.values(revisionData),
         backgroundColor:Object.keys(revisionData).map(
         (id) => userColors[id]
       ),
@@ -573,6 +573,8 @@ return (
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               Equitable Contribution
             </h3>
+            <p className="text-sm text-gray-600 mb-4">The pie charts below illustrate how contributions were distributed across tools. A single unit corresponds to a commit in GitHub, an edit in Google Docs, and one hour of work for External Work.</p>
+            
             <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
             <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
             <div className="p-6 bg-white rounded-lg shadow-md">
@@ -689,6 +691,8 @@ return (
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               Timeliness
             </h3>
+            <p className="text-sm text-gray-600 mb-4">This chart visualizes when each team member made contributions throughout the project timeline. Each shape represents the type of work and is colored to indicate the contributor, helping you see patterns of participation over time.</p>
+            
             <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
             <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
             <div className="p-6 bg-white rounded-lg shadow-md">
@@ -744,6 +748,8 @@ return (
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               Mutual Support
             </h3>
+              <p className="text-sm text-gray-600 mb-4">This heatmap visualizes the flow of support within the team. Each row represents the member giving support, and each column represents the member receiving it. The color intensity of a cell indicates the number of supportive interactions—such as code reviews, comments, or feedback—between the two members.</p>
+           
             <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
             <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
             
@@ -773,6 +779,8 @@ return (
             <h3 className="text-xl font-semibold text-gray-800 mb-2">
               Valued Contributions
             </h3>
+            <p className="text-sm text-gray-600 mb-4">This list displays contributions that teammates have bookmarked as ‘Valued.’ It highlights high-impact work that the team collectively recognized and appreciated.</p>
+
             <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
             <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
             

@@ -164,8 +164,8 @@ async def get_commit_summary(team_id: str = Query(...)):
             summary[author]["commits"] += 1
 
             additions = commit_data.get("additions", 0)
-            #deletions = commit_data.get("deletions", 0)
-            summary[author]["lines"] += additions #+ deletions
+            deletions = commit_data.get("deletions", 0)
+            summary[author]["lines"] += additions + deletions
             timestamp = commit_data.get("timestamp")
             size =  contrib_data.get("quantity")
             if timestamp:
@@ -300,8 +300,11 @@ async def get_revisions_history(team_id: str = Query(...)):
             original_author = contrib_data.get("author", "unknown")
             author = mapped_users.get(original_author, original_author)
             print(f"Google Docs timeline: {original_author} -> {author}")
-            summary[author] = summary.get(author, 0) + 1
-
+            if author not in summary:
+                summary[author] =  {"revisions": 0, "word_count": 0}
+            summary[author]['revisions'] += 1
+            summary[author]['word_count'] += revision_data.get('word_count', 0)
+            
             timestamp = revision_data.get("timestamp")
             if timestamp:
                 if author not in timeline_map:
