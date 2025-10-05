@@ -13,6 +13,8 @@ const ScrapeDocumentsPage = () => {
   const [error, setError] = useState(null);
   const [teamId, setTeamId] = useState('');
   const [isPosting, setIsPosting] = useState(false);
+  const [googleToken, setGoogleToken] = useState(null);
+  const [isGettingToken, setIsGettingToken] = useState(false);
 
   // Check server health
   const checkServerHealth = async () => {
@@ -43,6 +45,48 @@ const ScrapeDocumentsPage = () => {
     return () => clearInterval(interval);
   }, []);
 
+  const getGoogleToken = async () => {
+    setIsGettingToken(true);
+    setError(null);
+    
+    try {
+      // Open OAuth flow in a popup
+      const popup = window.open(
+        'http://localhost:8787/oauth/authorize',
+        'oauth',
+        'width=500,height=600,scrollbars=yes,resizable=yes'
+      );
+      
+      // Listen for the popup to close or receive a message
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed);
+          setIsGettingToken(false);
+        }
+      }, 1000);
+      
+      // Listen for message from popup (if using postMessage)
+      const messageListener = (event) => {
+        if (event.origin !== 'http://localhost:8787') return;
+        
+        if (event.data.token) {
+          console.log('Received token from OAuth:', event.data.token.length, 'characters');
+          setGoogleToken(event.data.token);
+          popup.close();
+          clearInterval(checkClosed);
+          setIsGettingToken(false);
+          window.removeEventListener('message', messageListener);
+        }
+      };
+      
+      window.addEventListener('message', messageListener);
+      
+    } catch (err) {
+      setError('Failed to get Google token: ' + err.message);
+      setIsGettingToken(false);
+    }
+  };
+
   const scrapeDocument = async () => {
     if (!docUrl.trim()) {
       setError('Please enter a Google Docs URL or document ID');
@@ -54,11 +98,13 @@ const ScrapeDocumentsPage = () => {
     setResult(null);
 
     try {
+      console.log('Sending token to server:', googleToken ? `${googleToken.length} characters` : 'null');
       const response = await fetch('http://localhost:8787/api/replay', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer 65678987654567887658'
+          'Authorization': 'Bearer 65678987654567887658',
+          'X-Google-Token': googleToken || ''
         },
         body: JSON.stringify({
           target: docUrl,
@@ -198,6 +244,33 @@ const ScrapeDocumentsPage = () => {
           )}
         </div>
 
+        {/* Google Token Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Google Authentication</h2>
+          
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">
+                  {googleToken ? 'Google token obtained' : 'Get Google token to fetch comments'}
+                </p>
+                {googleToken && (
+                  <p className="text-xs text-green-600 mt-1">
+                    Token: {googleToken.substring(0, 20)}...
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={getGoogleToken}
+                disabled={isGettingToken}
+                className="bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50"
+              >
+                {isGettingToken ? 'Getting Token...' : googleToken ? 'Refresh Token' : 'Get Google Token'}
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Document Scraping Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4">Scrape Google Docs</h2>
@@ -217,7 +290,10 @@ const ScrapeDocumentsPage = () => {
             </div>
 
             <button
-              onClick={scrapeDocument}
+              onClick={() => {
+                console.log('Button clicked! Server status:', serverStatus, 'Processing:', isProcessing, 'Token:', googleToken ? `${googleToken.length} chars` : 'null');
+                scrapeDocument();
+              }}
               disabled={serverStatus !== 'running' || isProcessing}
               className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >

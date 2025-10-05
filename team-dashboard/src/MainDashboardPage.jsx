@@ -86,8 +86,7 @@ const MainDashboardPage = () => {
         {/* Step 2: Google Docs Authentication */}
         <div
           className={`p-6 rounded-lg shadow-md transition-all ${
-            !stepsCompletion.step1 ? "opacity-50 cursor-not-allowed" : ""
-          } ${stepsCompletion.step2 ? "bg-green-50" : "bg-white"}`}
+            stepsCompletion.step2 ? "bg-green-50" : "bg-white"}`}
         >
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -117,9 +116,9 @@ const MainDashboardPage = () => {
                 </p>
               </div>
             </div>
-            {stepsCompletion.step2 ? <IconCheck /> : !stepsCompletion.step1 && <IconLock />}
+            {stepsCompletion.step2 ? <IconCheck /> : <IconLock />}
           </div>
-          {stepsCompletion.step1 && !stepsCompletion.step2 && (
+          {!stepsCompletion.step2 && (
             <button
               onClick={() => navigate("/teamio/auth")}
               className="mt-4 bg-green-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-600 transition-colors"
@@ -140,8 +139,7 @@ const MainDashboardPage = () => {
         {/* Step 3: Scrape Google Docs */}
         <div
           className={`p-6 rounded-lg shadow-md transition-all ${
-            !stepsCompletion.step2 ? "opacity-50 cursor-not-allowed" : ""
-          } ${stepsCompletion.step3 ? "bg-green-50" : "bg-white"}`}
+            stepsCompletion.step3 ? "bg-green-50" : "bg-white"}`}
         >
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -171,9 +169,9 @@ const MainDashboardPage = () => {
                 </p>
               </div>
             </div>
-            {stepsCompletion.step3 ? <IconCheck /> : !stepsCompletion.step2 && <IconLock />}
+            {stepsCompletion.step3 ? <IconCheck /> : <IconLock />}
           </div>
-          {stepsCompletion.step2 && !stepsCompletion.step3 && (
+          {!stepsCompletion.step3 && (
             <button
               onClick={() => navigate("/teamio/scrape")}
               className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
@@ -194,8 +192,7 @@ const MainDashboardPage = () => {
         {/* Step 4: Map All Logins to UserIDs */}
         <div
           className={`p-6 rounded-lg shadow-md transition-all ${
-            !stepsCompletion.step3 ? "opacity-50 cursor-not-allowed" : ""
-          } ${stepsCompletion.step4 ? "bg-green-50" : "bg-white"}`}
+            stepsCompletion.step4 ? "bg-green-50" : "bg-white"}`}
         >
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -225,9 +222,9 @@ const MainDashboardPage = () => {
                 </p>
               </div>
             </div>
-            {stepsCompletion.step4 ? <IconCheck /> : !stepsCompletion.step3 && <IconLock />}
+            {stepsCompletion.step4 ? <IconCheck /> : <IconLock />}
           </div>
-          {stepsCompletion.step3 && !stepsCompletion.step4 && (
+          {!stepsCompletion.step4 && (
             <button
               onClick={() => navigate("/teamio/mapping", { state: { teamId: teamId } })}
               className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
@@ -248,8 +245,7 @@ const MainDashboardPage = () => {
         {/* Step 5: Annotate Contributions */}
         <div
           className={`p-6 rounded-lg shadow-md transition-all ${
-            !stepsCompletion.step4 ? "opacity-50 cursor-not-allowed" : ""
-          } ${stepsCompletion.step5 ? "bg-green-50" : "bg-white"}`}
+            stepsCompletion.step5 ? "bg-green-50" : "bg-white"}`}
         >
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -279,9 +275,9 @@ const MainDashboardPage = () => {
                 </p>
               </div>
             </div>
-            {stepsCompletion.step5 ? <IconCheck /> : !stepsCompletion.step4 && <IconLock />}
+            {stepsCompletion.step5 ? <IconCheck /> : <IconLock />}
           </div>
-          {stepsCompletion.step4 && !stepsCompletion.step5 && (
+          {!stepsCompletion.step5 && (
             <button
               onClick={() => navigate("/teamio/annotation", { state: { teamId: teamId } })}
               className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
@@ -302,8 +298,7 @@ const MainDashboardPage = () => {
         {/* Step 6: Team Reflection */}
         <div
           className={`p-6 rounded-lg shadow-md transition-all ${
-            !stepsCompletion.step5 ? "opacity-50 cursor-not-allowed" : ""
-          } ${stepsCompletion.step6 ? "bg-green-50" : "bg-white"}`}
+            stepsCompletion.step6 ? "bg-green-50" : "bg-white"}`}
         >
           <div className="flex justify-between items-center">
             <div className="flex items-center">
@@ -333,14 +328,22 @@ const MainDashboardPage = () => {
                 </p>
               </div>
             </div>
-            {stepsCompletion.step6 ? <IconCheck /> : !stepsCompletion.step5 && <IconLock />}
+            {stepsCompletion.step6 ? <IconCheck /> : <IconLock />}
           </div>
-          {stepsCompletion.step5 && (
+          {!stepsCompletion.step6 && (
             <button
               onClick={() => navigate("/teamio/reflections", { state: { teamId: teamId } })}
               className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
             >
               Start Reflection
+            </button>
+          )}
+          {stepsCompletion.step6 && (
+            <button
+              onClick={() => navigate("/teamio/reflections", { state: { teamId: teamId } })}
+              className="mt-4 text-sm text-blue-600 hover:underline"
+            >
+              View Reflection
             </button>
           )}
         </div>

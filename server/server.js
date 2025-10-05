@@ -23,7 +23,7 @@ app.use(cors({
     return cb(new Error(`CORS: origin ${origin} not allowed`))
   },
   methods: ['GET','POST','OPTIONS'],
-  allowedHeaders: ['Content-Type','Authorization'],
+  allowedHeaders: ['Content-Type','Authorization','X-Google-Token'],
 }))
 app.options('/api/replay', cors())
 
@@ -38,6 +38,11 @@ const DEVTOOLS = process.env.DEVTOOLS === '1'
 const SLOWMO = Number(process.env.SLOWMO || 0)
 const KEEP_OPEN = process.env.KEEP_OPEN === '1'
 
+// OAuth config for comments
+const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID || '772932077916-l83t17b27phrbcsm9df08jfh4840bv51.apps.googleusercontent.com'
+const OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
+const INCLUDE_DELETED_COMMENTS = process.env.INCLUDE_DELETED_COMMENTS === 'true'
+
 // Parse HEADLESS env: false -> visible; "new"/true -> headless-new
 function resolveHeadless() {
   const raw = String(process.env.HEADLESS ?? 'new').toLowerCase()
@@ -46,6 +51,139 @@ function resolveHeadless() {
   return raw // allow 'new' or future values
 }
 const HEADLESS = resolveHeadless()
+
+/* ===== OAuth & Comments ===== */
+const REDIRECT_URL = 'http://localhost:8787/oauth/callback'
+
+function buildAuthUrl() {
+  const base = 'https://accounts.google.com/o/oauth2/v2/auth'
+  const params = new URLSearchParams({
+    client_id: OAUTH_CLIENT_ID,
+    response_type: 'code',
+    redirect_uri: REDIRECT_URL,
+    scope: OAUTH_SCOPE,
+    access_type: 'offline',
+    prompt: 'consent'
+  })
+  return `${base}?${params.toString()}`
+}
+
+async function getAccessToken(code) {
+  const tokenUrl = 'https://oauth2.googleapis.com/token'
+  const clientSecret = process.env.OAUTH_CLIENT_SECRET || ''
+  console.log(`[oauth] client_secret length: ${clientSecret.length}`)
+  console.log(`[oauth] client_secret starts with: ${clientSecret.substring(0, 10)}...`)
+  console.log(`[oauth] client_id: ${OAUTH_CLIENT_ID}`)
+  console.log(`[oauth] redirect_uri: ${REDIRECT_URL}`)
+  console.log(`[oauth] code length: ${code.length}`)
+  
+  const response = await fetch(tokenUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: OAUTH_CLIENT_ID,
+      client_secret: clientSecret,
+      code,
+      grant_type: 'authorization_code',
+      redirect_uri: REDIRECT_URL
+    })
+  })
+  
+  if (!response.ok) {
+    const errorText = await response.text()
+    console.log(`[oauth] Google error response: ${errorText}`)
+    throw new Error(`OAuth token request failed: ${response.status}`)
+  }
+  
+  const data = await response.json()
+  console.log(`[oauth] token received, length: ${data.access_token?.length || 0}`)
+  return data.access_token
+}
+
+async function driveGet(url, token) {
+  const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Drive ${res.status} ${res.statusText}: ${text.slice(0, 800)}`)
+  }
+  return res.json()
+}
+
+function normReply(r) {
+  return {
+    id: r.id,
+    createdTime: r.createdTime || null,
+    modifiedTime: r.modifiedTime || null,
+    authorName: r.author?.displayName || 'Unknown',
+    content: r.content || '',
+    htmlContent: r.htmlContent || ''
+  }
+}
+
+function normThread(c) {
+  return {
+    id: c.id,
+    createdTime: c.createdTime || null,
+    modifiedTime: c.modifiedTime || null,
+    resolved: !!c.resolved,
+    deleted: !!c.deleted,
+    authorName: c.author?.displayName || 'Unknown',
+    content: c.content || '',
+    htmlContent: c.htmlContent || '',
+    quoted: c.quotedFileContent?.value || '',
+    anchor: c.anchor || null,
+    replies: (c.replies || []).map(normReply)
+  }
+}
+
+async function fetchCommentsBundle(fileId, token) {
+  console.log('[server] fetchCommentsBundle called with fileId:', fileId, 'token length:', token?.length)
+  console.log('[server] received token:', token ? token.substring(0, 20) + '...' : 'null')
+
+  // 1) File meta (for nicer output); ask for resourceKey for secured files
+  const meta = await driveGet(
+    `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(
+      fileId
+    )}?fields=id,name,resourceKey&supportsAllDrives=true`,
+    token
+  )
+  console.log('[server] file meta:', meta)
+
+  // 2) Comments list with pagination
+  const fields =
+    'comments(id,createdTime,modifiedTime,resolved,deleted,author(displayName),content,htmlContent,quotedFileContent/value,anchor,replies(id,createdTime,modifiedTime,author(displayName),content,htmlContent)),nextPageToken'
+
+  const all = []
+  let pageToken = undefined
+
+  do {
+    console.log('[server] fetching comments page, pageToken:', pageToken)
+    const qs = new URLSearchParams({
+      fields,
+      pageSize: '100',
+      includeDeleted: INCLUDE_DELETED_COMMENTS ? 'true' : 'false',
+      ...(meta?.resourceKey ? { resourceKey: meta.resourceKey } : {}),
+      ...(pageToken ? { pageToken } : {})
+    })
+    const url = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(fileId)}/comments?${qs}`
+    console.log('[server] GET', url)
+    const data = await driveGet(url, token)
+    console.log('[server] comments page:', {
+      pageCount: (data.comments || []).length,
+      next: !!data.nextPageToken
+    })
+    all.push(...(data.comments || []))
+    pageToken = data.nextPageToken || undefined
+  } while (pageToken)
+
+  console.log('[server] total comments found:', all.length)
+  return {
+    fileId,
+    name: meta?.name || undefined,
+    count: all.length,
+    threads: all.map(normThread)
+  }
+}
 
 console.log('[boot] API_TOKEN present?', Boolean(API_TOKEN))
 console.log('[boot] HEADLESS =', HEADLESS, 'KEEP_OPEN =', KEEP_OPEN, 'SLOWMO =', SLOWMO, 'DEVTOOLS =', DEVTOOLS)
@@ -97,6 +235,9 @@ app.post('/api/replay', async (req, res) => {
     if (!API_TOKEN) return res.status(500).json({ error: 'Server missing API_TOKEN' })
     const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
     if (auth !== API_TOKEN) return res.status(401).json({ error: 'Unauthorized' })
+    
+    // Store the auth token for potential Google OAuth use
+    req.googleToken = auth
 
     const {
       target,
@@ -434,13 +575,39 @@ app.post('/api/replay', async (req, res) => {
       return res.status(200).send(JSON.stringify(result, null, 2))
     }
 
+    // Fetch comments if Google OAuth token is available
+    let comments = null
+    const googleToken = req.headers['x-google-token']
+    console.log('[replay] Google token available:', googleToken ? 'yes' : 'no')
+    
+    if (googleToken && googleToken.trim()) {
+      try {
+        console.log('[replay] fetching comments with Google OAuth token, length:', googleToken.length)
+        comments = await fetchCommentsBundle(docId, googleToken)
+        console.log('[replay] fetched comments:', comments.count, 'threads')
+      } catch (commentError) {
+        console.warn('[replay] failed to fetch comments:', commentError.message)
+        // Continue without comments rather than failing
+      }
+    } else {
+      console.log('[replay] No Google OAuth token provided, skipping comments')
+    }
+
     console.log('[replay] returning', {
       events: result?.events?.length,
       finalLen: result?.finalText?.length,
       doc: result?.meta?.docId,
+      comments: comments?.count || 0,
       ms: Date.now() - started
     })
-    return res.json(result)
+    
+    // Include comments in response if available
+    const response = { ...result }
+    if (comments) {
+      response.comments = comments
+    }
+    
+    return res.json(response)
 
   } catch (err) {
     try {
@@ -449,6 +616,59 @@ app.post('/api/replay', async (req, res) => {
     console.error('Replay error:', err)
     try { if (browser) await browser.close() } catch {}
     return res.status(500).json({ error: err?.message || String(err) })
+  }
+})
+
+/* ===== OAuth Endpoints ===== */
+app.get('/oauth/authorize', (req, res) => {
+  const authUrl = buildAuthUrl()
+  res.redirect(authUrl)
+})
+
+app.get('/oauth/callback', async (req, res) => {
+  try {
+    const { code } = req.query
+    if (!code) {
+      return res.status(400).send(`
+        <html>
+          <body>
+            <script>
+              window.opener.postMessage({ error: 'Authorization code missing' }, '*');
+              window.close();
+            </script>
+            <p>Authorization failed. Closing window...</p>
+          </body>
+        </html>
+      `)
+    }
+    
+    const token = await getAccessToken(code)
+    
+    // Return HTML that posts the token back to the parent window
+    res.send(`
+      <html>
+        <body>
+          <script>
+            window.opener.postMessage({ token: '${token}' }, '*');
+            window.close();
+          </script>
+          <p>Authorization successful. Closing window...</p>
+        </body>
+      </html>
+    `)
+  } catch (error) {
+    console.error('[oauth] callback error:', error)
+    res.status(500).send(`
+      <html>
+        <body>
+          <script>
+            window.opener.postMessage({ error: '${error.message}' }, '*');
+            window.close();
+          </script>
+          <p>Authorization failed: ${error.message}. Closing window...</p>
+        </body>
+      </html>
+    `)
   }
 })
 
