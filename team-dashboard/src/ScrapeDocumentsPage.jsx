@@ -126,8 +126,16 @@ const ScrapeDocumentsPage = () => {
       const data = await response.json();
       setResult(data);
       setError(null);
-      // Mark step 5 as completed
-      setStepsCompletion(prev => ({ ...prev, step5: true }));
+      
+      // Automatically post to backend after scraping
+      try {
+        await postToBackend();
+        // Mark step 3 as completed (scraping and posting done)
+        setStepsCompletion(prev => ({ ...prev, step3: true }));
+      } catch (postError) {
+        console.error('Failed to post to backend:', postError);
+        setError(`Scraping successful but failed to post to backend: ${postError.message}`);
+      }
       }
     } catch (err) {
       if (err.message.includes('401') || err.message.includes('Unauthorized')) {

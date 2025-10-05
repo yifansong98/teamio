@@ -107,6 +107,10 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     if "events" in doc and "meta" in doc:
         return process_server_format(doc)
     
+    # Handle server output format: {tiles: [...], file: {...}, totalsByUser: {...}}
+    if "tiles" in doc and "file" in doc:
+        return process_server_output_format(doc)
+    
     # Handle Chrome extension format: {file: {...}, revision: {tiles: [...]}, comments: {...}}
     file = doc.get("file", {}) or {}
     file_id = file.get("id", "unknown_file")
@@ -165,6 +169,56 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
             "team_id": None,
             "file": {"id": file_id, "name": file_name, "url": file_url},
         })
+    return out
+
+def process_server_output_format(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Process server output format: {tiles: [...], file: {...}, totalsByUser: {...}}
+    """
+    file = doc.get("file", {}) or {}
+    file_id = file.get("id", "unknown_file")
+    file_name = file.get("name", "Document")
+    file_url = file.get("url", "")
+    
+    tiles = doc.get("tiles", []) or []
+    
+    out = []
+    for idx, tile in enumerate(tiles):
+        if not isinstance(tile, dict):
+            continue
+            
+        # Extract tile information
+        author_name = tile.get("author", "Unknown")
+        author_id = tile.get("authorId", "unknown")
+        timestamp = tile.get("timestamp", "")
+        text = tile.get("text", "")
+        
+        # Count words
+        word_count = len(re.findall(r"\b\w+\b", text)) if text else 0
+        
+        # Generate title
+        title = _fmt_title_from_ts(timestamp, "Contribution")
+        
+        # Generate stable ID
+        cid = _uuid5(f"{file_id}:tile:{idx}:{text[:64]}")
+        
+        out.append({
+            "contribution_id": cid,
+            "login": author_name,  # Use name as login
+            "timestamp": timestamp,
+            "tool": "google_docs",
+            "metric": "revision",
+            "team_id": None,
+            "action": "insert",  # Tiles are insertions
+            "title": title,
+            "text": text,
+            "word_count": word_count,
+            "file_id": file_id,
+            "file_name": file_name,
+            "file_url": file_url,
+            "author_id": author_id
+        })
+    
     return out
 
 def process_server_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -246,10 +300,94 @@ def process_server_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     
     return out
 
+def process_server_output_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Process comments from server output format: {tiles: [...], file: {...}, comments: {...}}
+    """
+    file = doc.get("file", {}) or {}
+    file_id = file.get("id", "unknown_file")
+    file_name = file.get("name", "Document")
+    file_url = file.get("url", "")
+    
+    comments_data = doc.get("comments", {}) or {}
+    threads = comments_data.get("threads", []) or []
+    
+    out = []
+    for thread_idx, thread in enumerate(threads):
+        if not isinstance(thread, dict):
+            continue
+            
+        # Process main comment
+        author_name = thread.get("authorName", "Unknown")
+        timestamp = thread.get("createdTime", "")
+        content = thread.get("content", "")
+        
+        if content.strip():  # Only process non-empty comments
+            word_count = len(re.findall(r"\b\w+\b", content))
+            title = _fmt_title_from_ts(timestamp, "Comment")
+            cid = _uuid5(f"{file_id}:comment:{thread_idx}:{content[:64]}")
+            
+            out.append({
+                "contribution_id": cid,
+                "login": author_name,
+                "timestamp": timestamp,
+                "tool": "google_docs",
+                "metric": "comment",
+                "team_id": None,
+                "action": "comment",
+                "title": title,
+                "text": content,
+                "word_count": word_count,
+                "file_id": file_id,
+                "file_name": file_name,
+                "file_url": file_url,
+                "comment_id": thread.get("id", ""),
+                "comment_target_author": None  # Server format doesn't provide target
+            })
+        
+        # Process replies
+        replies = thread.get("replies", []) or []
+        for reply_idx, reply in enumerate(replies):
+            if not isinstance(reply, dict):
+                continue
+                
+            reply_author = reply.get("authorName", "Unknown")
+            reply_timestamp = reply.get("createdTime", "")
+            reply_content = reply.get("content", "")
+            
+            if reply_content.strip():
+                reply_word_count = len(re.findall(r"\b\w+\b", reply_content))
+                reply_title = _fmt_title_from_ts(reply_timestamp, "Reply")
+                reply_cid = _uuid5(f"{file_id}:reply:{thread_idx}:{reply_idx}:{reply_content[:64]}")
+                
+                out.append({
+                    "contribution_id": reply_cid,
+                    "login": reply_author,
+                    "timestamp": reply_timestamp,
+                    "tool": "google_docs",
+                    "metric": "comment",
+                    "team_id": None,
+                    "action": "reply",
+                    "title": reply_title,
+                    "text": reply_content,
+                    "word_count": reply_word_count,
+                    "file_id": file_id,
+                    "file_name": file_name,
+                    "file_url": file_url,
+                    "comment_id": reply.get("id", ""),
+                    "comment_target_author": author_name  # Reply targets the main comment author
+                })
+    
+    return out
+
 def process_docs_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     # Handle server format: {meta: {...}, users: {...}, events: [...], comments: {...}}
     if "events" in doc and "meta" in doc:
         return process_server_comments(doc)
+    
+    # Handle server output format: {tiles: [...], file: {...}, comments: {...}}
+    if "tiles" in doc and "file" in doc:
+        return process_server_output_comments(doc)
     
     # Handle Chrome extension format: {file: {...}, revision: {tiles: [...]}, comments: {...}}
     file = doc.get("file", {})

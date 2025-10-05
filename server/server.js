@@ -224,6 +224,108 @@ async function dumpOnStall(page, label) {
   }
 }
 
+// ============================
+// Comment Attribution Functions (matching Chrome extension)
+// ============================
+
+function _norm(s) {
+  return String(s).toLowerCase().replace(/\s+/g, ' ').trim()
+}
+
+function _stripHtml(html) {
+  if (!html) return ''
+  const tmp = html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>/gi, '\n')
+  return _norm(tmp.replace(/<[^>]+>/g, ' '))
+}
+
+function _quoteFromThread(th) {
+  // Prefer Drive "quotedFileContent.value", else html, else plain content
+  const q = _norm(th.quoted || '')
+  if (q) return q
+  const html = _stripHtml(th.htmlContent || '')
+  if (html) return html
+  return _norm(th.content || '')
+}
+
+function _bestTileForQuote(tiles, quoteNorm, commentTs) {
+  if (!quoteNorm || quoteNorm.length < 3) return null
+
+  const qWords = new Set(quoteNorm.split(' '))
+  let best = null
+
+  for (const t of tiles || []) {
+    const tTextNorm = _norm(t.text)
+    if (!tTextNorm) continue
+
+    // Exact-substring score (best)
+    let score = 0
+    if (tTextNorm.includes(quoteNorm)) {
+      // full match: weight by length to prefer longer quotes
+      score = 1 + Math.min(quoteNorm.length / Math.max(10, tTextNorm.length), 1)
+    } else {
+      // Soft overlap score as fallback
+      const tWords = new Set(tTextNorm.split(' '))
+      let overlap = 0
+      for (const w of qWords) if (tWords.has(w)) overlap++
+      score = overlap / Math.max(qWords.size, 1) // 0..1
+    }
+
+    if (score <= 0) continue
+
+    // Prefer tiles close to the comment time
+    const tTs = new Date(t.timestamp).getTime()
+    const dt = Math.abs((commentTs || tTs) - tTs)
+
+    const candidate = {
+      score,
+      dt,
+      author: t.author,
+      authorId: t.authorId,
+      tileTimestamp: t.timestamp,
+      tileTitle: t.title,
+      tileIndexHint: t.segments?.[0]?.index ?? null
+    }
+
+    if (!best || candidate.score > best.score || (candidate.score === best.score && candidate.dt < best.dt)) {
+      best = candidate
+    }
+  }
+
+  if (!best) return null
+
+  const confidence =
+    best.score >= 1 ? 'high'
+    : best.score >= 0.4 ? 'medium'
+    : 'low'
+
+  return { ...best, confidence, method: 'quote' }
+}
+
+function _attributeThreadsToTiles(tiles, threads) {
+  const out = []
+  for (const th of threads || []) {
+    const quote = _quoteFromThread(th)
+    const cTs = new Date(th.createdTime || th.modifiedTime || Date.now()).getTime()
+    const best = _bestTileForQuote(tiles, quote, cTs)
+    out.push(best || { method: 'none', confidence: 'low' })
+  }
+  return out
+}
+
+function attachAttributionToComments(tiles, comments) {
+  if (!comments || !comments.threads) return comments
+  
+  const threads = Array.isArray(comments.threads) ? comments.threads : []
+  const atts = _attributeThreadsToTiles(tiles, threads)
+
+  const withAttr = threads.map((th, i) => ({
+    ...th,
+    attribution: atts[i] || { method: 'none', confidence: 'low' }
+  }))
+
+  return { ...comments, threads: withAttr }
+}
+
 /* ===== Routes ===== */
 app.get('/health', (req, res) => res.json({ ok: true }))
 
@@ -601,10 +703,214 @@ app.post('/api/replay', async (req, res) => {
       ms: Date.now() - started
     })
     
-    // Include comments in response if available
-    const response = { ...result }
-    if (comments) {
-      response.comments = comments
+    // Transform to match Chrome extension format
+    const events = result.events || []
+    const users = result.meta?.users || {}
+    
+    // Build users object from events if not provided
+    const usersFromEvents = {}
+    for (const event of events) {
+      if (event.authorId && event.authorName) {
+        usersFromEvents[event.authorId] = {
+          name: event.authorName,
+          author: event.authorName
+        }
+      }
+    }
+    const allUsers = { ...users, ...usersFromEvents }
+    
+    console.log('[server] Debug - events count:', events.length)
+    console.log('[server] Debug - event types:', [...new Set(events.map(e => e.type))])
+    console.log('[server] Debug - users:', Object.keys(allUsers))
+    
+    // Filter and transform tiles (insert events) - with merging like Chrome extension
+    const TILE_GAP_MS = 10 * 60 * 1000; // 10 minutes (matches Chrome extension)
+    const MAX_INDEX_DISTANCE = 500; // 500 characters (matches Chrome extension)
+    
+    const insertEvents = events.filter(e => e.type === 'insert')
+    
+    // Helper functions for merging
+    const getFirstIndex = (tile) => (tile.segments[0]?.index ?? 0)
+    const getLastIndex = (tile) => (tile.segments[tile.segments.length - 1]?.index ?? 0)
+    const getLastTime = (tile) => new Date(tile.segments[tile.segments.length - 1]?.ts || tile.timestamp).getTime()
+    
+    const hasOtherAuthorInsertBetween = (tile1, tile2, allEvents) => {
+      const aTs = new Date(tile1.timestamp).getTime()
+      const bTs = new Date(tile2.timestamp).getTime()
+      const lo = Math.min(aTs, bTs), hi = Math.max(aTs, bTs)
+      
+      // Get the spatial range of the two tiles
+      const aStart = getFirstIndex(tile1)
+      const aEnd = getLastIndex(tile1)
+      const bStart = getFirstIndex(tile2)
+      const bEnd = getLastIndex(tile2)
+      const combinedStart = Math.min(aStart, bStart)
+      const combinedEnd = Math.max(aEnd, bEnd)
+      
+      for (const event of allEvents) {
+        if (event.type !== 'insert') continue
+        const eventTime = new Date(event.timestamp).getTime()
+        if (eventTime <= lo || eventTime >= hi) continue
+        
+        if (event.authorId !== tile1.authorId) {
+          // Check if the intervening tile is in the same spatial area
+          const eStart = event.index0Based || 0
+          const eEnd = eStart + (event.text?.length || 0)
+          
+          // If the intervening tile overlaps significantly with our combined area, consider it interfering
+          const overlap = Math.max(0, Math.min(eEnd, combinedEnd) - Math.max(eStart, combinedStart))
+          const eSize = eEnd - eStart
+          const overlapRatio = overlap / Math.max(eSize, 1)
+          
+          // Only consider it interfering if it has significant overlap (>50%) with our area
+          if (overlapRatio > 0.5) {
+            return true
+          }
+        }
+      }
+      return false
+    }
+    
+    const finalizeTileFromSegments = (authorId, author, startDate, segs) => {
+      const combinedText = segs.map(s => s.text).join('')
+      const countWords = (s) => (String(s).match(/\b\w+\b/g) || []).length
+      
+      let internalChars = 0, externalChars = 0
+      let internalWords = 0, externalWords = 0
+      for (const s of segs) {
+        const chars = s.text.length
+        const words = countWords(s.text)
+        if (s.paste === 'internal') { 
+          internalChars += chars
+          internalWords += words 
+        } else if (s.paste === 'external') { 
+          externalChars += chars
+          externalWords += words 
+        }
+      }
+      
+      const pad = (n) => String(n).padStart(2, '0')
+      const titleFromDate = (d) =>
+        `Contribution — ${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+      
+      return {
+        type: 'INSERT_TILE',
+        title: titleFromDate(startDate),
+        author,
+        authorId,
+        timestamp: startDate.toISOString(),
+        text: combinedText,
+        segments: segs.slice(),
+        stats: {
+          internalWords, externalWords,
+          internalChars, externalChars,
+          totalWords: countWords(combinedText),
+          totalChars: combinedText.length
+        }
+      }
+    }
+    
+    // Convert events to tile format first
+    const rawTiles = insertEvents.map(event => {
+      const text = event.text || ''
+      return {
+        authorId: event.authorId || 'unknown',
+        author: event.authorName || 'Unknown',
+        timestamp: event.timestamp || new Date().toISOString(),
+        segments: [{
+          index: event.index0Based || 0,
+          paste: event.pasteType || null,
+          text: text,
+          ts: event.timestamp || new Date().toISOString()
+        }]
+      }
+    })
+    
+    // Sort by timestamp and merge consecutive tiles
+    const byTimeAsc = [...rawTiles].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
+    const merged = []
+    let cur = null
+    
+    for (const tile of byTimeAsc) {
+      if (!cur) { 
+        cur = tile
+        continue 
+      }
+      
+      const sameAuthor = cur.authorId === tile.authorId
+      const gap = new Date(tile.timestamp).getTime() - getLastTime(cur)
+      const closeInTime = gap >= 0 && gap <= TILE_GAP_MS
+      const closeInSpace = Math.abs(getLastIndex(cur) - getFirstIndex(tile)) <= MAX_INDEX_DISTANCE
+      const cleanBetween = !hasOtherAuthorInsertBetween(cur, tile, insertEvents)
+      
+      if (sameAuthor && closeInTime && closeInSpace && cleanBetween) {
+        cur.segments.push(...tile.segments)
+        continue
+      }
+      
+      merged.push(finalizeTileFromSegments(cur.authorId, cur.author, new Date(cur.timestamp), cur.segments))
+      cur = tile
+    }
+    if (cur) merged.push(finalizeTileFromSegments(cur.authorId, cur.author, new Date(cur.timestamp), cur.segments))
+    
+    const tiles = merged
+    
+    // Include deletions for completeness (like Chrome extension) but don't process as contributions
+    const deletions = events.filter(e => e.type === 'delete').map(event => ({
+      type: 'DELETION',
+      author: event.authorName || 'Unknown',
+      authorId: event.authorId || 'unknown',
+      timestamp: event.timestamp || new Date().toISOString(),
+      text: event.text || '',
+      range: [event.range1Based?.start || 0, event.range1Based?.end || 0]
+    }))
+    
+    console.log('[server] Debug - tiles count:', tiles.length)
+    console.log('[server] Debug - deletions count:', deletions.length)
+    
+    // Calculate user totals based on final merged tiles (contributions only)
+    const totalsByUser = {}
+    for (const tile of tiles) {
+      const userId = tile.authorId
+      if (!totalsByUser[userId]) {
+        totalsByUser[userId] = {
+          author: tile.author,
+          externalChars: 0,
+          externalWords: 0,
+          internalChars: 0,
+          internalWords: 0,
+          tiles: 0,
+          totalChars: 0,
+          totalWords: 0
+        }
+      }
+      
+      // Add this tile's contribution to the user's totals
+      totalsByUser[userId].externalChars += tile.stats.externalChars
+      totalsByUser[userId].externalWords += tile.stats.externalWords
+      totalsByUser[userId].internalChars += tile.stats.internalChars
+      totalsByUser[userId].internalWords += tile.stats.internalWords
+      totalsByUser[userId].totalChars += tile.stats.totalChars
+      totalsByUser[userId].totalWords += tile.stats.totalWords
+      totalsByUser[userId].tiles += 1
+    }
+    
+    // Attach attribution to comments like Chrome extension
+    const commentsWithAttribution = attachAttributionToComments(tiles, comments)
+    
+    const response = {
+      ok: true,
+      tiles,
+      deletions,
+      totalsByUser,
+      blocks: tiles, // same as tiles
+      finalDocumentText: result.finalText || '',
+      comments: commentsWithAttribution,
+      file: {
+        id: result.meta?.docId || 'unknown',
+        name: result.meta?.title || 'Document',
+        url: result.meta?.url || ''
+      }
     }
     
     return res.json(response)
