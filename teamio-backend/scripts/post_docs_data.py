@@ -39,7 +39,7 @@ def _fmt_title_from_ts(ts: str, type_str: str) -> str:
 
 def process_server_format(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
-    Process server format: {meta: {...}, users: {...}, events: [...], finalText: "..."}
+    Process server format: {meta: {...}, users: {...}, events: [...], finalText: "...", comments: {...}}
     """
     meta = doc.get("meta", {}) or {}
     file_id = meta.get("docId", "unknown_file")
@@ -167,10 +167,89 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         })
     return out
 
+def process_server_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Process comments from server format: {meta: {...}, comments: {threads: [...]}}
+    """
+    meta = doc.get("meta", {}) or {}
+    file_id = meta.get("docId", "unknown_file")
+    file_url = meta.get("url", "")
+    
+    comments_data = doc.get("comments", {}) or {}
+    threads = comments_data.get("threads", []) or []
+    
+    out = []
+    for thread_idx, thread in enumerate(threads):
+        if not isinstance(thread, dict):
+            continue
+            
+        # Process main comment
+        author_name = thread.get("authorName", "Unknown")
+        timestamp = thread.get("createdTime", "")
+        content = thread.get("content", "")
+        
+        if content.strip():  # Only process non-empty comments
+            word_count = len(re.findall(r"\b\w+\b", content))
+            title = _fmt_title_from_ts(timestamp, "Comment")
+            cid = _uuid5(f"{file_id}:comment:{thread_idx}:{content[:64]}")
+            
+            out.append({
+                "contribution_id": cid,
+                "login": author_name,
+                "timestamp": timestamp,
+                "tool": "google_docs",
+                "metric": "comment",
+                "team_id": None,
+                "action": "comment",
+                "title": title,
+                "text": content,
+                "word_count": word_count,
+                "file_id": file_id,
+                "file_name": "Document",
+                "file_url": file_url,
+                "comment_id": thread.get("id", ""),
+                "comment_target_author": None  # Server format doesn't provide target
+            })
+        
+        # Process replies
+        replies = thread.get("replies", []) or []
+        for reply_idx, reply in enumerate(replies):
+            if not isinstance(reply, dict):
+                continue
+                
+            reply_author = reply.get("authorName", "Unknown")
+            reply_timestamp = reply.get("createdTime", "")
+            reply_content = reply.get("content", "")
+            
+            if reply_content.strip():
+                reply_word_count = len(re.findall(r"\b\w+\b", reply_content))
+                reply_title = _fmt_title_from_ts(reply_timestamp, "Reply")
+                reply_cid = _uuid5(f"{file_id}:reply:{thread_idx}:{reply_idx}:{reply_content[:64]}")
+                
+                out.append({
+                    "contribution_id": reply_cid,
+                    "login": reply_author,
+                    "timestamp": reply_timestamp,
+                    "tool": "google_docs",
+                    "metric": "comment",
+                    "team_id": None,
+                    "action": "reply",
+                    "title": reply_title,
+                    "text": reply_content,
+                    "word_count": reply_word_count,
+                    "file_id": file_id,
+                    "file_name": "Document",
+                    "file_url": file_url,
+                    "comment_id": reply.get("id", ""),
+                    "comment_target_author": author_name  # Reply targets the main comment author
+                })
+    
+    return out
+
 def process_docs_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
-    # Handle server format: server doesn't provide comments, return empty list
+    # Handle server format: {meta: {...}, users: {...}, events: [...], comments: {...}}
     if "events" in doc and "meta" in doc:
-        return []
+        return process_server_comments(doc)
     
     # Handle Chrome extension format: {file: {...}, revision: {tiles: [...]}, comments: {...}}
     file = doc.get("file", {})
