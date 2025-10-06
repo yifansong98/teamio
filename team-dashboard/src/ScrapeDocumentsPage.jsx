@@ -1,49 +1,31 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { IconArrowLeft, IconDownload, IconExternalLink } from "./assets/icons";
 import { useStepsCompletion } from "./StepsCompletionContext";
 
 const ScrapeDocumentsPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { stepsCompletion, setStepsCompletion } = useStepsCompletion();
-  const [serverStatus, setServerStatus] = useState('checking');
   const [docUrl, setDocUrl] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(null);
   const [teamId, setTeamId] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [googleToken, setGoogleToken] = useState(null);
   const [isGettingToken, setIsGettingToken] = useState(false);
 
-  // Check server health
-  const checkServerHealth = async () => {
-    try {
-      const response = await fetch('http://localhost:8787/health');
-      if (response.ok) {
-        setServerStatus('running');
-        return true;
-      }
-    } catch (err) {
-      console.log('Server not running:', err.message);
-    }
-    setServerStatus('stopped');
-    return false;
-  };
 
   useEffect(() => {
-    checkServerHealth();
-    const interval = setInterval(checkServerHealth, 10000);
-    
-    // Load team ID from localStorage
-    const savedData = localStorage.getItem("linkToolsData");
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      setTeamId(parsedData.teamId || "");
-    }
-    
-    return () => clearInterval(interval);
-  }, []);
+    // Load team ID from localStorage or location state
+    const storedTeamId = localStorage.getItem("teamId");
+    const stateTeamId = location.state?.teamId;
+    const finalTeamId = stateTeamId || storedTeamId || "";
+    console.log("ScrapeDocumentsPage - Team ID sources:", { storedTeamId, stateTeamId, finalTeamId });
+    setTeamId(finalTeamId);
+  }, [location.state]);
 
   const getGoogleToken = async () => {
     setIsGettingToken(true);
@@ -127,11 +109,15 @@ const ScrapeDocumentsPage = () => {
       setResult(data);
       setError(null);
       
+      console.log('Scraping completed, data keys:', Object.keys(data));
+      console.log('Current teamId:', teamId);
+      
       // Automatically post to backend after scraping
       try {
-        await postToBackend();
+        await postToBackendWithData(data);
         // Mark step 3 as completed (scraping and posting done)
         setStepsCompletion(prev => ({ ...prev, step3: true }));
+        setSuccess("Google Docs data scraped and posted successfully!");
       } catch (postError) {
         console.error('Failed to post to backend:', postError);
         setError(`Scraping successful but failed to post to backend: ${postError.message}`);
@@ -148,9 +134,46 @@ const ScrapeDocumentsPage = () => {
     }
   };
 
+  const postToBackendWithData = async (data) => {
+    console.log('postToBackendWithData called with:', { data: !!data, teamId, dataKeys: data ? Object.keys(data) : null });
+    if (!data || !teamId) {
+      setError(`No scraped data or team ID available. Data: ${!!data}, TeamId: ${teamId}`);
+      return;
+    }
+
+    setIsPosting(true);
+    setError(null);
+
+    try {
+      const response = await fetch('http://localhost:3000/api/google_docs/post', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          team_id: teamId,
+          doc: data
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to post Google Docs data');
+      }
+
+      const responseData = await response.json();
+      console.log('Successfully posted to backend:', responseData);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsPosting(false);
+    }
+  };
+
   const postToBackend = async () => {
+    console.log('postToBackend called with:', { result: !!result, teamId, resultKeys: result ? Object.keys(result) : null });
     if (!result || !teamId) {
-      setError('No scraped data or team ID available');
+      setError(`No scraped data or team ID available. Result: ${!!result}, TeamId: ${teamId}`);
       return;
     }
 
@@ -216,41 +239,6 @@ const ScrapeDocumentsPage = () => {
           <h1 className="text-3xl font-bold text-gray-800">Scrape Documents</h1>
         </div>
 
-        {/* Server Status */}
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-800">Server Status</h2>
-            <div className="flex items-center space-x-2">
-              <div className={`w-3 h-3 rounded-full ${
-                serverStatus === 'running' ? 'bg-green-500' :
-                serverStatus === 'checking' ? 'bg-yellow-500' :
-                'bg-red-500'
-              }`}></div>
-              <span className="text-sm font-medium capitalize">
-                {serverStatus === 'checking' ? 'Checking...' : serverStatus}
-              </span>
-            </div>
-          </div>
-
-          {serverStatus === 'stopped' && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800">
-                <strong>Server not running.</strong> Please start the Google Docs replay server:
-              </p>
-              <div className="mt-2 bg-gray-900 text-green-400 p-3 rounded font-mono text-sm">
-                cd server && npm start
-              </div>
-            </div>
-          )}
-
-          {serverStatus === 'running' && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <p className="text-green-800">
-                <strong>Server is running and ready!</strong>
-              </p>
-            </div>
-          )}
-        </div>
 
         {/* Google Token Section */}
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -299,10 +287,10 @@ const ScrapeDocumentsPage = () => {
 
             <button
               onClick={() => {
-                console.log('Button clicked! Server status:', serverStatus, 'Processing:', isProcessing, 'Token:', googleToken ? `${googleToken.length} chars` : 'null');
+                console.log('Button clicked! Processing:', isProcessing, 'Token:', googleToken ? `${googleToken.length} chars` : 'null');
                 scrapeDocument();
               }}
-              disabled={serverStatus !== 'running' || isProcessing}
+              disabled={isProcessing}
               className="flex items-center px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <IconExternalLink className="w-4 h-4 mr-2" />
@@ -322,6 +310,26 @@ const ScrapeDocumentsPage = () => {
                 )}
               </div>
             )}
+
+            {success && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <p className="text-green-800">{success}</p>
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={() => navigate('/teamio/mapping', { state: { teamId } })}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Continue to User Mapping
+                  </button>
+                  <button
+                    onClick={() => navigate('/teamio')}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+                  >
+                    Back to Dashboard
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -331,13 +339,6 @@ const ScrapeDocumentsPage = () => {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-semibold text-gray-800">Scraping Results</h2>
               <div className="flex space-x-2">
-                <button
-                  onClick={postToBackend}
-                  disabled={isPosting || !teamId}
-                  className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isPosting ? 'Posting...' : 'Post to Backend'}
-                </button>
                 <button
                   onClick={downloadResult}
                   className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"

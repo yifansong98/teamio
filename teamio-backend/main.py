@@ -309,7 +309,9 @@ async def get_revisions_history(team_id: str = Query(...)):
             if timestamp:
                 if author not in timeline_map:
                     timeline_map[author] = []
-                timeline_map[author].append({"ts": timestamp, "size" : 0})
+                # Get size from word_count or quantity, fallback to 1
+                size = revision_data.get("word_count", revision_data.get("quantity", 1))
+                timeline_map[author].append({"ts": timestamp, "size": size})
     
     timeline = [
         {"author": author, "contributions": timestamps}

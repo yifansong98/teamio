@@ -32,7 +32,7 @@ app.use(morgan('dev'))
 
 /* ===== Env & Puppeteer Config ===== */
 const API_TOKEN = process.env.API_TOKEN
-const USER_DATA_DIR = process.env.CHROME_USER_DATA_DIR || './.chrome-profile'
+const USER_DATA_DIR = process.env.CHROME_USER_DATA_DIR || `./.chrome-profile-${process.pid}`
 const NAV_TIMEOUT = Number(process.env.REPLAY_NAV_TIMEOUT_MS || 90_000)
 const DEVTOOLS = process.env.DEVTOOLS === '1'
 const SLOWMO = Number(process.env.SLOWMO || 0)
@@ -349,10 +349,100 @@ app.post('/api/replay', async (req, res) => {
       includeChars = false,    // include char-by-char attribution (can be large)
       minPasteLen = 25,        // threshold for paste classification
       maxRecentDeletes = 10,   // rolling buffer for internal paste heuristic
-      logoutFirst = false      // <--- NEW: force sign-out before navigation
+      logoutFirst = false,     // <--- NEW: force sign-out before navigation
+      statusCheck = false      // <--- NEW: lightweight status check only
     } = req.body || {}
 
     if (!target) return res.status(400).json({ error: 'Missing "target" (doc URL or fileId)' })
+
+    // If this is just a status check, do a lightweight verification
+    if (statusCheck) {
+      try {
+        let url = toDocUrl(target)
+        if (typeof authuser !== 'undefined') {
+          const u = new URL(url)
+          u.searchParams.set('authuser', String(authuser))
+          url = u.toString()
+        }
+
+        console.log('[replay] status check →', { url })
+        browser = await puppeteer.launch({
+          headless: true,  // Always headless for status check
+          devtools: false, // No devtools for status check
+          userDataDir: USER_DATA_DIR, // Use same profile to share login session
+          slowMo: 0,       // No slowmo for status check
+          args: ['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']
+        })
+
+        page = await browser.newPage()
+        page.setDefaultTimeout(NAV_TIMEOUT)
+
+        // Just navigate to the document to check if we can access it
+        await page.goto(url, { waitUntil: 'domcontentloaded' })
+        
+        // Check if we're redirected to a login page
+        const currentUrl = page.url()
+        if (currentUrl.includes('accounts.google.com') || currentUrl.includes('signin')) {
+          // Ensure browser is properly closed
+          await page.close()
+          await browser.close()
+          browser = null
+          page = null
+          return res.status(401).json({ error: 'Not signed into Google' })
+        }
+
+        // Try to detect if we can actually access the document content
+        try {
+          // Wait a bit for the page to load
+          await page.waitForTimeout(2000)
+          
+          // Check if the docs editor is present
+          const hasDocsEditor = await page.evaluate(() => {
+            return !!(
+              document.querySelector('div#docs-editor-container') ||
+              document.querySelector('div.kix-appview-editor') ||
+              document.querySelector('[data-docs-editor]') ||
+              window._docs_flag_initialData
+            )
+          })
+          
+          if (!hasDocsEditor) {
+            // Ensure browser is properly closed
+            await page.close()
+            await browser.close()
+            browser = null
+            page = null
+            return res.status(401).json({ error: 'Cannot access document content' })
+          }
+        } catch (err) {
+          console.log('[status check] error checking document access:', err.message)
+          // Continue anyway - if we're not on login page, assume it's accessible
+        }
+
+        // If we can access the document, return success
+        // Ensure browser is properly closed
+        await page.close()
+        await browser.close()
+        browser = null
+        page = null
+        return res.json({ 
+          success: true, 
+          message: 'Document access confirmed',
+          url: currentUrl 
+        })
+      } catch (err) {
+        // Ensure browser is properly closed even on error
+        if (page) {
+          try { await page.close() } catch (e) {}
+          page = null
+        }
+        if (browser) {
+          try { await browser.close() } catch (e) {}
+          browser = null
+        }
+        return res.status(500).json({ error: 'Failed to access document: ' + err.message })
+      }
+    }
 
     let url = toDocUrl(target)
     if (typeof authuser !== 'undefined') {
@@ -724,10 +814,22 @@ app.post('/api/replay', async (req, res) => {
     console.log('[server] Debug - users:', Object.keys(allUsers))
     
     // Filter and transform tiles (insert events) - with merging like Chrome extension
-    const TILE_GAP_MS = 10 * 60 * 1000; // 10 minutes (matches Chrome extension)
-    const MAX_INDEX_DISTANCE = 500; // 500 characters (matches Chrome extension)
+    const TILE_GAP_MS = 5 * 60 * 1000; // 5 minutes (matches Chrome extension)
+    const MAX_INDEX_DISTANCE = 200; // 200 characters (matches Chrome extension)
+    const MAX_INDEX_DISTANCE_SAME_AUTHOR = 500; // 500 characters for same author working in same area
     
     const insertEvents = events.filter(e => e.type === 'insert')
+    
+    console.log('[server] Debug - insert events after filtering:', insertEvents.length)
+    
+    // Group events by author for debugging
+    const eventsByAuthor = {}
+    insertEvents.forEach(event => {
+      const author = event.authorId || 'unknown'
+      if (!eventsByAuthor[author]) eventsByAuthor[author] = []
+      eventsByAuthor[author].push(event)
+    })
+    console.log('[server] Debug - events by author:', Object.keys(eventsByAuthor).map(author => `${author}: ${eventsByAuthor[author].length}`))
     
     // Helper functions for merging
     const getFirstIndex = (tile) => (tile.segments[0]?.index ?? 0)
@@ -757,13 +859,16 @@ app.post('/api/replay', async (req, res) => {
           const eStart = event.index0Based || 0
           const eEnd = eStart + (event.text?.length || 0)
           
-          // If the intervening tile overlaps significantly with our combined area, consider it interfering
+          // More permissive: only consider it interfering if it's directly between the two tiles
+          // and has significant overlap (>80%) with the combined area
           const overlap = Math.max(0, Math.min(eEnd, combinedEnd) - Math.max(eStart, combinedStart))
           const eSize = eEnd - eStart
+          const combinedSize = combinedEnd - combinedStart
           const overlapRatio = overlap / Math.max(eSize, 1)
+          const coverageRatio = overlap / Math.max(combinedSize, 1)
           
-          // Only consider it interfering if it has significant overlap (>50%) with our area
-          if (overlapRatio > 0.5) {
+          // Only consider it interfering if it has high overlap AND covers a significant portion of our area
+          if (overlapRatio > 0.8 && coverageRatio > 0.3) {
             return true
           }
         }
@@ -826,34 +931,7 @@ app.post('/api/replay', async (req, res) => {
       }
     })
     
-    // Sort by timestamp and merge consecutive tiles
-    const byTimeAsc = [...rawTiles].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp))
-    const merged = []
-    let cur = null
-    
-    for (const tile of byTimeAsc) {
-      if (!cur) { 
-        cur = tile
-        continue 
-      }
-      
-      const sameAuthor = cur.authorId === tile.authorId
-      const gap = new Date(tile.timestamp).getTime() - getLastTime(cur)
-      const closeInTime = gap >= 0 && gap <= TILE_GAP_MS
-      const closeInSpace = Math.abs(getLastIndex(cur) - getFirstIndex(tile)) <= MAX_INDEX_DISTANCE
-      const cleanBetween = !hasOtherAuthorInsertBetween(cur, tile, insertEvents)
-      
-      if (sameAuthor && closeInTime && closeInSpace && cleanBetween) {
-        cur.segments.push(...tile.segments)
-        continue
-      }
-      
-      merged.push(finalizeTileFromSegments(cur.authorId, cur.author, new Date(cur.timestamp), cur.segments))
-      cur = tile
-    }
-    if (cur) merged.push(finalizeTileFromSegments(cur.authorId, cur.author, new Date(cur.timestamp), cur.segments))
-    
-    const tiles = merged
+    console.log('[server] Debug - raw tiles count:', rawTiles.length)
     
     // Include deletions for completeness (like Chrome extension) but don't process as contributions
     const deletions = events.filter(e => e.type === 'delete').map(event => ({
@@ -865,8 +943,134 @@ app.post('/api/replay', async (req, res) => {
       range: [event.range1Based?.start || 0, event.range1Based?.end || 0]
     }))
     
-    console.log('[server] Debug - tiles count:', tiles.length)
     console.log('[server] Debug - deletions count:', deletions.length)
+    
+    // Apply Chrome extension's coalesceInsertTiles function for better merging
+    const coalesceInsertTiles = (tiles, deletions, opts = {}) => {
+      const { maxGapMs = 5 * 60 * 1000, maxIndexDistance = 200, allowInterveningDeletions = true } = opts;
+
+      const events = [];
+      for (const t of tiles) events.push({ kind: 'tile', by: t.authorId, ts: new Date(t.timestamp).getTime(), ref: t });
+      for (const d of deletions) events.push({ kind: 'del', by: d.authorId, ts: new Date(d.timestamp).getTime(), ref: d });
+      events.sort((a, b) => a.ts - b.ts);
+
+      function hasOtherAuthorInsertBetween(a, b) {
+        const aTs = new Date(a.timestamp).getTime();
+        const bTs = new Date(b.timestamp).getTime();
+        const lo = Math.min(aTs, bTs), hi = Math.max(aTs, bTs);
+        
+        // Get the spatial range of the two tiles
+        const aStart = getFirstIndex(a);
+        const aEnd = getLastIndex(a);
+        const bStart = getFirstIndex(b);
+        const bEnd = getLastIndex(b);
+        const combinedStart = Math.min(aStart, bStart);
+        const combinedEnd = Math.max(aEnd, bEnd);
+        
+        for (const e of events) {
+          if (e.ts <= lo || e.ts >= hi) continue;
+          
+          if (e.kind === 'tile' && e.by !== a.authorId) {
+            // Check if the intervening tile is in the same spatial area
+            const eStart = getFirstIndex(e.ref);
+            const eEnd = getLastIndex(e.ref);
+            
+            // If the intervening tile overlaps significantly with our combined area, consider it interfering
+            const overlap = Math.max(0, Math.min(eEnd, combinedEnd) - Math.max(eStart, combinedStart));
+            const eSize = eEnd - eStart;
+            const overlapRatio = overlap / Math.max(eSize, 1);
+            
+            // Only consider it interfering if it has significant overlap (>50%) with our area
+            if (overlapRatio > 0.5) {
+              return true;
+            }
+          }
+          
+          if (!allowInterveningDeletions && e.kind === 'del') return true;
+        }
+        return false;
+      }
+
+      const merged = [];
+      let cur = null;
+
+      const getFirstIndex = (tile) => (tile.segments[0]?.index ?? 0);
+      const getLastIndex  = (tile) => (tile.segments[tile.segments.length - 1]?.index ?? 0);
+      const getLastTime   = (tile) => new Date(tile.segments[tile.segments.length - 1]?.ts || tile.timestamp).getTime();
+
+      const finalizeTileFromSegments = (authorId, author, startDate, segs) => {
+        const combinedText = segs.map(s => s.text).join('');
+        const countWords = (s) => (String(s).match(/\b\w+\b/g) || []).length;
+
+        let internalChars = 0, externalChars = 0;
+        let internalWords = 0, externalWords = 0;
+        for (const s of segs) {
+          const chars = s.text.length;
+          const words = countWords(s.text);
+          if (s.paste === 'internal') { internalChars += chars; internalWords += words; }
+          else if (s.paste === 'external') { externalChars += chars; externalWords += words; }
+        }
+        const pad = (n) => String(n).padStart(2, '0');
+        const titleFromDate = (d) =>
+          `Contribution — ${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        return {
+          type: 'INSERT_TILE',
+          title: titleFromDate(startDate),
+          author,
+          authorId,
+          timestamp: startDate.toISOString(),
+          text: combinedText,
+          segments: segs.slice(),
+          stats: {
+            internalWords, externalWords,
+            internalChars, externalChars,
+            totalWords: countWords(combinedText),
+            totalChars: combinedText.length
+          }
+        };
+      };
+
+      const byTimeAsc = [...tiles].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+      for (const tile of byTimeAsc) {
+        if (!cur) { cur = tile; continue; }
+
+        const sameAuthor = cur.authorId === tile.authorId;
+        const gap = new Date(tile.timestamp).getTime() - getLastTime(cur);
+        const closeInTime = gap >= 0 && gap <= maxGapMs;
+        const closeInSpace = Math.abs(getLastIndex(cur) - getFirstIndex(tile)) <= maxIndexDistance;
+        const cleanBetween = !hasOtherAuthorInsertBetween(cur, tile);
+
+        if (sameAuthor && closeInTime && closeInSpace && cleanBetween) {
+          cur.segments.push(...tile.segments);
+          continue;
+        }
+
+        merged.push(finalizeTileFromSegments(cur.authorId, cur.author, new Date(cur.timestamp), cur.segments));
+        cur = tile;
+      }
+      if (cur) merged.push(finalizeTileFromSegments(cur.authorId, cur.author, new Date(cur.timestamp), cur.segments));
+
+      return merged;
+    };
+
+    // Apply the Chrome extension's coalescing algorithm directly to raw tiles
+    const tiles = coalesceInsertTiles(rawTiles, deletions, {
+      maxGapMs: 5 * 60 * 1000,  // 5 minutes
+      maxIndexDistance: 200,     // 200 characters
+      allowInterveningDeletions: true
+    });
+    
+    console.log('[server] Debug - tiles after coalescing:', tiles.length)
+    
+    // Debug: show merging results by author
+    const mergedByAuthor = {}
+    tiles.forEach(tile => {
+      const author = tile.authorId || 'unknown'
+      if (!mergedByAuthor[author]) mergedByAuthor[author] = []
+      mergedByAuthor[author].push(tile)
+    })
+    console.log('[server] Debug - final tiles by author:', Object.keys(mergedByAuthor).map(author => `${author}: ${mergedByAuthor[author].length}`))
     
     // Calculate user totals based on final merged tiles (contributions only)
     const totalsByUser = {}

@@ -1,22 +1,17 @@
-# Environment files
-.env.*
-env.py
+# Backend-specific files to ignore
+# (Main .gitignore in project root covers most common patterns)
 
-# Firebase credentials
+# Firebase credentials (backend specific)
 TEAMIO_FIREBASE_SERVICE_CREDENTIALS.json
 
-# Python cache
-__pycache__/
-*.py[cod]
-*.pyc
+# Backend-specific environment files
+env.py
 
-# Virtual environment
-.venv/
-venv/
+# Database files
+*.db
+*.sqlite
+*.sqlite3
 
-# Logs
-*.log
-
-# OS files
-.DS_Store.env
-.env
+# Backend logs
+backend.log
+api.log

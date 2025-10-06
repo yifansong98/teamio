@@ -115,16 +115,7 @@ const AnnotateContributionsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   // Get team ID from location state or localStorage
-  let teamId = location.state?.teamId;
-  if (!teamId) {
-    const savedData = localStorage.getItem("linkToolsData");
-    if (savedData) {
-      const parsedData = JSON.parse(savedData);
-      teamId = parsedData.teamId || "teamio";
-    } else {
-      teamId = "teamio"; // fallback
-    }
-  }
+  let teamId = location.state?.teamId || localStorage.getItem("teamId") || "teamio";
   const [teamMembers, setTeamMembers] = useState({});
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -144,6 +135,15 @@ const AnnotateContributionsPage = () => {
   const [endDate, setEndDate] = useState('');
 
   useEffect(() => {
+    // Reset data when team ID changes
+    setContributions([]);
+    setTeamMembers({});
+    setError("");
+    setCurrentUser(null);
+    setEditingContribution(null);
+    setShowValuedModal(null);
+    setShowOfflineModal(false);
+
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -247,16 +247,7 @@ const AnnotateContributionsPage = () => {
       <button 
         onClick={() => {
           // Get team ID from localStorage if not already available
-          let currentTeamId = teamId;
-          if (!currentTeamId) {
-            const savedData = localStorage.getItem("linkToolsData");
-            if (savedData) {
-              const parsedData = JSON.parse(savedData);
-              currentTeamId = parsedData.teamId || "teamio";
-            } else {
-              currentTeamId = "teamio";
-            }
-          }
+          let currentTeamId = teamId || localStorage.getItem("teamId") || "teamio";
           navigate("/teamio", { state: { teamId: currentTeamId } });
         }} 
         className="text-blue-600 hover:underline mb-6"
@@ -378,16 +369,7 @@ const AnnotateContributionsPage = () => {
           onClick={() => { 
             setStepsCompletion((prev) => ({...prev, step5: true })); 
             // Get team ID from localStorage if not already available
-            let currentTeamId = teamId;
-            if (!currentTeamId) {
-              const savedData = localStorage.getItem("linkToolsData");
-              if (savedData) {
-                const parsedData = JSON.parse(savedData);
-                currentTeamId = parsedData.teamId || "teamio";
-              } else {
-                currentTeamId = "teamio";
-              }
-            }
+            let currentTeamId = teamId || localStorage.getItem("teamId") || "teamio";
             navigate("/teamio", { state: { teamId: currentTeamId } });
           }}
           className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"

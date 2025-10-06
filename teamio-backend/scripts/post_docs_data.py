@@ -196,6 +196,10 @@ def process_server_output_format(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         # Count words
         word_count = len(re.findall(r"\b\w+\b", text)) if text else 0
         
+        # Skip contributions with no meaningful content
+        if word_count == 0:
+            continue
+        
         # Generate title
         title = _fmt_title_from_ts(timestamp, "Contribution")
         
@@ -242,6 +246,10 @@ def process_server_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         timestamp = thread.get("createdTime", "")
         content = thread.get("content", "")
         
+        # Get attribution data to determine target author
+        attribution = thread.get("attribution", {})
+        target_author = attribution.get("author") if attribution else None
+        
         if content.strip():  # Only process non-empty comments
             word_count = len(re.findall(r"\b\w+\b", content))
             title = _fmt_title_from_ts(timestamp, "Comment")
@@ -262,7 +270,7 @@ def process_server_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "file_name": "Document",
                 "file_url": file_url,
                 "comment_id": thread.get("id", ""),
-                "comment_target_author": None  # Server format doesn't provide target
+                "comment_target_author": target_author  # Use attribution data
             })
         
         # Process replies
@@ -322,6 +330,10 @@ def process_server_output_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         timestamp = thread.get("createdTime", "")
         content = thread.get("content", "")
         
+        # Get attribution data to determine target author
+        attribution = thread.get("attribution", {})
+        target_author = attribution.get("author") if attribution else None
+        
         if content.strip():  # Only process non-empty comments
             word_count = len(re.findall(r"\b\w+\b", content))
             title = _fmt_title_from_ts(timestamp, "Comment")
@@ -342,7 +354,7 @@ def process_server_output_comments(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
                 "file_name": file_name,
                 "file_url": file_url,
                 "comment_id": thread.get("id", ""),
-                "comment_target_author": None  # Server format doesn't provide target
+                "comment_target_author": target_author  # Use attribution data
             })
         
         # Process replies
@@ -444,6 +456,7 @@ def post_to_contributions_generic(contributions: List[Dict[str, Any]], team_id: 
             "metric": c.get("metric", ""),
             "team_id": team_id,
             "title": c.get("title", ""),
+            "quantity": c.get("word_count"),  # Use word_count as quantity for Google Docs
         }
         ref.set(payload)
 
