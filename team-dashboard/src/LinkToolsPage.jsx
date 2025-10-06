@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useStepsCompletion } from "./StepsCompletionContext";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const LinkToolsPage = () => {
   const [repoURL, setRepoURL] = useState("");
@@ -12,10 +12,14 @@ const LinkToolsPage = () => {
 
   const { setStepsCompletion } = useStepsCompletion();
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Load saved data from localStorage on page load
   useEffect(() => {
     const savedData = localStorage.getItem("linkToolsData");
+    const stateTeamId = location.state?.teamId;
+    const storedTeamId = localStorage.getItem("teamId");
+    
     if (savedData) {
       const parsedData = JSON.parse(savedData);
       setRepoURL(parsedData.repoURL || "");
@@ -23,7 +27,13 @@ const LinkToolsPage = () => {
       setOnlyMainBranch(parsedData.onlyMainBranch || false);
       setOnlyMergedPRs(parsedData.onlyMergedPRs || false);
     }
-  }, []);
+    
+    // Set teamId from location state or localStorage
+    const finalTeamId = stateTeamId || storedTeamId || "";
+    if (finalTeamId) {
+      setTeamId(finalTeamId);
+    }
+  }, [location.state]);
 
   // Save data to localStorage whenever inputs change
   useEffect(() => {
@@ -70,7 +80,7 @@ const LinkToolsPage = () => {
       if (githubResponse.ok) {
         const data = await githubResponse.json();
         setResponseMessage("GitHub: " + JSON.stringify(data) + "\n");
-        setStepsCompletion((prev) => ({ ...prev, step1: true }));
+        setStepsCompletion((prev) => ({ ...prev, step2: true }));
         navigate("/teamio", { state: { teamId: teamId } });
       } else {
         const errorData = await githubResponse.json();

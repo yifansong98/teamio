@@ -162,7 +162,7 @@ const GoldStandardModal = ({ behavior, onCancel }) => {
 
 const ReflectionsPage = () => {
   const location = useLocation();
-  const teamId = location.state?.teamId || "defaultTeamId";
+  const teamId = location.state?.teamId || localStorage.getItem("teamId") || "defaultTeamId";
   const [showGoldStandard, setShowGoldStandard] = useState(null);
 
   const [commitData, setCommitData] = useState({});
@@ -180,6 +180,14 @@ const ReflectionsPage = () => {
   const { setStepsCompletion } = useStepsCompletion();
 
   useEffect(() => {
+    // Reset data when team ID changes
+    setCommitData({});
+    setRevisionData({});
+    setFeedbackData({});
+    setTimelineData([]);
+    setTimelineGDocData([]);
+    setError("");
+
     const fetchData = async () => {
       setLoading(true);
       try {
@@ -414,8 +422,8 @@ const ReflectionsPage = () => {
     const mapGDocSizeToRadius = (size) => {
       if (size < 50) return 10;
       if (size < 200) return 12;
-      if (size < 1500) return 14;
-      if (size < 1000) return 16;
+      if (size < 1000) return 14;
+      if (size < 1500) return 16;
       return 20
     };
 
@@ -692,7 +700,7 @@ return (
             <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
             <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
             <div className="p-6 bg-white rounded-lg shadow-md">
-      {hasTimelineData ? (
+      {(hasTimelineData || hasGDocTimelineData) ? (
         <>
           {}
           <div className="w-full h-[500px]">

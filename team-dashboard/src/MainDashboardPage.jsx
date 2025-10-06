@@ -2,28 +2,38 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useStepsCompletion } from "./StepsCompletionContext";
-import { IconCheck, IconLock } from "./assets/icons"; // Assuming you have these icons defined elsewhere
+import { IconCheck, IconLock } from "./assets/icons";
 
 const MainDashboardPage = () => {
   const navigate = useNavigate();
   const { stepsCompletion } = useStepsCompletion();
-  const location = useLocation(); // Hook to access the current location
+  const location = useLocation();
 
-  const [teamId, setTeamId] = useState(location.state?.teamId || null);
+  const [teamId, setTeamId] = useState(location.state?.teamId || localStorage.getItem("teamId") || null);
+  
   // Update teamId whenever location.state changes
   useEffect(() => {
-    console.log("Location state changed:", location.state);
-    const updatedTeamId = location.state?.teamId || null;
+    const updatedTeamId = location.state?.teamId || localStorage.getItem("teamId") || null;
     setTeamId(updatedTeamId);
   }, [location.state]);
+
+  // If no team ID, redirect to team setup
+  useEffect(() => {
+    if (!teamId) {
+      navigate("/teamio/setup");
+    }
+  }, [teamId, navigate]);
 
   return (
     <div className="p-4 md:p-8">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Teamwork Reflection</h1>
+        <h1 className="text-3xl font-bold text-gray-800">Teamwork Analysis</h1>
         <p className="text-gray-600 mt-2">
-          Follow these steps to analyze and reflect on your team's collaboration.
+          Team ID: <span className="font-mono bg-gray-100 px-2 py-1 rounded">{teamId}</span>
+        </p>
+        <p className="text-gray-600 mt-2">
+          Follow these steps to analyze your team's collaboration patterns.
         </p>
       </div>
 

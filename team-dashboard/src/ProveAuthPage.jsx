@@ -110,8 +110,8 @@ const ProveAuthPage = () => {
       if (response.ok) {
         setAuthStatus('success');
         setError(null);
-        // Mark step 2 as completed
-        setStepsCompletion(prev => ({ ...prev, step2: true }));
+        // Mark step 3 as completed
+        setStepsCompletion(prev => ({ ...prev, step3: true }));
       } else {
         setAuthStatus('failed');
         setError('Authentication test failed. Please try authenticating again.');

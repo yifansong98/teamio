@@ -5,6 +5,7 @@ import { useStepsCompletion } from "./StepsCompletionContext";
 const MappingLoginsPage = () => {
   const [logins, setLogins] = useState([]); // Store logins fetched from the API
   const [mappings, setMappings] = useState({}); // Store login-to-NetID mappings
+  const [teamMembers, setTeamMembers] = useState([]); // Store team member names
   const [loading, setLoading] = useState(false);
   const [responseMessage, setResponseMessage] = useState("");
 
@@ -15,12 +16,17 @@ const MappingLoginsPage = () => {
 
   useEffect(() => {
     // Load team ID from localStorage if not provided in state
-    let currentTeamId = teamId;
-    if (!currentTeamId) {
-      const savedData = localStorage.getItem("linkToolsData");
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        currentTeamId = parsedData.teamId || "";
+    let currentTeamId = teamId || localStorage.getItem("teamId") || "";
+    
+    // Load team members from localStorage
+    const storedMembers = localStorage.getItem("teamMembers");
+    if (storedMembers) {
+      try {
+        const members = JSON.parse(storedMembers);
+        setTeamMembers(members);
+        console.log("Loaded team members:", members);
+      } catch (e) {
+        console.error("Error parsing team members:", e);
       }
     }
 
@@ -28,6 +34,11 @@ const MappingLoginsPage = () => {
       setResponseMessage("Error: Team ID is missing. Please complete Step 1 (Link GitHub Repository) first.");
       return;
     }
+
+    // Reset data when team ID changes
+    setLogins([]);
+    setMappings({});
+    setResponseMessage("");
 
     // Fetch logins for the given team_id
     const fetchLogins = async () => {
@@ -77,14 +88,7 @@ const MappingLoginsPage = () => {
     setResponseMessage("");
 
     // Get team ID from localStorage if not provided in state
-    let currentTeamId = teamId;
-    if (!currentTeamId) {
-      const savedData = localStorage.getItem("linkToolsData");
-      if (savedData) {
-        const parsedData = JSON.parse(savedData);
-        currentTeamId = parsedData.teamId || "";
-      }
-    }
+    let currentTeamId = teamId || localStorage.getItem("teamId") || "";
 
     if (!currentTeamId) {
       setResponseMessage("Error: Team ID is missing. Please complete Step 1 (Link GitHub Repository) first.");
@@ -121,14 +125,7 @@ const MappingLoginsPage = () => {
       <button
         onClick={() => {
           // Get team ID from localStorage if not provided in state
-          let currentTeamId = teamId;
-          if (!currentTeamId) {
-            const savedData = localStorage.getItem("linkToolsData");
-            if (savedData) {
-              const parsedData = JSON.parse(savedData);
-              currentTeamId = parsedData.teamId || "";
-            }
-          }
+          let currentTeamId = teamId || localStorage.getItem("teamId") || "";
           navigate("/teamio", { state: { teamId: currentTeamId } });
         }}
         className="text-blue-600 hover:underline mb-6"
@@ -141,9 +138,14 @@ const MappingLoginsPage = () => {
       <div className="mt-4 p-4 bg-blue-50 border-l-4 border-blue-500 text-blue-800 rounded-lg">
         <p className="text-sm">
           Below is a list of logins extracted from your GitHub repository and Google Docs. Please map each login to the
-          corresponding UserID for your team members. This mapping ensures that contributions are
+          corresponding team member. This mapping ensures that contributions are
           correctly attributed to the right individuals.
         </p>
+        {teamMembers.length > 0 && (
+          <p className="text-sm mt-2">
+            <strong>Team members:</strong> {teamMembers.join(", ")}
+          </p>
+        )}
       </div>
 
       {responseMessage && (
@@ -180,14 +182,19 @@ const MappingLoginsPage = () => {
                     {login}
                   </div>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Enter UserID"
+                <select
                   value={mappings[login] || ""}
                   onChange={(e) => handleMappingChange(login, e.target.value)}
                   className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
                   required
-                />
+                >
+                  <option value="">Select team member...</option>
+                  {teamMembers.map((member, memberIndex) => (
+                    <option key={memberIndex} value={member}>
+                      {member}
+                    </option>
+                  ))}
+                </select>
               </div>
             ))}
           </div>
