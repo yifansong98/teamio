@@ -116,6 +116,46 @@ function hexToRgb(hex) {
   return `${r}, ${g}, ${b}`;
 }
 
+
+function createSqrtScale(domain, range) {
+  const [dMin, dMax] = domain;
+  const [rMin, rMax] = range;
+
+  return function(value) {
+    const normalized = Math.sqrt(value - dMin) / Math.sqrt(dMax - dMin || 1);
+    return rMin + normalized * (rMax - rMin);
+  };
+}
+
+function createQuantizedScale(domain, levels) {
+  const [min, max] = domain;
+  const step = (max - min) / levels.length;
+
+  return function(value) {
+    const index = Math.min(
+      levels.length - 1,
+      Math.floor((value - min) / step)
+    );
+    return levels[index];
+  };
+}
+
+function createLogScale(domain, range) {
+  const [dMin, dMax] = domain;
+  const [rMin, rMax] = range;
+
+  return function(value) {
+    const safeValue = Math.max(value, 1); // avoid log(0)
+    const logMin = Math.log(dMin || 1);
+    const logMax = Math.log(dMax);
+    const logValue = Math.log(safeValue);
+
+    const normalized = (logValue - logMin) / (logMax - logMin || 1);
+    return rMin + normalized * (rMax - rMin);
+  };
+}
+
+
 const GoldStandardModal = ({ behavior, onCancel }) => {
   const content = {
     equitable: {
@@ -398,28 +438,46 @@ const ReflectionsPage = () => {
 
   
     const paddedYAxisLabels = useMemo(() => 
-                ['', ...allNetIds.flatMap(author => [`${author}-github`, `${author}-gdoc`]), ''],
+                ['', ...allNetIds.flatMap(author => [`${author}-github`, `${author}-gdocs`]), ''],
                 [allNetIds]
             );
-
+    // const groupedYAxisLabels = allNetIds.map(name => ({
+    //   label: name,
+    //   github: `${name}-github`,
+    //   gdoc: `${name}-gdocs`
+    // }));
+    
+    // const paddedYAxisLabels = groupedYAxisLabels.flatMap(group => [group.github, group.gdoc]);
 
     const mapSizeToRadius = (size) => {
-      if (size < 50) return 5;
-      if (size < 200) return 7;
-      if (size < 1500) return 10;
-      if (size < 1000) return 12;
-      return 14
+      if (size < 100) return 7;
+      if (size < 500) return 10;
+      if (size < 1500) return 12;
+      if (size < 1000) return 15;
+      return 17
     };
 
     const mapGDocSizeToRadius = (size) => {
       if (size < 50) return 10;
-      if (size < 200) return 12;
-      if (size < 1500) return 14;
-      if (size < 1000) return 16;
-      return 20
+      if (size < 250) return 13;
+      if (size < 750) return 16;
+      if (size < 1250) return 19;
+      return 21
     };
 
 const scatterChartData = useMemo(() => {
+    const maxLOC = Math.max(
+      ...timelineData.flatMap(entry => entry.contributions.map(c => c.size))
+    ) || 1;
+
+    const maxWords = Math.max(
+      ...timelineGDocData.flatMap(entry => entry.contributions.map(c => c.size))
+    ) || 1;
+
+    // Create custom scale functions
+    const githubSizeScale = createSqrtScale([0, maxLOC], [10, 20]);
+    const gdocSizeScale = createSqrtScale([0, maxWords], [14, 24]);
+
     const datasets = [
         ...timelineData.map((entry) => {
             //const authorIndex = paddedYAxisLabels.indexOf(entry.author);
@@ -427,13 +485,13 @@ const scatterChartData = useMemo(() => {
                 label: entry.author,
                 datalabels: { display: false },
                 data: entry.contributions.map(c => ({
-                    x: new Date(c.ts),
-                    y: `${entry.author}-github`, 
+                    x: c.date,
+                    y: `${entry.author}-github` , 
                     v: c.size,
                 })),
                 backgroundColor: userColors[entry.author] || "#999999",
                 pointStyle: 'circle',
-                radius: entry.contributions.map(c => mapSizeToRadius(c.size)),
+                radius: entry.contributions.map(c =>githubSizeScale(c.size)),
             };
         }),
         ...timelineGDocData.map((entry) => {
@@ -442,13 +500,13 @@ const scatterChartData = useMemo(() => {
                 label: entry.author,
                 datalabels: { display: false },
                 data: entry.contributions.map(c => ({
-                    x: new Date(c.ts),
-                    y: `${entry.author}-gdoc`, 
+                    x: c.date,
+                    y: `${entry.author}-gdocs`, 
                     v: c.size,
                 })),
                 backgroundColor: userColors[entry.author] || "#999999",
                 pointStyle: 'triangle',
-                radius: entry.contributions.map(c => mapGDocSizeToRadius(c.size)),
+                radius: entry.contributions.map(c => gdocSizeScale(c.size)),
             };
         }),
     ];
@@ -470,7 +528,7 @@ const scatterOptions = useMemo(() => ({
             bodyFont: { size: 12 },
             displayColors: false,
             callbacks: {
-                title: (ctx) => ctx[0].raw.y.replace('-gdoc', '').replace('-github', ''),
+                title: (ctx) => ctx[0].raw.y.replace('-gdocs', '').replace('-github', ''),
                 label: (ctx) => {
                     const size = ctx.raw.v;
                     const source = ctx.dataset.pointStyle === 'triangle' ? 'Google Docs' : 'GitHub';
@@ -500,8 +558,17 @@ const scatterOptions = useMemo(() => ({
             }
             },
             ticks: {
-              // No callback needed, will display full labels like 'rohan23-github'
-            }
+              callback: function(value, index) {
+    
+                const rawLabel =  this.getLabelForValue(value)
+                return rawLabel.endsWith('-github') ? rawLabel.replace('-github', '') : '\u00A0';
+              },
+              font: { size: 14, 
+                lineHeight: 0.8
+              },
+              
+          }
+
           },
         },
       }), [paddedYAxisLabels]);
@@ -516,6 +583,7 @@ const scatterOptions = useMemo(() => ({
   const navigate = useNavigate();
 
 return (
+  <div className="bg-gray-50 min-h-screen">
     <div className="p-4 md:p-8 max-w-6xl mx-auto">
             <button onClick={() => navigate("/teamio", { state: { teamId: teamId } })} className="text-blue-600 hover:underline mb-6">&larr; Back to Dashboard</button>
             <h1 className="text-2xl font-bold text-gray-800">Step 3: Team Reflection</h1>
@@ -577,10 +645,10 @@ return (
             
             <h3 className="text-sm mb-4">{content[activeTab].title}</h3>
             <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
-            <div className="p-6 bg-white rounded-lg shadow-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="p-6  rounded-lg w-full max-w-6xl mx-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start justify-center">
               {/* Commits Pie */}
-              <div className="w-full h-[400px] flex flex-col items-center">
+                  <div className="w-full h-[400px] flex flex-col items-center bg-white p-4 rounded-lg shadow-md">
                 <h2 className="text-lg font-semibold text-gray-700 mb-4">
                   GitHub
                 </h2>
@@ -625,7 +693,7 @@ return (
         </div>
 
               {/* Revisions Pie */}
-              <div className="w-full h-[400px] flex flex-col items-center">
+                  <div className="w-full h-[400px] flex flex-col items-center bg-white p-4 rounded-lg shadow-md">
                 <h2 className="text-lg font-semibold text-gray-700 mb-4">
                   Google Docs
                 </h2>
@@ -802,6 +870,7 @@ return (
           Finish Reflection
         </button>
       </div>
+    </div>
     </div>
   );
 };
