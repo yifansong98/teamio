@@ -1,0 +1,4 @@
+2025/10/05-23:34:13.913 2b0f Reusing MANIFEST /Users/leishagarg/teamio/server/.chrome-profile/Default/Session Storage/MANIFEST-000001
+2025/10/05-23:34:13.916 2b0f Recovering log #10
+2025/10/05-23:34:13.916 2b0f (ignoring error) /Users/leishagarg/teamio/server/.chrome-profile/Default/Session Storage/000010.log: dropping 5 bytes; Corruption: missing start of fragmented record(2)
+2025/10/05-23:34:13.917 2b0f Reusing old log /Users/leishagarg/teamio/server/.chrome-profile/Default/Session Storage/000010.log 

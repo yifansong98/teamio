@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OAuth Test</title>
+</head>
+<body>
+    <h1>OAuth Test</h1>
+    <button onclick="testOAuth()">Test OAuth Flow</button>
+    <div id="result"></div>
+
+    <script>
+        function testOAuth() {
+            console.log('Starting OAuth test...');
+            
+            const popup = window.open(
+                'http://localhost:8787/oauth/authorize',
+                'google-drive-auth',
+                'width=500,height=600,scrollbars=yes,resizable=yes,noopener,noreferrer'
+            );
+            
+            if (!popup) {
+                document.getElementById('result').innerHTML = 'Popup blocked!';
+                return;
+            }
+            
+            console.log('Popup opened:', popup);
+            
+            const messageHandler = (event) => {
+                console.log('Received message:', event.data, 'from origin:', event.origin);
+                
+                if (event.data && event.data.token && typeof event.data.token === 'string') {
+                    console.log('Token received:', event.data.token);
+                    document.getElementById('result').innerHTML = 'SUCCESS: Token received: ' + event.data.token.substring(0, 20) + '...';
+                    window.removeEventListener('message', messageHandler);
+                    popup.close();
+                } else if (event.data && event.data.error) {
+                    console.log('Error received:', event.data.error);
+                    document.getElementById('result').innerHTML = 'ERROR: ' + event.data.error;
+                    window.removeEventListener('message', messageHandler);
+                    popup.close();
+                }
+            };
+            
+            window.addEventListener('message', messageHandler);
+            
+            // Timeout after 30 seconds
+            setTimeout(() => {
+                window.removeEventListener('message', messageHandler);
+                if (!popup.closed) {
+                    document.getElementById('result').innerHTML = 'TIMEOUT: No response received';
+                    popup.close();
+                }
+            }, 30000);
+        }
+    </script>
+</body>
+</html>
