@@ -15,6 +15,7 @@ from collections import defaultdict
 import asyncio
 from fastapi.concurrency import run_in_threadpool
 from dotenv import load_dotenv
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
@@ -151,14 +152,13 @@ async def get_commit_summary(team_id: str = Query(...)):
     commit_results = await asyncio.gather(*tasks)
 
     summary = {}
-    timeline_map = {}
+    timeline_map = defaultdict(lambda: defaultdict(int))
     
     for contrib_data, commit_data in zip(contributions.values(), commit_results):
         if commit_data:
             # Use mapped net_id if available, otherwise fall back to author
             original_author = contrib_data.get("author", "unknown")
             author = mapped_users.get(original_author, original_author)
-            print(f"GitHub timeline: {original_author} -> {author}")
             if author not in summary:
                 summary[author] =  {"commits": 0, "lines": 0}
             summary[author]["commits"] += 1
@@ -168,19 +168,20 @@ async def get_commit_summary(team_id: str = Query(...)):
             summary[author]["lines"] += additions + deletions
             timestamp = commit_data.get("timestamp")
             size =  contrib_data.get("quantity")
-            if timestamp:
-                if author not in timeline_map:
-                    timeline_map[author] = []
-                timeline_map[author].append({
-                    "ts": timestamp,
-                    "size": size
-                })
+            if timestamp:     
+                date_str = datetime.fromisoformat(timestamp).date().isoformat()
+                if date_str <= "2025-02-25" and date_str >= "2025-01-06":
+                    timeline_map[author][date_str] += size
+                
 
     timeline = [
-        {"author": author, "contributions": timestamps}
-        for author, timestamps in timeline_map.items()
+    {
+        "author": author,
+        "contributions": [{"date": date, "size": size} for date, size in sorted(dates.items())]
+    }
+        for author, dates in timeline_map.items()
     ]
-    
+
     return JSONResponse(content={"summary": summary, "timeline": timeline})
 
 @app.get("/api/reflections/feedback")
@@ -303,7 +304,8 @@ async def get_revisions_history(team_id: str = Query(...)):
 
     # 4. Process the results
     summary = {}
-    timeline_map = {}
+    timeline_map = defaultdict(lambda: defaultdict(int))
+
 
     for contrib_data, revision_data in zip(contributions.values(), revision_results):
         if revision_data:
@@ -314,18 +316,24 @@ async def get_revisions_history(team_id: str = Query(...)):
             if author not in summary:
                 summary[author] =  {"revisions": 0, "word_count": 0}
             summary[author]['revisions'] += 1
-            summary[author]['word_count'] += revision_data.get('word_count', 0)
-            
+            word_count = revision_data.get('word_count', 0)
+            summary[author]['word_count'] += word_count
             timestamp = revision_data.get("timestamp")
             if timestamp:
-                if author not in timeline_map:
-                    timeline_map[author] = []
-                timeline_map[author].append({"ts": timestamp, "size" : 0})
-    
+                date_str = datetime.fromisoformat(timestamp).date().isoformat()
+                if date_str <= "2025-02-25" and date_str >= "2025-01-06":
+                    timeline_map[author][date_str] += word_count
+                
+
     timeline = [
-        {"author": author, "contributions": timestamps}
-        for author, timestamps in timeline_map.items()
+    {
+        "author": author,
+        "contributions": [{"date": date, "size": size} for date, size in sorted(dates.items())]
+    }
+        for author, dates in timeline_map.items()
     ]
+    
+    
     
     return JSONResponse(content={"summary": summary, "timeline": timeline})
 
