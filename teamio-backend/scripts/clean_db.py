@@ -4,7 +4,7 @@ from firebase_admin import credentials, db
 def clean_database():
     try:
         # Initialize Firebase Admin SDK
-        cred = credentials.Certificate("TEAMIO_FIREBASE_SERVICE_CREDENTIALS.json")  # Path to your Firebase service account JSON
+        cred = credentials.Certificate("../TEAMIO_FIREBASE_SERVICE_CREDENTIALS.json")  # Path to your Firebase service account JSON
         firebase_admin.initialize_app(cred, {
             'databaseURL': 'https://teamio-test-default-rtdb.firebaseio.com'  # Replace with your Firebase database URL
         })

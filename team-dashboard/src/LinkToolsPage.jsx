@@ -11,7 +11,7 @@ const LinkToolsPage = () => {
   const [responseMessage, setResponseMessage] = useState("");
   const [onlyMainBranch, setOnlyMainBranch] = useState(false);
   const [onlyMergedPRs, setOnlyMergedPRs] = useState(false);
-
+  const [deliverableDates, setDeliverableDates] = useState([]);
   const { setStepsCompletion } = useStepsCompletion();
   const navigate = useNavigate();
 
@@ -26,6 +26,7 @@ const LinkToolsPage = () => {
       setTeamId(parsedData.teamId || "");
       setOnlyMainBranch(parsedData.onlyMainBranch || false);
       setOnlyMergedPRs(parsedData.onlyMergedPRs || false);
+      setDeliverableDates(parsedData.deliverableDates || []);
     }
   }, []);
 
@@ -38,6 +39,7 @@ const LinkToolsPage = () => {
       teamId,
       onlyMainBranch,
       onlyMergedPRs,
+      deliverableDates
     };
     localStorage.setItem("linkToolsData", JSON.stringify(dataToSave));
   }, [googleDocsData, googleDocsFileName, repoURL, teamId, onlyMainBranch, onlyMergedPRs]);
@@ -57,6 +59,21 @@ const LinkToolsPage = () => {
       };
       reader.readAsText(file);
     }
+  };
+
+  const handleAddDeliverableDate = () => {
+    setDeliverableDates([...deliverableDates, ""]); // Add an empty date
+  };
+
+  const handleRemoveDeliverableDate = (index) => {
+    const updatedDates = deliverableDates.filter((_, i) => i !== index);
+    setDeliverableDates(updatedDates);
+  };
+
+  const handleDeliverableDateChange = (index, value) => {
+    const updatedDates = [...deliverableDates];
+    updatedDates[index] = value;
+    setDeliverableDates(updatedDates);
   };
 
   const handleSubmit = async (e) => {
@@ -238,6 +255,37 @@ const LinkToolsPage = () => {
               </label>
             </div>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Deliverable Dates</label>
+            <div className="space-y-2">
+              {deliverableDates.map((date, index) => (
+                <div key={index} className="flex items-center space-x-2">
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => handleDeliverableDateChange(index, e.target.value)}
+                    className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveDeliverableDate(index)}
+                    className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={handleAddDeliverableDate}
+                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
+              >
+                + Add Deliverable
+              </button>
+            </div>
+          </div>
+
         </div>
 
         <div className="mt-6 text-center">

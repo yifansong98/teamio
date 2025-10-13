@@ -92,6 +92,18 @@ async def get_team_logins(team_id: str = Query(...)):
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 
+@app.get("/api/teams/students")
+async def get_team_students(team_id: str = Query(...)):
+    try:
+        ref = db.reference(f'teams/{team_id}/students')
+        students_data = ref.get() or {}
+        print(f"Fetched students data: {students_data}")
+        # Convert to array format expected by frontend
+        students = list(students_data)
+        return JSONResponse(content=students)
+    except Exception as e:
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
 @app.get("/api/teams/mapped-users")
 async def get_mapped_users(team_id: str = Query(...)):
     try:

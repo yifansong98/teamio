@@ -7,6 +7,7 @@ const MappingLoginsPage = () => {
   const [mappings, setMappings] = useState({}); // Store login-to-NetID mappings
   const [loading, setLoading] = useState(false);
   const [responseMessage, setResponseMessage] = useState("");
+  const [students, setStudents] = useState([]); // Store students fetched from the API
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -40,7 +41,24 @@ const MappingLoginsPage = () => {
       }
     };
 
+    const fetchStudents = async () => {
+      try {
+        const response = await fetch(`http://localhost:3000/api/teams/students?team_id=${teamId}`);
+        if (response.ok) {
+          const data = await response.json();
+          console.log("Fetched Students:", data);
+          setStudents(data || []);
+        } else {
+          const errorData = await response.json();
+          console.error("Error fetching students:", JSON.stringify(errorData));
+        }
+      } catch (error) {
+        setResponseMessage("Error: " + error.message);
+      }
+    }
+
     fetchLogins();
+    fetchStudents();
   }, [teamId]);
 
   const handleMappingChange = (login, netId) => {
@@ -132,24 +150,25 @@ const MappingLoginsPage = () => {
             {logins.map((login, index) => (
               <div key={`${login}-${index}`} className="flex items-center space-x-4">
                 <div className="relative group w-1/3">
-                  <label
-                    className="text-sm font-medium text-gray-700 truncate block"
-                  >
+                  <label className="text-sm font-medium text-gray-700 truncate block">
                     {login}
                   </label>
-                  {/* Tooltip */}
-                  <div className="absolute hidden group-hover:block bg-gray-800 text-white text-xs rounded py-1 px-2 z-10">
-                    {login}
-                  </div>
                 </div>
-                <input
-                  type="text"
-                  placeholder="Enter UserID"
+                <select
                   value={mappings[login] || ""}
                   onChange={(e) => handleMappingChange(login, e.target.value)}
                   className="flex-1 p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
                   required
-                />
+                >
+                  <option value="" disabled>
+                    Select a student
+                  </option>
+                  {students.map((student) => (
+                    <option key={student} value={student}>
+                      {student}
+                    </option>
+                  ))}
+                </select>
               </div>
             ))}
           </div>
