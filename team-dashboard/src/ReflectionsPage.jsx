@@ -175,6 +175,8 @@ const ReflectionsPage = () => {
   const [feedbackData, setFeedbackData] = useState({});
   const [feedbackGitHubData, setFeedbackGitHubData] = useState({});
   const [feedbackGDocData, setFeedbackGDocData] = useState({});
+    const [feedbackGitHubMessagesData, setFeedbackGitHubMessagesData] = useState({});
+  const [feedbackGDocMessagesData, setFeedbackGDocMessagesData] = useState({});
   const { setStepsCompletion } = useStepsCompletion();
 
   // useEffect(() => {
@@ -213,6 +215,8 @@ const ReflectionsPage = () => {
           
           setFeedbackGitHubData(feedbackData.feedback_counts_github);
           setFeedbackGDocData(feedbackData.feedback_counts_gdoc);
+          setFeedbackGitHubMessagesData(feedbackData.feedback_messages_github);
+          setFeedbackGDocMessagesData(feedbackData.feedback_messages_google_doc);
         } else {
           setError(feedbackData.error || "Failed to fetch feedback data");
         }
@@ -326,26 +330,59 @@ const ReflectionsPage = () => {
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                    boxWidth: 200,
                     backgroundColor: '#2d3748',
                     titleFont: { size: 14, weight: 'bold' },
                     bodyFont: { size: 12 },
                     displayColors: false,
                     callbacks: {
-                      title: () => '',
+                      title: (ctx) =>  {
+                       if (!ctx || !ctx.length || !ctx[0].raw) return ''; // safety check
+                        const raw = ctx[0].raw;
+                        const giver = raw.y || 'Unknown';
+                        const receiver = raw.x || 'Unknown';
+                        return `${giver} → ${receiver}`;
+                      },
+                      
+
                       label: (ctx) => {
                         const giver = ctx.raw.y;
                         const receiver = ctx.raw.x;
 
                         const githubCount = feedbackGitHubData[giver]?.[receiver] || 0;
                         const gdocCount = feedbackGDocData[giver]?.[receiver] || 0;
-      
+                        
+
+                        let githubLines = [];
+                        let gDocLines = [];
+
+                        const shorten = (text, max = 80) =>
+                           text.length > max ? text.slice(0, max) + "..." : text;
+                        if (githubCount > 0) {
+                          githubLines = ((feedbackGitHubMessagesData[giver] || {})[receiver] || []).map(
+                            (c) => `\u2022 [Comment on PR #${c.pr_number} ${c.pr_title}]: ${shorten(c.comment)}`
+                          );
+                        }
+
+                        if (gdocCount > 0) {
+                          gDocLines = ((feedbackGDocMessagesData[giver] || {})[receiver] || []).map(
+                            (c) => `\u2022 [Comment on ${c.doc}]: ${shorten(c.comment)}`
+                          );
+                        }
+                        
+                        const GitHubSummary = `GitHub: ${giver} left ${githubCount} comment(s) on ${receiver}'s PRs`;
+                        const GDocSummary = `GoogleDoc: ${giver} left ${gdocCount} comment(s) on ${receiver}'s content`;
+
                         return [
-                          `GitHub: ${giver} left ${githubCount} comment(s) on ${receiver}'s PRs `,
-                          `GoogleDoc: ${giver} left ${gdocCount} comment(s) on ${receiver}'s content`,
-                
+                          GitHubSummary,
+                          ...githubLines,
+                          GDocSummary,
+                          ...gDocLines
                         ];
                       },
                     },
+                    titleAlign: 'center',
+                    
                   },
                     datalabels: {
                         

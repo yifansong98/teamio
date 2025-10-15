@@ -220,8 +220,12 @@ async def get_feedback_matrix(team_id: str = Query(...)):
         feedback_counts = {}
         feedback_counts_github = {}
         feedback_counts_gdoc = {}
+        feedback_messages_github = {}
+        feedback_messages_google_doc = {}
 
         for (pr_id, pr_info), comments in zip(pr_list, comments_results):
+            pr_number = pr_info.get("pr_number") or pr_id
+            pr_title = pr_info.get("title", "No Title")
             author = pr_info.get("login", "unknown")
             if not comments:
                 continue
@@ -238,6 +242,9 @@ async def get_feedback_matrix(team_id: str = Query(...)):
                 feedback_counts.setdefault(commenter_netid, {})
                 feedback_counts_github.setdefault(commenter_netid, {})
 
+                feedback_messages_github.setdefault(commenter_netid, {})
+                feedback_messages_github[commenter_netid].setdefault(author_netid, [])
+
                 feedback_counts[commenter_netid].setdefault(author_netid, 0)
                 feedback_counts_github[commenter_netid].setdefault(author_netid, 0)
 
@@ -249,6 +256,14 @@ async def get_feedback_matrix(team_id: str = Query(...)):
                 feedback_counts[commenter_netid][author_netid] += count
                 feedback_counts_github[commenter_netid][author_netid] += count
 
+                for c in comment_entries:
+                    message_text = c.get("body") or ""
+                    feedback_messages_github[commenter_netid][author_netid].append({
+                        "pr_number": pr_number,
+                        "pr_title": pr_title,
+                        "comment": message_text
+                    })
+
         gdoc_comments_ref = await run_in_threadpool(
             db.reference,
             "log_data/google_docs/comment"
@@ -258,7 +273,9 @@ async def get_feedback_matrix(team_id: str = Query(...)):
         for comment_id, comment_info in gdoc_comments.items():
             giver_login = comment_info.get("login")
             receiver_name = comment_info.get("comment_target_author")
-
+            file_info = comment_info.get("file", {})
+            file_name = file_info.get("name", "Unknown Document")
+            text = comment_info.get("text", "")
             if not giver_login or not receiver_name:
                 continue
 
@@ -274,12 +291,18 @@ async def get_feedback_matrix(team_id: str = Query(...)):
             feedback_counts[giver_netid].setdefault(receiver_netid, 0)
             feedback_counts_gdoc[giver_netid].setdefault(receiver_netid, 0)
 
+            feedback_messages_google_doc.setdefault(giver_netid, {})
+            feedback_messages_google_doc[giver_netid].setdefault(receiver_netid, [])
+
             feedback_counts[giver_netid][receiver_netid] += 1
             feedback_counts_gdoc[giver_netid][receiver_netid] += 1
-            
-        print(feedback_counts_gdoc)
-        print(feedback_counts_github)
-        return JSONResponse(content={"feedback_counts": feedback_counts, "feedback_counts_github": feedback_counts_github, "feedback_counts_gdoc": feedback_counts_gdoc})
+
+            feedback_messages_google_doc[giver_netid][receiver_netid].append({
+                "doc": file_name,
+                "comment": text
+            })
+
+        return JSONResponse(content={"feedback_counts": feedback_counts, "feedback_counts_github": feedback_counts_github, "feedback_counts_gdoc": feedback_counts_gdoc, "feedback_messages_github": feedback_messages_github, "feedback_messages_google_doc": feedback_messages_google_doc})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
