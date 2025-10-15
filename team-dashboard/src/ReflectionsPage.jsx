@@ -156,54 +156,12 @@ function createLogScale(domain, range) {
 }
 
 
-const GoldStandardModal = ({ behavior, onCancel }) => {
-  const content = {
-    equitable: {
-      title: "Why is Equitable Contribution Important?",
-      description:
-        "Equitable contribution doesn't mean everyone does the exact same amount of work, but that the workload is distributed fairly and agreed upon by the team. A 'gold-standard' team often shows a relatively balanced pie chart, with no single member dominating or contributing very little.",
-    },
-    timeliness: {
-      title: "Why is Timeliness Important?",
-      description:
-        "Timeliness involves completing work on schedule and avoiding last-minute rushes. A 'gold-standard' team shows consistent progress throughout the project timeline, rather than a large cluster of activity right before the deadline.",
-    },
-    support: {
-      title: "Why is Mutual Support Important?",
-      description:
-        "Mutual support is about helping teammates, providing constructive feedback, and acknowledging valuable contributions. A 'gold-standard' team shows reciprocal support, where all members are engaged in helping each other succeed.",
-    },
-    valued: {
-      title: "Why are Valued Contributions Important?",
-      description:
-        "Valued contributions are pieces of work that teammates identify as particularly high-quality, creative, or helpful. In a 'gold-standard' team, all members both give and receive recognition, showing that high-quality work is distributed and appreciated across the team.",
-    },
-  };
-  const current = content[behavior];
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-20">
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-lg">
-        <h3 className="text-xl font-bold mb-4">{current.title}</h3>
-        <p className="text-sm text-gray-600 mb-4">{current.description}</p>
-        <div className="mt-6 flex justify-end">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold"
-          >
-            Close
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
 
 
 const ReflectionsPage = () => {
   const location = useLocation();
   const teamId = location.state?.teamId || "defaultTeamId";
-  const [showGoldStandard, setShowGoldStandard] = useState(null);
+  const [selectedCommitTitles, setSelectedCommitTitles] = useState([]);
 
   const [commitData, setCommitData] = useState({});
   const [timelineData, setTimelineData] = useState([]);
@@ -218,6 +176,10 @@ const ReflectionsPage = () => {
   const [feedbackGitHubData, setFeedbackGitHubData] = useState({});
   const [feedbackGDocData, setFeedbackGDocData] = useState({});
   const { setStepsCompletion } = useStepsCompletion();
+
+  // useEffect(() => {
+  //   setStepsCompletion(prev => ({ ...prev, step3: true }));
+  // }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -441,13 +403,7 @@ const ReflectionsPage = () => {
                 ['', ...allNetIds.flatMap(author => [`${author}-github`, `${author}-gdocs`]), ''],
                 [allNetIds]
             );
-    // const groupedYAxisLabels = allNetIds.map(name => ({
-    //   label: name,
-    //   github: `${name}-github`,
-    //   gdoc: `${name}-gdocs`
-    // }));
-    
-    // const paddedYAxisLabels = groupedYAxisLabels.flatMap(group => [group.github, group.gdoc]);
+
 
     const mapSizeToRadius = (size) => {
       if (size < 100) return 7;
@@ -474,13 +430,11 @@ const scatterChartData = useMemo(() => {
       ...timelineGDocData.flatMap(entry => entry.contributions.map(c => c.size))
     ) || 1;
 
-    // Create custom scale functions
     const githubSizeScale = createSqrtScale([0, maxLOC], [10, 20]);
     const gdocSizeScale = createSqrtScale([0, maxWords], [14, 24]);
 
     const datasets = [
         ...timelineData.map((entry) => {
-            //const authorIndex = paddedYAxisLabels.indexOf(entry.author);
             return {
                 label: entry.author,
                 datalabels: { display: false },
@@ -488,6 +442,7 @@ const scatterChartData = useMemo(() => {
                     x: c.date,
                     y: `${entry.author}-github` , 
                     v: c.size,
+                    titles: c.titles
                 })),
                 backgroundColor: userColors[entry.author] || "#999999",
                 pointStyle: 'circle',
@@ -495,7 +450,6 @@ const scatterChartData = useMemo(() => {
             };
         }),
         ...timelineGDocData.map((entry) => {
-            //const authorIndex = paddedYAxisLabels.indexOf(entry.author);
             return {
                 label: entry.author,
                 datalabels: { display: false },
@@ -503,6 +457,7 @@ const scatterChartData = useMemo(() => {
                     x: c.date,
                     y: `${entry.author}-gdocs`, 
                     v: c.size,
+                    titles: c.titles
                 })),
                 backgroundColor: userColors[entry.author] || "#999999",
                 pointStyle: 'triangle',
@@ -519,6 +474,9 @@ const scatterChartData = useMemo(() => {
 const scatterOptions = useMemo(() => ({
       maintainAspectRatio: false,
       responsive: true,
+      animation: {
+        duration: 0
+      },
       plugins: {
         datalabels: { display: false },
         legend: { display: false },
@@ -536,6 +494,16 @@ const scatterOptions = useMemo(() => ({
                 }
             }
         }
+        },
+        onHover: (evt, activeElements) => {
+          if (activeElements.length > 0) {
+            const element = activeElements[0]; 
+            const dataset = scatterChartData.datasets[element.datasetIndex];
+            const pointData = dataset.data[element.index];
+            setSelectedCommitTitles(pointData.titles || []); 
+          } else {
+            setSelectedCommitTitles([]);
+          }
         },
         scales: {
           x: {
@@ -802,7 +770,21 @@ return (
         <p className="text-gray-500 text-center">No timeline data available.</p>
       )}
     </div>
-    
+    <div className="mt-4">
+      {selectedCommitTitles.length > 0 ? (
+        <div className="bg-white p-4 rounded-lg shadow-md ">
+          <ul className="list-disc list-inside text-sm">
+          {selectedCommitTitles.map((commit, idx) => (
+            <li key={idx}>
+              <strong>{commit.author} - </strong> <strong>{commit.date}: </strong> [{commit.tool}] - {commit.message}
+            </li>
+          ))}
+        </ul>
+        </div>
+      ) : (
+        <p className="text-gray-500 text-sm">Click a point on the chart to see contribution titles.</p>
+      )}
+    </div>
     <div className="mt-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
         <p className="text-sm text-gray-600 mb-2">How well did you and your team manage deadlines and complete tasks on time? Were there any patterns of last-minute work or early completion? How did this affect the team’s progress and collaboration?</p>

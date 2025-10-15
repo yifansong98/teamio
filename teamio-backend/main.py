@@ -152,7 +152,7 @@ async def get_commit_summary(team_id: str = Query(...)):
     commit_results = await asyncio.gather(*tasks)
 
     summary = {}
-    timeline_map = defaultdict(lambda: defaultdict(int))
+    timeline_map = defaultdict(lambda: defaultdict(lambda: {"size": 0, "titles": []}))
     
     for contrib_data, commit_data in zip(contributions.values(), commit_results):
         if commit_data:
@@ -163,21 +163,27 @@ async def get_commit_summary(team_id: str = Query(...)):
                 summary[author] =  {"commits": 0, "lines": 0}
             summary[author]["commits"] += 1
 
-            additions = commit_data.get("additions", 0)
-            deletions = commit_data.get("deletions", 0)
-            summary[author]["lines"] += additions + deletions
+            lines_changed = commit_data.get("lines_changed", 0)
+            message = commit_data.get("message", "")
+            summary[author]["lines"] += lines_changed 
             timestamp = commit_data.get("timestamp")
             size =  contrib_data.get("quantity")
             if timestamp:     
                 date_str = datetime.fromisoformat(timestamp).date().isoformat()
                 if date_str <= "2025-02-25" and date_str >= "2025-01-06":
-                    timeline_map[author][date_str] += size
+                    timeline_map[author][date_str]['size'] += size
+                    timeline_map[author][date_str]['titles'].append({
+                        "author": author,
+                        "date": date_str,
+                        "tool": 'GitHub',
+                        "message": message
+                    })
                 
 
     timeline = [
     {
         "author": author,
-        "contributions": [{"date": date, "size": size} for date, size in sorted(dates.items())]
+        "contributions": [{"date": date, "size": data['size'], "titles": data['titles']} for date, data in sorted(dates.items())]
     }
         for author, dates in timeline_map.items()
     ]
@@ -304,7 +310,7 @@ async def get_revisions_history(team_id: str = Query(...)):
 
     # 4. Process the results
     summary = {}
-    timeline_map = defaultdict(lambda: defaultdict(int))
+    timeline_map = defaultdict(lambda: defaultdict(lambda: {"size": 0, "titles": []}))
 
 
     for contrib_data, revision_data in zip(contributions.values(), revision_results):
@@ -319,20 +325,26 @@ async def get_revisions_history(team_id: str = Query(...)):
             word_count = revision_data.get('word_count', 0)
             summary[author]['word_count'] += word_count
             timestamp = revision_data.get("timestamp")
+            message = revision_data.get("title", "")
             if timestamp:
                 date_str = datetime.fromisoformat(timestamp).date().isoformat()
                 if date_str <= "2025-02-25" and date_str >= "2025-01-06":
-                    timeline_map[author][date_str] += word_count
+                    timeline_map[author][date_str]['size'] += word_count
+                    timeline_map[author][date_str]['titles'].append({
+                        "author": author,
+                        "date": date_str,
+                        "tool": 'Google Docs',
+                        "message": message
+                    })
                 
 
     timeline = [
     {
         "author": author,
-        "contributions": [{"date": date, "size": size} for date, size in sorted(dates.items())]
+        "contributions": [{"date": date, "size": data['size'], "titles": data['titles']} for date, data in sorted(dates.items())]
     }
         for author, dates in timeline_map.items()
     ]
-    
     
     
     return JSONResponse(content={"summary": summary, "timeline": timeline})
