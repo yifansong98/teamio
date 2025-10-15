@@ -2,15 +2,15 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import MainDashboardPage from "./MainDashboardPage";
-import LinkToolsPage from "./LinkToolsPage";
-import MappingLoginsPage from "./MappingLoginsPage";
-import AnnotateContributionsPage from "./AnnotateContributionsPage";
-import ReflectionsPage from "./ReflectionsPage";
-import LoginPage from "./LoginPage";
-import { StepsCompletionProvider } from "./StepsCompletionContext";
-import { AuthContextProvider } from "./AuthContext";
-import ProtectedRoute from "./ProtectedRoute";
+import MainDashboardPage from "./pages/MainDashboardPage";
+import LinkToolsPage from "./pages/LinkToolsPage";
+import MappingLoginsPage from "./pages/MappingLoginsPage";
+import AnnotateContributionsPage from "./pages/AnnotateContributionsPage";
+import ReflectionsPage from "./pages/ReflectionsPage";
+import LoginPage from "./pages/LoginPage";
+import { StepsCompletionProvider } from "./contexts/StepsCompletionContext";
+import { AuthContextProvider } from "./contexts/AuthContext";
+import ProtectedRoute from "./utils/ProtectedRoute";
 import "./index.css";
 
 localStorage.clear(); // Clear localStorage on page load for fresh start
