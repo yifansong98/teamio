@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext"; // Assuming you have an AuthContext to get the authenticated user
 import { useStepsCompletion } from "../contexts/StepsCompletionContext";
-import { IconCheck, IconLock } from "../assets/icons"; // Assuming you have these icons defined elsewhere
+import { IconCheck, IconLock, IconArrowRightOnRectangle } from "../assets/icons"; // Assuming you have these icons defined elsewhere
 
 const MainDashboardPage = () => {
   const navigate = useNavigate();
@@ -54,6 +54,11 @@ const MainDashboardPage = () => {
     fetchUserInfo();
   }, [user]);
 
+  const handleSignOut = () => {
+    localStorage.clear(); // Clear all stored data
+    navigate("/login"); // Redirect to login page
+  };
+
   if (loading) {
     return <p className="text-center text-gray-500">Loading...</p>;
   }
@@ -61,11 +66,27 @@ const MainDashboardPage = () => {
   return (
     <div className="p-4 md:p-8">
       {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-800">Teamwork Reflection</h1>
-        <p className="text-gray-600 mt-2">
-          Follow these steps to analyze and reflect on your team's collaboration.
-        </p>
+      <div className="flex justify-between items-start mb-8">
+        {/* Centered Content */}
+        <div className="flex-1 flex justify-center items-start">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-800">Hi, {JSON.parse(localStorage.getItem("userData")).full_name ?? "Unknown User"}!</h1>
+            <p className="text-gray-600 mt-2">
+              Follow these steps to analyze and reflect on your team's collaboration.
+            </p>
+          </div>
+        </div>
+
+        {/* Right-Aligned Content */}
+        <div className="text-right">
+          <button
+            onClick={handleSignOut}
+            title="Sign Out"
+            className="mt-2 bg-gray-400 text-white font-bold p-2 rounded-lg hover:bg-gray-500 transition-colors flex items-start justify-center"
+          >
+            <IconArrowRightOnRectangle className="h-6 w-6" />
+          </button>
+        </div>
       </div>
 
       {/* Steps */}
