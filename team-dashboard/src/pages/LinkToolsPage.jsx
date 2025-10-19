@@ -8,7 +8,6 @@ const LinkToolsPage = () => {
   const [teamId, setTeamId] = useState("");
   const [loading, setLoading] = useState(false);
   const [responseMessage, setResponseMessage] = useState("");
-  const [deliverableDates, setDeliverableDates] = useState([]);
   const { setStepsCompletion } = useStepsCompletion();
   const navigate = useNavigate();
 
@@ -19,7 +18,6 @@ const LinkToolsPage = () => {
       const parsedData = JSON.parse(savedData);
       setGoogleDocsData(parsedData.googleDocsData || null);
       setGoogleDocsFileName(parsedData.googleDocsFileName || "");
-      setDeliverableDates(parsedData.deliverableDates || []);
     }
 
     const userData = localStorage.getItem("userData");
@@ -36,11 +34,10 @@ const LinkToolsPage = () => {
   useEffect(() => {
     const dataToSave = {
       googleDocsData,
-      googleDocsFileName,
-      deliverableDates
+      googleDocsFileName
     };
     localStorage.setItem("linkToolsData", JSON.stringify(dataToSave));
-  }, [googleDocsData, googleDocsFileName, deliverableDates]);
+  }, [googleDocsData, googleDocsFileName]);
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -57,21 +54,6 @@ const LinkToolsPage = () => {
       };
       reader.readAsText(file);
     }
-  };
-
-  const handleAddDeliverableDate = () => {
-    setDeliverableDates([...deliverableDates, ""]); // Add an empty date
-  };
-
-  const handleRemoveDeliverableDate = (index) => {
-    const updatedDates = deliverableDates.filter((_, i) => i !== index);
-    setDeliverableDates(updatedDates);
-  };
-
-  const handleDeliverableDateChange = (index, value) => {
-    const updatedDates = [...deliverableDates];
-    updatedDates[index] = value;
-    setDeliverableDates(updatedDates);
   };
 
   const handleSubmit = async (e) => {
@@ -166,36 +148,6 @@ const LinkToolsPage = () => {
                 className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition"
               >
                 {googleDocsData ? googleDocsFileName : "Upload File"}
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Deliverable Dates</label>
-            <div className="space-y-2">
-              {deliverableDates.map((date, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => handleDeliverableDateChange(index, e.target.value)}
-                    className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveDeliverableDate(index)}
-                    className="px-2 py-1 bg-red-500 text-white rounded-md hover:bg-red-600 transition"
-                  >
-                    Remove
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={handleAddDeliverableDate}
-                className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition"
-              >
-                + Add Deliverable
               </button>
             </div>
           </div>

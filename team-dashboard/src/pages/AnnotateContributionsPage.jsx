@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import { useStepsCompletion } from "../contexts/StepsCompletionContext";
 
 // This will now be determined dynamically from the data
@@ -43,14 +44,13 @@ const ValuedContributionModal = ({ onSubmit, onCancel }) => {
 };
 
 const AnnotateContributionsPage = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-  const teamId = location.state?.teamId || "teamio";
+  const teamId = JSON.parse(localStorage.getItem("userData"))?.team_id || "";
   const [teamMembers, setTeamMembers] = useState({});
   const [contributions, setContributions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [currentUser, setCurrentUser] = useState(null);
+  const user = JSON.parse(localStorage.getItem("userData")) || {};
   const { setStepsCompletion } = useStepsCompletion();
 
   // State for annotation functions
@@ -67,6 +67,7 @@ const AnnotateContributionsPage = () => {
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      console.log("current user:", user);
       try {
         // Fetch contributions
         const contributionsResponse = await fetch("http://localhost:3000/api/contributions/all?team_id=" + teamId);
@@ -88,39 +89,36 @@ const AnnotateContributionsPage = () => {
         const mappedUsers = await mappedUsersResponse.json();
         console.log("Mapped users:", mappedUsers);
         
-        // Process contributions with mapped net_ids
+        // Process contributions with mapped user_ids
         const processedContributions = contributionsData.map(c => {
-          // Map the author/login to net_id using the mapping
-          const mappedNetId = mappedUsers[c.author] || c.author;
+          // Map the author/login to user_id using the mapping
+          const mappedUser = mappedUsers[c.author] || c.author;
           return {
             ...c,
-            net_id: mappedNetId,
-            attributedTo: c.attributedTo || [mappedNetId],
+            user_id: mappedUser['user_id'],
+            full_name: mappedUser['full_name'],
+            attributedTo: c.attributedTo || [mappedUser['user_id']],
             valuedBy: c.valuedBy || []
           };
         });
         
         setContributions(processedContributions);
         
-        // Create team members from mapped users
+        // Create team members
+        const teamData = JSON.parse(localStorage.getItem("teamData")) ?? [];
         const members = {};
-        Object.values(mappedUsers).forEach((netId, i) => {
-          if (!members[netId]) {
-            members[netId] = { 
-              net_id: netId, 
-              initials: netId.charAt(0).toUpperCase(),
-              color: ["bg-pink-500", "bg-blue-500", "bg-yellow-400", "bg-teal-400", "bg-purple-500", "bg-orange-400"][i % 6]
-            };
-          }
+
+        teamData.forEach((member, i) => {
+          members[member.user_id] = { 
+            user_id: member.user_id,
+            full_name: member.full_name,
+            initials: member.full_name ? member.full_name.split(' ').map(n => n[0]).join('').toUpperCase() : member.user_id.slice(0, 2).toUpperCase(),
+            color: ["bg-pink-500", "bg-blue-500", "bg-yellow-400", "bg-teal-400", "bg-purple-500", "bg-orange-400"][i % 6]
+          };
         });
         
-        setTeamMembers(members);
-        
-        // Set current user (use first mapped user or default)
-        const sortedNetIds = Object.values(mappedUsers).sort();
-        const determinedUser = sortedNetIds.includes('yifan') ? 'yifan' : sortedNetIds[0] || 'default_user';
-        setCurrentUser(determinedUser);
-        
+        console.log("Team members:", members);
+        setTeamMembers(members);        
       } catch (err) {
         console.error("Error details:", err);
         setError(`An error occurred while fetching data: ${err.message}`);
@@ -135,8 +133,8 @@ const AnnotateContributionsPage = () => {
   }, [teamId]);
   
   // --- Handlers from previous step (unchanged) ---
-  const toggleAttribution = (contributionId, memberId) => { setContributions(contributions.map(c => { if (c.id === contributionId && c.net_id === currentUser) { const newAttributedTo = c.attributedTo.includes(memberId) ? c.attributedTo.filter(id => id !== memberId) : [...c.attributedTo, memberId]; if (newAttributedTo.length > 0) { return { ...c, attributedTo: newAttributedTo }; } } return c; })); };
-  const handleValuedContribution = (tag, comment) => { setContributions(contributions.map(c => { if (c.id === showValuedModal) { const alreadyValued = c.valuedBy.some(v => v.net_id === currentUser); if (alreadyValued) { return { ...c, valuedBy: c.valuedBy.filter(v => v.net_id !== currentUser) }; } else { const newValuation = { net_id: currentUser, tag, comment }; return { ...c, valuedBy: [...c.valuedBy, newValuation] }; } } return c; })); setShowValuedModal(null); };
+  const toggleAttribution = (contributionId, memberId) => { setContributions(contributions.map(c => { if (c.id === contributionId && c.user_id === user) { const newAttributedTo = c.attributedTo.includes(memberId) ? c.attributedTo.filter(id => id !== memberId) : [...c.attributedTo, memberId]; if (newAttributedTo.length > 0) { return { ...c, attributedTo: newAttributedTo }; } } return c; })); };
+  const handleValuedContribution = (tag, comment) => { setContributions(contributions.map(c => { if (c.id === showValuedModal) { const alreadyValued = c.valuedBy.some(v => v.user_id === user.user_id); if (alreadyValued) { return { ...c, valuedBy: c.valuedBy.filter(v => v.user_id !== user.user_id) }; } else { const newValuation = { user_id: user.user_id, tag, comment }; return { ...c, valuedBy: [...c.valuedBy, newValuation] }; } } return c; })); setShowValuedModal(null); };
 
   if (loading) {
     return <div className="p-8 text-center text-gray-600 text-lg">Loading contributions...</div>;
@@ -215,8 +213,8 @@ const AnnotateContributionsPage = () => {
         <div className="mt-8 overflow-x-auto">
           <div className="min-w-full bg-white rounded-lg shadow">
             {filteredContributions.map((c) => {
-              const isCurrentUserAuthor = c.net_id === currentUser;
-              const hasCurrentUserValued = c.valuedBy.some(v => v.net_id === currentUser);
+              const isCurrentUserAuthor = c.user_id === user.user_id;
+              const hasCurrentUserValued = c.valuedBy.some(v => v.user_id === user.user_id);
 
               return (
                 <div key={c.id} className="p-4 border-b flex flex-col md:flex-row md:items-center md:justify-between">
@@ -225,22 +223,22 @@ const AnnotateContributionsPage = () => {
                     <ToolIcon tool={c.tool} />
                     <div>
                       <p className="font-semibold text-gray-800">{c.title}</p>
-                      <p className="text-sm text-gray-500">Logged by {c.net_id} on {new Date(c.timestamp).toLocaleDateString()}</p>
+                      <p className="text-sm text-gray-500">Logged by {c.full_name} on {new Date(c.timestamp).toLocaleDateString()}</p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 md:space-x-4">
                     <div className="flex items-center">
                       <span className="text-sm font-medium text-gray-600 mr-2">Attributed to:</span>
                       {Object.values(teamMembers).map(member => {
-                        const isAttributed = c.attributedTo.includes(member.net_id);
-                        const isOriginalAuthor = c.net_id === member.net_id;
+                        const isAttributed = c.attributedTo.includes(member.user_id);
+                        const isOriginalAuthor = c.user_id === member.user_id;
                         return (
                           <button
-                            key={member.net_id}
-                            onClick={() => toggleAttribution(c.id, member.net_id)}
+                            key={member.user_id}
+                            onClick={() => toggleAttribution(c.id, member.user_id)}
                             disabled={!isCurrentUserAuthor || isOriginalAuthor}
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm transition-all duration-200 mx-1 ${member.color} ${isAttributed ? 'opacity-100' : 'opacity-30'} ${isOriginalAuthor ? 'ring-2 ring-offset-1 ring-blue-500' : ''} ${isCurrentUserAuthor && !isOriginalAuthor ? 'hover:opacity-100' : ''} ${!isCurrentUserAuthor || isOriginalAuthor ? 'cursor-not-allowed' : ''}`}
-                            title={isCurrentUserAuthor ? `Click to ${isAttributed ? 'remove' : 'add'} ${member.net_id}` : member.net_id}
+                            title={isCurrentUserAuthor ? `Click to ${isAttributed ? 'remove' : 'add'} ${member.user_id}` : member.user_id}
                           >
                             {member.initials}
                           </button>
@@ -262,7 +260,7 @@ const AnnotateContributionsPage = () => {
 
       <div className="flex justify-center mt-4">
         <button
-          onClick={() => { setStepsCompletion((prev) => ({...prev, step2: true })) ; navigate("/teamio", { state: { teamId: teamId } })}}
+          onClick={() => { setStepsCompletion((prev) => ({...prev, step2: true })) ; navigate("/teamio")}}
           className="px-4 py-2 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"
         >
           Submit
@@ -270,8 +268,8 @@ const AnnotateContributionsPage = () => {
       </div>
 
       {showValuedModal && <ValuedContributionModal onSubmit={(tag, comment) => handleValuedContribution(tag, comment)} onCancel={() => setShowValuedModal(null)} />}
-      {showOfflineModal && <AddOfflineWorkModal onSubmit={handleAddOfflineWork} onCancel={() => setShowOfflineModal(false)} teamMembers={teamMembers} currentUser={currentUser} />}
-      {editingContribution && <AddOfflineWorkModal existingWork={editingContribution} onSubmit={handleEditOfflineWork} onCancel={() => setEditingContribution(null)} teamMembers={teamMembers} currentUser={currentUser} />}
+      {showOfflineModal && <AddOfflineWorkModal onSubmit={handleAddOfflineWork} onCancel={() => setShowOfflineModal(false)} teamMembers={teamMembers} currentUser={user.user_id} />}
+      {editingContribution && <AddOfflineWorkModal existingWork={editingContribution} onSubmit={handleEditOfflineWork} onCancel={() => setEditingContribution(null)} teamMembers={teamMembers} currentUser={user.user_id} />}
     </div>
   );
 };
