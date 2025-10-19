@@ -12,6 +12,8 @@ import { StepsCompletionProvider } from "./contexts/StepsCompletionContext";
 import { AuthContextProvider } from "./contexts/AuthContext";
 import ProtectedRoute from "./utils/ProtectedRoute";
 import "./index.css";
+import LinkDocsPage from "./pages/LinkDocsPage";
+import ProveAuthPage from "./pages/ProveAuthPage";
 
 localStorage.clear(); // Clear localStorage on page load for fresh start
 
@@ -34,7 +36,15 @@ root.render(
             path="/teamio/link"
             element={
               <ProtectedRoute>
-                <LinkToolsPage />
+                <ProveAuthPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/teamio/scrape"
+            element={
+              <ProtectedRoute>
+                <LinkDocsPage />
               </ProtectedRoute>
             }
           />
