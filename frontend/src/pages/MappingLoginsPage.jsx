@@ -4,7 +4,7 @@ import { useStepsCompletion } from "../contexts/StepsCompletionContext";
 
 const MappingLoginsPage = () => {
   const [logins, setLogins] = useState([]); // Store logins fetched from the API
-  const [mappings, setMappings] = useState({}); // Store login-to-NetID mappings
+  const [mappings, setMappings] = useState({}); // Store login-to-UserID mappings
   const [loading, setLoading] = useState(false);
   const [responseMessage, setResponseMessage] = useState("");
   const [members, setMembers] = useState([]); // Store students fetched from the API

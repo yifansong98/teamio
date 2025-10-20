@@ -262,7 +262,7 @@ const ReflectionsPage = () => {
   "#E67E22", "#1ABC9C", "#C0392B", "#34495E"
   ];
 
-    const allNetIds = Array.from(
+    const allUserIds = Array.from(
       new Set([
         ...Object.keys(revisionData || {}),
         ...Object.keys(feedbackData || {}),
@@ -271,8 +271,8 @@ const ReflectionsPage = () => {
     );
 
     const userColors = {};
-    allNetIds.forEach((net_id, idx) => {
-      userColors[net_id] = colors[idx % colors.length];
+    allUserIds.forEach((user_id, idx) => {
+      userColors[user_id] = colors[idx % colors.length];
     });
 
 
@@ -282,8 +282,8 @@ const ReflectionsPage = () => {
   ), [feedbackData]);
 
   const matrixData = useMemo(() => {
-      return allNetIds.flatMap(giver =>
-          allNetIds.map(receiver => {
+      return allUserIds.flatMap(giver =>
+          allUserIds.map(receiver => {
               const value = feedbackData[giver]?.[receiver] || 0;
               const baseColor = userColors[giver] || "#d7e0e8ff";;
               const rgbColor = hexToRgb(baseColor);
@@ -297,9 +297,9 @@ const ReflectionsPage = () => {
               };
           })
       );
-  }, [allNetIds, maxCount]);
+  }, [allUserIds, maxCount]);
 
-    const reversedNetIds = useMemo(() => [...allNetIds].reverse(), [allNetIds]);
+    const reversedUserIds = useMemo(() => [...allUserIds].reverse(), [allUserIds]);
 
     const prettyHeatmapOptions = useMemo(() => ({
                 responsive: true,
@@ -307,7 +307,7 @@ const ReflectionsPage = () => {
                 scales: {
                     x: {
                         type: 'category',
-                        labels: reversedNetIds,
+                        labels: reversedUserIds,
                         position: 'top',
                         title: { display: true, text: 'Feedback Receiver', font: { size: 18, weight: 'bold' }, padding: 10 },
                         grid: { display: false },
@@ -315,7 +315,7 @@ const ReflectionsPage = () => {
                     },
                     y: {
                         type: 'category',
-                        labels: allNetIds,
+                        labels: allUserIds,
                         offset: true,
                         title: { display: true, text: 'Feedback Giver', font: { size: 18, weight: 'bold' }, padding: 10 },
                         grid: { display: false },
@@ -382,7 +382,7 @@ const ReflectionsPage = () => {
                     }
                 },
                 layout: { padding: 10 }
-            }), [allNetIds, reversedNetIds, maxCount]);
+            }), [allUserIds, reversedUserIds, maxCount]);
 
   const pieGDocChartData = {
     labels: Object.keys(revisionData).map((id => userIdsToFullName ? (userIdsToFullName[id] || id) : id)),
@@ -401,8 +401,8 @@ const ReflectionsPage = () => {
   };
 
     const paddedYAxisLabels = useMemo(() => 
-                ['', ...allNetIds.flatMap(author => [`${author}-gdocs`]), ''],
-                [allNetIds]
+                ['', ...allUserIds.flatMap(author => [`${author}-gdocs`]), ''],
+                [allUserIds]
             );
 
 

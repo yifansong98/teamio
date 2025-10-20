@@ -21,8 +21,8 @@ async def get_commit_summary(team_id: str = Query(...)):
     logins_data = await run_in_threadpool(logins_ref.get) or {}
     mapped_users = {}
     for login_key, login_info in logins_data.items():
-        if isinstance(login_info, dict) and 'net_id' in login_info:
-            mapped_users[login_info['login']] = login_info['net_id']
+        if isinstance(login_info, dict) and 'user_id' in login_info:
+            mapped_users[login_info['login']] = login_info['user_id']
 
     tasks = []
     for contrib_id in contributions.keys():
@@ -36,7 +36,7 @@ async def get_commit_summary(team_id: str = Query(...)):
     
     for contrib_data, commit_data in zip(contributions.values(), commit_results):
         if commit_data:
-            # Use mapped net_id if available, otherwise fall back to author
+            # Use mapped user_id if available, otherwise fall back to author
             original_author = contrib_data.get("author", "unknown")
             author = mapped_users.get(original_author, original_author)
             if author not in summary:
@@ -73,9 +73,9 @@ async def get_feedback_matrix(team_id: str = Query(...)):
         team_data = await run_in_threadpool(db_ref(f"teams/{team_id}/logins").get) or {}
 
         team_students = {
-            login: info.get("net_id")
+            login: info.get("user_id")
             for login, info in team_data.items()
-            if info.get("net_id")  # only include if net_id exists
+            if info.get("user_id")  # only include if user_id exists
         }
         # 2. Prepare async tasks for fetching comments under each PR
         tasks = []
@@ -95,23 +95,23 @@ async def get_feedback_matrix(team_id: str = Query(...)):
             author = pr_info.get("login", "unknown")
             if not comments:
                 continue
-            author_netid = team_students.get(author)
-            if not author_netid:
+            author_userid = team_students.get(author)
+            if not author_userid:
                 continue
             for commenter, comment_entries in comments.items():
                 if commenter.lower() == "copilot":
                     continue
-                commenter_netid = team_students.get(commenter)
-                if not commenter_netid:
+                commenter_userid = team_students.get(commenter)
+                if not commenter_userid:
                     continue
 
-                if commenter_netid not in feedback_counts:
-                    feedback_counts[commenter_netid] = {}
+                if commenter_userid not in feedback_counts:
+                    feedback_counts[commenter_userid] = {}
 
-                if author_netid not in feedback_counts[commenter_netid]:
-                    feedback_counts[commenter_netid][author_netid] = 0
+                if author_userid not in feedback_counts[commenter_userid]:
+                    feedback_counts[commenter_userid][author_userid] = 0
 
-                feedback_counts[commenter_netid][author_netid] += len(comment_entries)  # count all comments
+                feedback_counts[commenter_userid][author_userid] += len(comment_entries)  # count all comments
 
         gdoc_comments_ref = await run_in_threadpool(
             db_ref,
@@ -126,18 +126,18 @@ async def get_feedback_matrix(team_id: str = Query(...)):
             if not giver_login or not receiver_name:
                 continue
 
-            giver_netid = team_students.get(giver_login)
-            receiver_netid = team_students.get(receiver_name)
+            giver_userid = team_students.get(giver_login)
+            receiver_userid = team_students.get(receiver_name)
 
-            if not giver_netid or not receiver_netid:
+            if not giver_userid or not receiver_userid:
                 continue
 
-            if giver_netid not in feedback_counts:
-                feedback_counts[giver_netid] = {}
-            if receiver_netid not in feedback_counts[giver_netid]:
-                feedback_counts[giver_netid][receiver_netid] = 0
+            if giver_userid not in feedback_counts:
+                feedback_counts[giver_userid] = {}
+            if receiver_userid not in feedback_counts[giver_userid]:
+                feedback_counts[giver_userid][receiver_userid] = 0
 
-            feedback_counts[giver_netid][receiver_netid] += 1
+            feedback_counts[giver_userid][receiver_userid] += 1
 
         return JSONResponse(content={"feedback_counts": feedback_counts})
 
@@ -175,7 +175,7 @@ async def get_revisions_history(team_id: str = Query(...)):
 
         for contrib_data, revision_data in zip(contributions.values(), revision_results):
             if revision_data:
-                # Use mapped net_id if available, otherwise fall back to author
+                # Use mapped user_id if available, otherwise fall back to author
                 original_author = contrib_data.get("author", "unknown")
                 author = mapped_users.get(original_author, original_author)
                 if author not in summary:
