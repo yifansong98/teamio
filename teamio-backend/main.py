@@ -79,8 +79,28 @@ async def get_contributions(team_id: str = Query(...)):
         ref = db.reference(f'contributions/{team_id}')
         raw_data = ref.get()
         contributions = list(raw_data.values()) if raw_data else []
-        contributions.sort(key=lambda x: x['timestamp'], reverse=True)
-        return JSONResponse(content=contributions)
+        
+        # Fetch detailed data from log_data for each contribution
+        detailed_contributions = []
+        for contrib in contributions:
+            contrib_id = contrib.get('contribution_id')
+            tool = contrib.get('tool', 'google_docs')
+            metric = contrib.get('metric', 'revision')
+            
+            # Fetch detailed data from log_data
+            log_ref = db.reference(f'log_data/{tool}/{metric}/{contrib_id}')
+            log_data = log_ref.get()
+            
+            # Merge basic contribution data with detailed log data
+            if log_data:
+                detailed_contrib = {**contrib, **log_data}
+            else:
+                detailed_contrib = contrib
+                
+            detailed_contributions.append(detailed_contrib)
+        
+        detailed_contributions.sort(key=lambda x: x['timestamp'], reverse=True)
+        return JSONResponse(content=detailed_contributions)
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
 

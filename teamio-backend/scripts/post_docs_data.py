@@ -37,6 +37,17 @@ def _fmt_title_from_ts(ts: str, type_str: str) -> str:
     except Exception:
         return f"{type_str} — {ts or 'Unknown'}"
 
+def _clean_summary_text(text: str) -> str:
+    if not text:
+        return ""
+    # Strip server-side summaries like "[Edits: +118 chars inserted]" and variants
+    cleaned = re.sub(r"\[Edits:[^\]]+\]", " ", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\(\s*[+-]?\d+\s+chars?\s+(?:inserted|deleted)[^)]*\)", " ", cleaned, flags=re.IGNORECASE)
+    # Collapse whitespace
+    cleaned = re.sub(r"\s+", " ", cleaned).strip()
+    return cleaned
+
+
 def process_server_format(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Process server format: {meta: {...}, users: {...}, events: [...], finalText: "...", comments: {...}}
@@ -64,7 +75,8 @@ def process_server_format(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         author_id = event.get("authorId", "")
         author_name = get_user_name(author_id)
         timestamp = event.get("timestamp", "")
-        text = event.get("text", "")
+        raw_text = event.get("text", "")
+        text = _clean_summary_text(raw_text)
         
         # Count words
         word_count = len(re.findall(r"\b\w+\b", text)) if text else 0
@@ -103,13 +115,12 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
       - action: normalized action type ('insert'/'delete')
       - word_count: word count from stats or computed from text
     """
-    # Handle server format: {meta: {...}, users: {...}, events: [...], finalText: "..."}
-    if "events" in doc and "meta" in doc:
-        return process_server_format(doc)
-    
-    # Handle server output format: {tiles: [...], file: {...}, totalsByUser: {...}}
+    # Prefer server output tiles when available (contain reconstructed text)
     if "tiles" in doc and "file" in doc:
         return process_server_output_format(doc)
+    # Fallback: server events format
+    if "events" in doc and "meta" in doc:
+        return process_server_format(doc)
     
     # Handle Chrome extension format: {file: {...}, revision: {tiles: [...]}, comments: {...}}
     file = doc.get("file", {}) or {}
@@ -132,7 +143,7 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
             author_email = _author_to_email(item.get("author"))
             ts = item.get("timestamp", "") or ""
             typ = "insert"  # tiles are always insertions
-            final_text = (item.get("text") or "").strip()
+            final_text = _clean_summary_text((item.get("text") or "").strip())
             title = item.get("title", _fmt_title_from_ts(ts, "Contribution"))
         else:  # Old format with blocks
             author_email = _author_to_email(item.get("author"))
@@ -143,7 +154,7 @@ def process_docs_revisions(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
                 typ = "insert"
             elif typ == "deletion":
                 typ = "delete"
-            final_text = (item.get("finalText") or item.get("text") or "").strip()
+            final_text = _clean_summary_text((item.get("finalText") or item.get("text") or "").strip())
             title = _fmt_title_from_ts(ts, "Contribution")
 
         # Get word count from stats if available, otherwise compute from text
@@ -191,14 +202,10 @@ def process_server_output_format(doc: Dict[str, Any]) -> List[Dict[str, Any]]:
         author_name = tile.get("author", "Unknown")
         author_id = tile.get("authorId", "unknown")
         timestamp = tile.get("timestamp", "")
-        text = tile.get("text", "")
+        text = _clean_summary_text(tile.get("text", ""))
         
-        # Count words
+        # Count words (but do NOT skip zero-word entries; keep numbers/symbols/newlines)
         word_count = len(re.findall(r"\b\w+\b", text)) if text else 0
-        
-        # Skip contributions with no meaningful content
-        if word_count == 0:
-            continue
         
         # Generate title
         title = _fmt_title_from_ts(timestamp, "Contribution")

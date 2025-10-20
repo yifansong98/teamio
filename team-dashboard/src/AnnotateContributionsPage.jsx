@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useStepsCompletion } from "./StepsCompletionContext";
+import ContributionsDisplay from "./ContributionsDisplay";
+import GoogleDocsContributions from "./GoogleDocsContributions";
 
 // This will now be determined dynamically from the data
 const VALUED_TAGS = ["Leadership", "Creative Idea", "Quality Work", "Helpful Support"];
@@ -122,11 +124,72 @@ const AnnotateContributionsPage = () => {
   const [error, setError] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const { setStepsCompletion } = useStepsCompletion();
+  // Local expand/collapse state for the main list items
+  const [expandedRows, setExpandedRows] = useState(new Set());
+
+  const toggleRowExpanded = (rowId) => {
+    setExpandedRows(prev => {
+      const next = new Set(prev);
+      if (next.has(rowId)) next.delete(rowId); else next.add(rowId);
+      return next;
+    });
+  };
+
+  // Fetch Google Docs contributions from scraping server
+  const fetchGoogleDocsContributions = async (documentId) => {
+    if (!documentId) {
+      setGoogleDocsContributions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch('http://localhost:8787/api/replay', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer 65678987654567887658'
+        },
+        body: JSON.stringify({
+          target: documentId
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch Google Docs contributions');
+      }
+
+      const data = await response.json();
+      if (data.tiles && Array.isArray(data.tiles)) {
+        // Transform Google Docs tiles to match contribution format
+        const transformedTiles = data.tiles.map(tile => ({
+          id: `google-docs-${tile.id || Date.now()}`,
+          net_id: tile.author,
+          title: tile.title,
+          tool: 'google_docs',
+          timestamp: tile.timestamp || new Date().toISOString(),
+          attributedTo: [tile.author],
+          valuedBy: [],
+          text: tile.text,
+          wordCount: tile.wordCount,
+          charCount: tile.charCount,
+          stats: tile.stats
+        }));
+        setGoogleDocsContributions(transformedTiles);
+      } else {
+        setGoogleDocsContributions([]);
+      }
+    } catch (err) {
+      console.error('Error fetching Google Docs contributions:', err);
+      setGoogleDocsContributions([]);
+    }
+  };
 
   // State for annotation functions
   const [editingContribution, setEditingContribution] = useState(null);
   const [showValuedModal, setShowValuedModal] = useState(null);
   const [showOfflineModal, setShowOfflineModal] = useState(false);
+  // Google Docs document ID entry for tiles/text
+  const [googleDocId, setGoogleDocId] = useState('');
   
   // State for new search and filter functionality
   const [searchTerm, setSearchTerm] = useState('');
@@ -306,59 +369,145 @@ const AnnotateContributionsPage = () => {
       {filteredContributions.length === 0 ? (
         <p className="text-center text-gray-500 text-sm mt-6">No contributions match your search criteria.</p>
       ) : (
-        <div className="mt-8 overflow-x-auto">
-          <div className="min-w-full bg-white rounded-lg shadow">
-            {filteredContributions.map((c) => {
-              const isCurrentUserAuthor = c.net_id === currentUser;
-              const isExternalWork = c.tool === 'External Work';
-              const hasCurrentUserValued = c.valuedBy.some(v => v.net_id === currentUser);
+        <>
+          {/* Original Contributions List */}
+          <div className="mt-8 overflow-x-auto">
+            <div className="min-w-full bg-white rounded-lg shadow">
+              {filteredContributions.map((c, idx) => {
+                const isCurrentUserAuthor = c.net_id === currentUser;
+                const isExternalWork = c.tool === 'External Work';
+                const hasCurrentUserValued = c.valuedBy.some(v => v.net_id === currentUser);
+                const rowKey = c.id || `${c.tool}-${c.title}-${c.timestamp}-${idx}`;
+                // Normalize title timestamps to user's local time if the backend embedded a UTC-like datetime
+                const titleHasUtc = typeof c.title === 'string' && /Contribution\s+—\s+\d{4}-\d{2}-\d{2}/.test(c.title);
+                const displayTitle = titleHasUtc && c.timestamp
+                  ? `Contribution — ${new Date(c.timestamp).toLocaleString()}`
+                  : c.title;
 
-              return (
-                <div key={c.id} className="p-4 border-b flex flex-col md:flex-row md:items-center md:justify-between">
-                  {/* ... rest of the component is the same as the previous correct version ... */}
-                  <div className="flex-grow mb-4 md:mb-0 flex items-center space-x-4">
-                    <ToolIcon tool={c.tool} />
-                    <div>
-                      <p className="font-semibold text-gray-800">{c.title}</p>
-                      <p className="text-sm text-gray-500">Logged by {c.net_id} on {new Date(c.timestamp).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2 md:space-x-4">
-                    <div className="flex items-center">
-                      <span className="text-sm font-medium text-gray-600 mr-2">Attributed to:</span>
-                      {Object.values(teamMembers).map(member => {
-                        const isAttributed = c.attributedTo.includes(member.net_id);
-                        const isOriginalAuthor = c.net_id === member.net_id;
-                        return (
-                          <button
-                            key={member.net_id}
-                            onClick={() => toggleAttribution(c.id, member.net_id)}
-                            disabled={!isCurrentUserAuthor || isOriginalAuthor}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm transition-all duration-200 mx-1 ${member.color} ${isAttributed ? 'opacity-100' : 'opacity-30'} ${isOriginalAuthor ? 'ring-2 ring-offset-1 ring-blue-500' : ''} ${isCurrentUserAuthor && !isOriginalAuthor ? 'hover:opacity-100' : ''} ${!isCurrentUserAuthor || isOriginalAuthor ? 'cursor-not-allowed' : ''}`}
-                            title={isCurrentUserAuthor ? `Click to ${isAttributed ? 'remove' : 'add'} ${member.net_id}` : member.net_id}
-                          >
-                            {member.initials}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div className="flex items-center">
-                      <button onClick={() => !isCurrentUserAuthor && setShowValuedModal(c.id)} disabled={isCurrentUserAuthor} className={`p-2 rounded-full transition-colors ${isCurrentUserAuthor ? 'cursor-not-allowed' : ''} ${hasCurrentUserValued ? 'text-yellow-500' : 'text-gray-500 hover:bg-gray-200'}`} title={isCurrentUserAuthor ? "Cannot value your own work" : "Tag as Valued"}>
-                        <svg className="w-5 h-5" fill={hasCurrentUserValued ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                return (
+                  <div key={rowKey} className="p-4 border-b flex flex-col">
+                    {/* Header Row: title + attributed + actions + chevron (right aligned) */}
+                    <div className="flex items-center gap-4 min-h-12 flex-nowrap">
+                      <div className="flex items-center space-x-4 min-w-0 flex-1">
+                        <ToolIcon tool={c.tool} />
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <p className="font-semibold text-gray-800 truncate" title={displayTitle}>{displayTitle}</p>
+                            <div className="flex items-center">
+                              <span className="text-sm font-medium text-gray-600 mr-2">Attributed to:</span>
+                              {Object.values(teamMembers).map(member => {
+                                const isAttributed = c.attributedTo.includes(member.net_id);
+                                const isOriginalAuthor = c.net_id === member.net_id;
+                                return (
+                                  <button
+                                    key={member.net_id}
+                                    onClick={() => toggleAttribution(c.id, member.net_id)}
+                                    disabled={!isCurrentUserAuthor || isOriginalAuthor}
+                                    className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm transition-all duration-200 mx-1 ${member.color} ${isAttributed ? 'opacity-100' : 'opacity-30'} ${isOriginalAuthor ? 'ring-2 ring-offset-1 ring-blue-500' : ''} ${isCurrentUserAuthor && !isOriginalAuthor ? 'hover:opacity-100' : ''} ${!isCurrentUserAuthor || isOriginalAuthor ? 'cursor-not-allowed' : ''}`}
+                                    title={isCurrentUserAuthor ? `Click to ${isAttributed ? 'remove' : 'add'} ${member.net_id}` : member.net_id}
+                                  >
+                                    {member.initials}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-500">Logged by {c.net_id} on {new Date(c.timestamp).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <button onClick={() => !isCurrentUserAuthor && setShowValuedModal(c.id)} disabled={isCurrentUserAuthor} className={`p-2 rounded-full transition-colors ${isCurrentUserAuthor ? 'cursor-not-allowed' : ''} ${hasCurrentUserValued ? 'text-yellow-500' : 'text-gray-500 hover:bg-gray-200'}`} title={isCurrentUserAuthor ? "Cannot value your own work" : "Tag as Valued"}>
+                          <svg className="w-5 h-5" fill={hasCurrentUserValued ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"></path></svg>
+                        </button>
+                        {isCurrentUserAuthor && isExternalWork && (
+                          <>
+                            <button onClick={() => setEditingContribution(c)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Edit External Work"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg></button>
+                            <button onClick={() => handleDeleteExternalWork(c.id)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Delete External Work"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
+                          </>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => toggleRowExpanded(rowKey)}
+                        className="p-2 rounded-full text-blue-600 hover:bg-blue-50 transition-colors ml-auto self-center"
+                        title={expandedRows.has(rowKey) ? 'Collapse' : 'Expand'}
+                        aria-label={expandedRows.has(rowKey) ? 'Collapse' : 'Expand'}
+                      >
+                        <svg className={`w-5 h-5 transition-transform ${expandedRows.has(rowKey) ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                        </svg>
                       </button>
-                      {isCurrentUserAuthor && isExternalWork && (
-                        <>
-                          <button onClick={() => setEditingContribution(c)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Edit External Work"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-600" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828z" /><path fillRule="evenodd" d="M2 6a2 2 0 012-2h4a1 1 0 010 2H4v10h10v-4a1 1 0 112 0v4a2 2 0 01-2 2H4a2 2 0 01-2-2V6z" clipRule="evenodd" /></svg></button>
-                          <button onClick={() => handleDeleteExternalWork(c.id)} className="p-2 rounded-full hover:bg-gray-200 transition-colors" title="Delete External Work"><svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" /></svg></button>
-                        </>
-                      )}
                     </div>
+
+                    {/* Expanded row content full width */}
+                    {expandedRows.has(rowKey) && (
+                      <div className="w-full">
+                        <div className="bg-white p-4">
+                          <div className="text-sm text-gray-700">
+                            <div className="font-semibold text-gray-800 mb-2">Contribution Text</div>
+                            {(() => {
+                              const cleaned = String(c.text || '')
+                                .replace(/\[Edits:[^\]]+\]/gi, '')
+                                .replace(/\(\s*[+-]?\d+\s+chars?\s+(?:inserted|deleted)[^)]*\)/gi, '')
+                                .replace(/\s{2,}/g, ' ')
+                                .trim();
+                              return cleaned.length > 0
+                                ? <pre className="whitespace-pre-wrap font-sans text-gray-800 w-full">{cleaned}</pre>
+                                : <div className="italic text-gray-500">No text content available for this contribution.</div>;
+                            })()}
+                          </div>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-4">
+                            <div className="text-center">
+                              <div className="font-semibold text-gray-800">{c.wordCount || 0}</div>
+                              <div className="text-gray-600">Words</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-semibold text-gray-800">{c.charCount || 0}</div>
+                              <div className="text-gray-600">Characters</div>
+                            </div>
+                            {c.stats && (
+                              <>
+                                <div className="text-center">
+                                  <div className="font-semibold text-gray-800">{c.stats.totalWords || 0}</div>
+                                  <div className="text-gray-600">Total Words</div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="font-semibold text-gray-800">{c.stats.totalChars || 0}</div>
+                                  <div className="text-gray-600">Total Chars</div>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+
+
+          {/* Google Docs Contributions with Expandable Text */}
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">Google Docs Contributions</h2>
+            <div className="flex items-center gap-2 mb-4">
+              <input
+                type="text"
+                value={googleDocId}
+                onChange={(e) => setGoogleDocId(e.target.value)}
+                placeholder="Paste Google Doc ID (the long string in the URL)"
+                className="flex-grow p-2 border rounded-md"
+              />
+              <button
+                onClick={() => setGoogleDocId(googleDocId.trim())}
+                className="px-3 py-2 rounded bg-blue-500 text-white hover:bg-blue-600 text-sm"
+              >
+                Load
+              </button>
+            </div>
+            <GoogleDocsContributions teamId={teamId} documentId={googleDocId || null} />
+          </div>
+        </>
       )}
 
       <div className="mt-6 text-center">
