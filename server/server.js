@@ -13,12 +13,16 @@ const PORT = process.env.PORT || 8787
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Support multiple dev origins: comma-separated in ALLOWED_ORIGIN
-const ORIGINS = (process.env.ALLOWED_ORIGIN || 'http://localhost:5173')
+const ORIGINS = (process.env.ALLOWED_ORIGIN || 'http://localhost:5173,http://localhost:5174')
   .split(',')
   .map(s => s.trim())
 
+console.log('CORS Origins:', ORIGINS)
+
 app.use(cors({
   origin: (origin, cb) => {
+    console.log('CORS check for origin:', origin)
+    console.log('Allowed origins:', ORIGINS)
     if (!origin || ORIGINS.includes(origin)) return cb(null, true)
     return cb(new Error(`CORS: origin ${origin} not allowed`))
   },
@@ -39,9 +43,13 @@ const SLOWMO = Number(process.env.SLOWMO || 0)
 const KEEP_OPEN = process.env.KEEP_OPEN === '1'
 
 // OAuth config for comments
-const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID || '772932077916-l83t17b27phrbcsm9df08jfh4840bv51.apps.googleusercontent.com'
-const OAUTH_SCOPE = 'https://www.googleapis.com/auth/drive.readonly'
+const OAUTH_CLIENT_ID = process.env.OAUTH_CLIENT_ID
+const OAUTH_SCOPE = process.env.OAUTH_SCOPE || 'https://www.googleapis.com/auth/drive https://www.googleapis.com/auth/drive.file'
 const INCLUDE_DELETED_COMMENTS = process.env.INCLUDE_DELETED_COMMENTS === 'true'
+
+if (!OAUTH_CLIENT_ID) {
+  console.warn('[config] OAUTH_CLIENT_ID not set - OAuth comments will not work')
+}
 
 // Parse HEADLESS env: false -> visible; "new"/true -> headless-new
 function resolveHeadless() {
@@ -592,7 +600,12 @@ app.post('/api/replay', async (req, res) => {
           const data = r.parsed.json
           const tileInfo = data.tileInfo || []
           const latestRevision = tileInfo.length ? tileInfo[tileInfo.length - 1].end : null
-          return { latestRevision, users: data.userMap || {} }
+          return { 
+            latestRevision, 
+            users: data.userMap || {},
+            tiles: tileInfo, // Return the actual tiles from Google
+            rawData: data    // Keep raw data for debugging
+          }
         }
 
         async function fetchChangelog(latestRevision) {
@@ -607,15 +620,15 @@ app.post('/api/replay', async (req, res) => {
           return { changelog: Array.isArray(data.changelog) ? data.changelog : [] }
         }
 
-        const tiles = await fetchTiles()
-        if (tiles.__error) {
+        const tilesResult = await fetchTiles()
+        if (tilesResult.__error) {
           return {
             error: 'Failed fetching revision tiles (likely login/permission/version-history issue).',
-            which: tiles.__error,
-            detail: tiles.detail
+            which: tilesResult.__error,
+            detail: tilesResult.detail
           }
         }
-        const { latestRevision, users } = tiles
+        const { latestRevision, users, tiles: googleTiles, rawData } = tilesResult
 
         const load = await fetchChangelog(latestRevision)
         if (load.__error) {
@@ -626,6 +639,222 @@ app.post('/api/replay', async (req, res) => {
           }
         }
         const { changelog } = load
+
+        // Extract the actual edits (insertions and deletions) for each tile
+        function reconstructTileContent(tile, changelog) {
+          try {
+            // Get operations that happened specifically in this tile's revision range
+            const tileOps = changelog.filter(([op, ts, authorId], index) => {
+              const revisionIndex = index + 1
+              return revisionIndex >= tile.start && revisionIndex <= tile.end
+            })
+            
+            // Extract text insertions and deletions from this tile's operations
+            const insertions = []
+            const deletions = []
+            
+            function collectAllStrings(node, out) {
+              if (!node) return
+              const t = typeof node
+              if (t === 'string') { if (node.length) out.push(node); return }
+              if (Array.isArray(node)) { for (const it of node) collectAllStrings(it, out); return }
+              if (t === 'object') { for (const k of Object.keys(node)) collectAllStrings(node[k], out) }
+            }
+
+            function extractEdits(op, authorId) {
+              switch (op.ty) {
+                case 'is':
+                case 'iss': {
+                  // Google sometimes encodes inserts as arrays, strings, or nested ops; preserve exactly
+                  const text = Array.isArray(op.s) ? op.s.join('') : String(op.s ?? '')
+                  insertions.push({
+                    text,
+                    authorId: authorId,
+                    position: typeof op.ibi === 'number' ? op.ibi : 0
+                  })
+                  break
+                }
+                case 'ds':
+                case 'dss': {
+                  const deletedText = Array.isArray(op.s) ? op.s.join('') : String(op.s || '')
+                  if (deletedText.trim()) {
+                    deletions.push({
+                      text: deletedText.trim(),
+                      authorId: authorId,
+                      position: op.si || 0
+                    })
+                  }
+                  break
+                }
+                case 'mlti': {
+                  (op.mts || []).forEach(sub => extractEdits(sub, authorId))
+                  break
+                }
+                case 'rplc': {
+                  // For replacements, only traverse nested ops to capture inserted fragments
+                  if (op.snapshot) {
+                    op.snapshot.forEach(sub => extractEdits(sub, authorId))
+                  }
+                  break
+                }
+                default: {
+                  // Ignore non-insert op types for text output
+                  break
+                }
+              }
+            }
+            
+            // Extract all edits from operations in this tile's range
+            tileOps.forEach(([op, ts, authorId]) => {
+              try { extractEdits(op, authorId) } catch (e) {}
+            })
+            
+            const totalInsertedAll = insertions.reduce((sum, ins) => sum + ins.text.length, 0)
+
+            // Heuristic requested: if we see >5 consecutive inserts at the same index, show that formed text
+            if (totalInsertedAll > 0) {
+              let runs = []
+              let currentRun = { idx: null, count: 0, text: '' }
+
+              // Walk ops in tile range in order again to retain adjacency semantics
+              for (const [op, ts, authorId] of tileOps) {
+                if (op?.ty === 'is' || op?.ty === 'iss') {
+                  const idx = typeof op.ibi === 'number' ? op.ibi : 0
+                  const t = Array.isArray(op.s) ? op.s.join('') : String(op.s || '')
+                  if (currentRun.idx === idx) {
+                    currentRun.count += 1
+                    currentRun.text += t
+                  } else {
+                    if (currentRun.count > 5 && currentRun.text.trim().length > 0) runs.push(currentRun.text)
+                    currentRun = { idx, count: 1, text: t }
+                  }
+                } else {
+                  if (currentRun.count > 5 && currentRun.text.trim().length > 0) runs.push(currentRun.text)
+                  currentRun = { idx: null, count: 0, text: '' }
+                }
+              }
+              if (currentRun.count > 5 && currentRun.text.trim().length > 0) runs.push(currentRun.text)
+
+              if (runs.length > 0) {
+                const formed = runs.join('\n\n')
+                const limit = 2000
+                return formed.length > limit ? formed.slice(0, limit) + '…' : formed
+              }
+
+              // Fallback: show all inserted text in order
+              let combinedRaw = insertions.map(ins => String(ins.text || '')).join('')
+              if (!combinedRaw || combinedRaw.trim().length === 0) {
+                combinedRaw = insertions.map(ins => String(ins.text || '')).join(' ')
+              }
+              const limit = 2000
+              return combinedRaw.length > limit ? combinedRaw.slice(0, limit) + '…' : combinedRaw
+            }
+
+            // If there were no insertions, log diagnostics and return empty string (no summary)
+            try {
+              const typeCounts = tileOps.reduce((acc, [op]) => { const k = op?.ty || 'unknown'; acc[k] = (acc[k]||0)+1; return acc }, {})
+              const sampleStrings = []
+              for (const [op] of tileOps) {
+                const buf = []
+                collectAllStrings(op, buf)
+                if (buf.length) { sampleStrings.push(buf.join('').slice(0,120)) }
+                if (sampleStrings.length >= 3) break
+              }
+              console.warn('[tile-debug] No insertions for range', `${tile.start}-${tile.end}`,
+                { typeCounts, sampleStrings, ops: tileOps.length })
+            } catch {}
+            return ''
+            
+          } catch (error) {
+            console.warn(`[tile] Error reconstructing content for tile ${tile.start}-${tile.end}:`, error.message)
+            return ''
+          }
+        }
+
+        // Reconstruct content for all tiles, including nested ones
+        console.log('[replay] Starting tile content reconstruction...')
+        
+        async function processTileWithNesting(tile, changelog, depth = 0) {
+          const indent = '  '.repeat(depth)
+          console.log(`${indent}[replay] Processing tile: revisions ${tile.start}-${tile.end} (expandable: ${tile.expandable})`)
+          
+          // Get the basic content for this tile
+          const content = reconstructTileContent(tile, changelog)
+          console.log(`${indent}[replay] Tile content: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}" (${content.length} chars)`)
+          // Derive a timestamp from the last operation in this tile's range
+          let derivedTs = null
+          try {
+            const opsInRange = changelog.filter(([, ts], index) => {
+              const revisionIndex = index + 1
+              return revisionIndex >= tile.start && revisionIndex <= tile.end
+            })
+            if (opsInRange.length > 0) {
+              const last = opsInRange[opsInRange.length - 1]
+              derivedTs = last?.[1] || null
+            }
+          } catch {}
+
+          const processedTile = { ...tile, text: content, depth, endMillisDerived: derivedTs ? Number(derivedTs) : undefined }
+          
+          // If tile is expandable, try to fetch nested tiles
+          if (tile.expandable) {
+            console.log(`${indent}[replay] Tile is expandable, attempting to fetch nested tiles...`)
+            try {
+              console.log(`${indent}[replay] Fetching nested tiles for ${tile.start}-${tile.end}...`)
+              
+              // Fetch detailed tiles for this expandable tile
+              const nestedUrl = `${prefix}/revisions/tiles?` +
+                new URLSearchParams({ 
+                  id: innerDocId, 
+                  token, 
+                  start: tile.start, 
+                  end: tile.end, 
+                  showDetailedRevisions: true 
+                })
+              
+              console.log(`${indent}[replay] Nested URL: ${nestedUrl}`)
+              const nestedResponse = await fetchGuarded(nestedUrl)
+              console.log(`${indent}[replay] Nested response status: ${nestedResponse.status}`)
+              
+              if (nestedResponse.ok && !nestedResponse.parsed.__html && !nestedResponse.parsed.__parseError) {
+                const nestedData = nestedResponse.parsed.json
+                const nestedTiles = nestedData.tileInfo || []
+                
+                console.log(`${indent}[replay] Found ${nestedTiles.length} nested tiles`)
+                
+                // Process nested tiles recursively
+                const processedNestedTiles = []
+                for (const nestedTile of nestedTiles) {
+                  const processedNested = await processTileWithNesting(nestedTile, changelog, depth + 1)
+                  processedNestedTiles.push(processedNested)
+                }
+                
+                processedTile.nestedTiles = processedNestedTiles
+                console.log(`${indent}[replay] Processed ${processedNestedTiles.length} nested tiles`)
+              } else {
+                console.log(`${indent}[replay] Failed to fetch nested tiles: ${nestedResponse.status}`)
+                console.log(`${indent}[replay] Response details:`, nestedResponse.parsed)
+              }
+            } catch (error) {
+              console.warn(`${indent}[replay] Error fetching nested tiles:`, error.message)
+            }
+          } else {
+            console.log(`${indent}[replay] Tile is not expandable, skipping nested fetch`)
+          }
+          
+          return processedTile
+        }
+        
+        // Process all tiles with nesting
+        const tilesWithContent = []
+        for (let i = 0; i < googleTiles.length; i++) {
+          const tile = googleTiles[i]
+          console.log(`[replay] Processing tile ${i + 1}/${googleTiles.length}: revisions ${tile.start}-${tile.end} (expandable: ${tile.expandable})`)
+          const processedTile = await processTileWithNesting(tile, changelog)
+          tilesWithContent.push(processedTile)
+        }
+        
+        console.log('[replay] Tile reconstruction complete')
 
         /** @type {{ch:string, authorId:string}[]} */
         const docChars = []
@@ -732,6 +961,7 @@ app.post('/api/replay', async (req, res) => {
             url: location.href,
             builtAt: new Date().toISOString(),
             latestRevision,
+            accessToken: window._docs_flag_initialData?.token || null,
             counts: {
               events: events.length,
               inserts: events.filter(e => e.type === 'insert').length,
@@ -741,7 +971,8 @@ app.post('/api/replay', async (req, res) => {
           },
           users,
           events,
-          finalText
+          finalText,
+          tiles: tilesWithContent // Add Google tiles with actual text content
         }
 
         if (includeChars) payload.charAttribution = docChars
@@ -812,126 +1043,271 @@ app.post('/api/replay', async (req, res) => {
     console.log('[server] Debug - events count:', events.length)
     console.log('[server] Debug - event types:', [...new Set(events.map(e => e.type))])
     console.log('[server] Debug - users:', Object.keys(allUsers))
+    console.log('[server] Debug - user details:', allUsers)
+    console.log('[server] Debug - sample user object:', allUsers['12486329958650769098'])
     
-    // Filter and transform tiles (insert events) - with merging like Chrome extension
-    const TILE_GAP_MS = 5 * 60 * 1000; // 5 minutes (matches Chrome extension)
-    const MAX_INDEX_DISTANCE = 200; // 200 characters (matches Chrome extension)
-    const MAX_INDEX_DISTANCE_SAME_AUTHOR = 500; // 500 characters for same author working in same area
+    // Debug: Check what's in the events for user information
+    const sampleEvents = events.slice(0, 5)
+    console.log('[server] Debug - sample events:', sampleEvents.map(e => ({
+      type: e.type,
+      authorId: e.authorId,
+      authorName: e.authorName,
+      hasAuthor: !!(e.authorId || e.authorName)
+    })))
     
-    const insertEvents = events.filter(e => e.type === 'insert')
-    
-    console.log('[server] Debug - insert events after filtering:', insertEvents.length)
-    
-    // Group events by author for debugging
-    const eventsByAuthor = {}
-    insertEvents.forEach(event => {
-      const author = event.authorId || 'unknown'
-      if (!eventsByAuthor[author]) eventsByAuthor[author] = []
-      eventsByAuthor[author].push(event)
-    })
-    console.log('[server] Debug - events by author:', Object.keys(eventsByAuthor).map(author => `${author}: ${eventsByAuthor[author].length}`))
-    
-    // Helper functions for merging
-    const getFirstIndex = (tile) => (tile.segments[0]?.index ?? 0)
-    const getLastIndex = (tile) => (tile.segments[tile.segments.length - 1]?.index ?? 0)
-    const getLastTime = (tile) => new Date(tile.segments[tile.segments.length - 1]?.ts || tile.timestamp).getTime()
-    
-    const hasOtherAuthorInsertBetween = (tile1, tile2, allEvents) => {
-      const aTs = new Date(tile1.timestamp).getTime()
-      const bTs = new Date(tile2.timestamp).getTime()
-      const lo = Math.min(aTs, bTs), hi = Math.max(aTs, bTs)
-      
-      // Get the spatial range of the two tiles
-      const aStart = getFirstIndex(tile1)
-      const aEnd = getLastIndex(tile1)
-      const bStart = getFirstIndex(tile2)
-      const bEnd = getLastIndex(tile2)
-      const combinedStart = Math.min(aStart, bStart)
-      const combinedEnd = Math.max(aEnd, bEnd)
-      
-      for (const event of allEvents) {
-        if (event.type !== 'insert') continue
-        const eventTime = new Date(event.timestamp).getTime()
-        if (eventTime <= lo || eventTime >= hi) continue
-        
-        if (event.authorId !== tile1.authorId) {
-          // Check if the intervening tile is in the same spatial area
-          const eStart = event.index0Based || 0
-          const eEnd = eStart + (event.text?.length || 0)
-          
-          // More permissive: only consider it interfering if it's directly between the two tiles
-          // and has significant overlap (>80%) with the combined area
-          const overlap = Math.max(0, Math.min(eEnd, combinedEnd) - Math.max(eStart, combinedStart))
-          const eSize = eEnd - eStart
-          const combinedSize = combinedEnd - combinedStart
-          const overlapRatio = overlap / Math.max(eSize, 1)
-          const coverageRatio = overlap / Math.max(combinedSize, 1)
-          
-          // Only consider it interfering if it has high overlap AND covers a significant portion of our area
-          if (overlapRatio > 0.8 && coverageRatio > 0.3) {
-            return true
-          }
-        }
-      }
-      return false
+    // Debug: Check what user information is available in the events
+    const eventsWithAuthors = events.filter(e => e.authorId || e.authorName)
+    console.log('[server] Debug - events with authors:', eventsWithAuthors.length)
+    if (eventsWithAuthors.length > 0) {
+      console.log('[server] Debug - sample event with author:', {
+        authorId: eventsWithAuthors[0].authorId,
+        authorName: eventsWithAuthors[0].authorName,
+        type: eventsWithAuthors[0].type
+      })
     }
     
-    const finalizeTileFromSegments = (authorId, author, startDate, segs) => {
-      const combinedText = segs.map(s => s.text).join('')
-      const countWords = (s) => (String(s).match(/\b\w+\b/g) || []).length
+    // Debug: Check what's in the first few events to understand the structure
+    console.log('[server] Debug - first 3 events structure:', events.slice(0, 3).map(e => ({
+      type: e.type,
+      authorId: e.authorId,
+      authorName: e.authorName,
+      userId: e.userId,
+      user: e.user,
+      keys: Object.keys(e)
+    })))
+    
+    // Extract Google tiles from the result
+    const googleTiles = result.tiles || []
+    console.log('[server] Debug - Google tiles count:', googleTiles.length)
+    console.log('[server] Debug - Google tiles data:', JSON.stringify(googleTiles.slice(0, 2), null, 2))
+    
+    // Debug: Check if tiles have text content
+    if (googleTiles.length > 0) {
+      const firstTile = googleTiles[0]
+      console.log('[server] Debug - First tile text content:', {
+        hasText: 'text' in firstTile,
+        textLength: firstTile.text ? firstTile.text.length : 0,
+        textPreview: firstTile.text ? firstTile.text.substring(0, 100) + '...' : 'No text'
+      })
       
-      let internalChars = 0, externalChars = 0
-      let internalWords = 0, externalWords = 0
-      for (const s of segs) {
-        const chars = s.text.length
-        const words = countWords(s.text)
-        if (s.paste === 'internal') { 
-          internalChars += chars
-          internalWords += words 
-        } else if (s.paste === 'external') { 
-          externalChars += chars
-          externalWords += words 
+      // Debug: Show user IDs from Google tiles
+      const allTileUserIds = new Set()
+      googleTiles.forEach(tile => {
+        if (tile.users) {
+          tile.users.forEach(userId => allTileUserIds.add(userId))
         }
-      }
-      
-      const pad = (n) => String(n).padStart(2, '0')
-      const titleFromDate = (d) =>
-        `Contribution — ${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
-      
+      })
+      console.log('[server] Debug - Google tile user IDs:', Array.from(allTileUserIds))
+      console.log('[server] Debug - Changelog user IDs:', Object.keys(allUsers))
+      console.log('[server] Debug - User ID overlap:', Array.from(allTileUserIds).filter(id => allUsers[id]))
+    }
+    
+    // Debug: Check if tiles have the expected structure
+    if (googleTiles.length > 0) {
+      const firstTile = googleTiles[0]
+      console.log('[server] Debug - First tile structure:', {
+        hasStartTime: 'startTime' in firstTile,
+        hasEndTime: 'endTime' in firstTile,
+        hasAuthorId: 'authorId' in firstTile,
+        hasText: 'text' in firstTile,
+        textLength: firstTile.text ? firstTile.text.length : 0,
+        textPreview: firstTile.text ? firstTile.text.substring(0, 100) + '...' : 'No text',
+        keys: Object.keys(firstTile)
+      })
+    }
+    
+    // Process Google's native tiles, including nested ones
+    const processGoogleTiles = (googleTiles, users, events, depth = 0) => {
+      console.log(`[server] Debug - processGoogleTiles called with:`, {
+        googleTilesCount: googleTiles.length,
+        usersCount: Object.keys(users).length,
+        eventsCount: events.length,
+        sampleEvent: events[0] ? {
+          type: events[0].type,
+          revision: events[0].revision,
+          hasAuthorId: 'authorId' in events[0],
+          hasAuthorName: 'authorName' in events[0],
+          keys: Object.keys(events[0])
+        } : 'No events'
+      })
+      return googleTiles.map((tile, index) => {
+        try {
+        // Use the same author extraction logic as the old code
+        // Get the primary user ID from the Google tile
+        const primaryUserId = tile.users && tile.users[0] ? tile.users[0] : 'unknown'
+        
+        // Use the same authorName function from the old code
+        function authorName(users, authorId) {
+          const info = users?.[authorId] || {}
+          return info.anonymous ? 'Anonymous' : (info.name || authorId)
+        }
+        
+        const primaryAuthorName = authorName(users, primaryUserId)
+        
+        // Debug: Check what's in the users object
+        if (index < 3) { // Only debug first 3 tiles
+          console.log(`[server] Debug - Tile ${index + 1} author lookup:`, {
+            tileRange: `${tile.start}-${tile.end}`,
+            primaryUserId,
+            userFound: !!users[primaryUserId],
+            userObject: users[primaryUserId],
+            authorName: primaryAuthorName,
+            usersObjectKeys: Object.keys(users),
+            usersObjectSample: Object.keys(users).slice(0, 3).map(key => ({ key, value: users[key] }))
+          })
+        }
+          
+          // Safe date parsing with fallback
+          const getSafeDate = (dateValue) => {
+            if (!dateValue) return new Date()
+            const date = new Date(dateValue)
+            return isNaN(date.getTime()) ? new Date() : date
+          }
+          
+          // Use endMillis for timestamp, fallback to derived endMillisDerived, then current time
+          const tileDate = getSafeDate(tile.endMillis || tile.endMillisDerived)
+          
+          // Create a title based on revision range and depth
+          const revisionRange = tile.start === tile.end ? `Revision ${tile.start}` : `Revisions ${tile.start}-${tile.end}`
+          const depthPrefix = depth > 0 ? '  '.repeat(depth) + '└─ ' : ''
+          const title = `${depthPrefix}Contribution — ${revisionRange}`
+          
+          let tileText = tile.text || ''
+          // Final sanitize: strip any lingering edit-summary artifacts if present
+          tileText = String(tileText)
+            .replace(/\[Edits:[^\]]+\]/gi, '')
+            .replace(/\(\s*[+-]?\d+\s+chars?\s+(?:inserted|deleted)[^)]*\)/gi, '')
+            .replace(/\s{2,}/g, ' ')
+            .trim()
+          const wordCount = tileText.split(/\s+/).filter(w => w.length > 0).length
+          
+          console.log(`[server] Processing tile ${index + 1} (depth ${depth}):`, {
+            revisionRange,
+            author: primaryAuthorName,
+            textLength: tileText.length,
+            wordCount,
+            textPreview: tileText.substring(0, 50) + (tileText.length > 50 ? '...' : ''),
+            hasNested: !!tile.nestedTiles,
+            nestedCount: tile.nestedTiles ? tile.nestedTiles.length : 0
+          })
+          
+          const processedTile = {
+            type: 'INSERT_TILE',
+            title,
+            author: primaryAuthorName || 'Unknown',
+            authorId: primaryUserId,
+            timestamp: tileDate.toISOString(),
+            text: tileText,
+            segments: [{
+              index: 0,
+              paste: null,
+              text: tileText,
+              ts: tileDate.toISOString()
+            }],
+            stats: {
+              internalWords: 0,
+              externalWords: 0,
+              internalChars: 0,
+              externalChars: 0,
+              totalWords: wordCount,
+              totalChars: tileText.length
+            },
+            wordCount: wordCount,
+            charCount: tileText.length,
+            // Add Google-specific metadata
+            googleTile: {
+              start: tile.start,
+              end: tile.end,
+              endMillis: tile.endMillis,
+              users: tile.users,
+              expandable: tile.expandable,
+              revisionMac: tile.revisionMac,
+              depth: depth
+            }
+          }
+          
+          // Process nested tiles if they exist
+          if (tile.nestedTiles && tile.nestedTiles.length > 0) {
+            console.log(`[server] Processing ${tile.nestedTiles.length} nested tiles for ${revisionRange}`)
+            processedTile.nestedTiles = processGoogleTiles(tile.nestedTiles, users, events, depth + 1)
+          }
+          
+          return processedTile
+        } catch (error) {
+          console.warn(`[server] Error processing tile ${index}:`, error.message, tile)
+          // Return a fallback tile
       return {
         type: 'INSERT_TILE',
-        title: titleFromDate(startDate),
-        author,
-        authorId,
-        timestamp: startDate.toISOString(),
-        text: combinedText,
-        segments: segs.slice(),
+            title: `${depth > 0 ? '  '.repeat(depth) + '└─ ' : ''}Contribution — Unknown`,
+            author: 'Unknown',
+            authorId: 'unknown',
+            timestamp: new Date().toISOString(),
+            text: '',
+            segments: [{
+              index: 0,
+              paste: null,
+              text: '',
+              ts: new Date().toISOString()
+            }],
         stats: {
-          internalWords, externalWords,
-          internalChars, externalChars,
-          totalWords: countWords(combinedText),
-          totalChars: combinedText.length
+              internalWords: 0,
+              externalWords: 0,
+              internalChars: 0,
+              externalChars: 0,
+              totalWords: 0,
+              totalChars: 0
+            }
+          }
         }
+      })
+    }
+    
+    const tiles = processGoogleTiles(googleTiles, allUsers, events)
+    console.log('[server] Debug - processed Google tiles:', tiles.length)
+    
+    // Flatten nested tiles into the main tiles array
+    function flattenTiles(tiles) {
+      const flattened = []
+      tiles.forEach(tile => {
+        flattened.push(tile)
+        if (tile.nestedTiles && tile.nestedTiles.length > 0) {
+          flattened.push(...flattenTiles(tile.nestedTiles))
+        }
+      })
+      return flattened
+    }
+    
+    const flattenedTiles = flattenTiles(tiles)
+    console.log('[server] Debug - flattened tiles (including nested):', flattenedTiles.length)
+    
+    // Debug: Show detailed information about each tile, including nested ones
+    function logTileDetails(tile, index, depth = 0) {
+      const indent = '  '.repeat(depth)
+      console.log(`${indent}[server] Debug - Tile ${index + 1}:`, {
+        title: tile.title,
+        author: tile.author,
+        textLength: tile.text.length,
+        textPreview: tile.text.substring(0, 100) + (tile.text.length > 100 ? '...' : ''),
+        wordCount: tile.stats.totalWords,
+        charCount: tile.stats.totalChars,
+        depth: depth,
+        hasNested: !!tile.nestedTiles,
+        nestedCount: tile.nestedTiles ? tile.nestedTiles.length : 0,
+        googleTile: tile.googleTile
+      })
+      
+      // Log nested tiles
+      if (tile.nestedTiles && tile.nestedTiles.length > 0) {
+        console.log(`${indent}[server] Debug - Nested tiles for ${tile.title}:`)
+        tile.nestedTiles.forEach((nestedTile, nestedIndex) => {
+          logTileDetails(nestedTile, nestedIndex, depth + 1)
+        })
       }
     }
     
-    // Convert events to tile format first
-    const rawTiles = insertEvents.map(event => {
-      const text = event.text || ''
-      return {
-        authorId: event.authorId || 'unknown',
-        author: event.authorName || 'Unknown',
-        timestamp: event.timestamp || new Date().toISOString(),
-        segments: [{
-          index: event.index0Based || 0,
-          paste: event.pasteType || null,
-          text: text,
-          ts: event.timestamp || new Date().toISOString()
-        }]
-      }
+    tiles.forEach((tile, index) => {
+      logTileDetails(tile, index)
     })
-    
-    console.log('[server] Debug - raw tiles count:', rawTiles.length)
     
     // Include deletions for completeness (like Chrome extension) but don't process as contributions
     const deletions = events.filter(e => e.type === 'delete').map(event => ({
@@ -945,136 +1321,11 @@ app.post('/api/replay', async (req, res) => {
     
     console.log('[server] Debug - deletions count:', deletions.length)
     
-    // Apply Chrome extension's coalesceInsertTiles function for better merging
-    const coalesceInsertTiles = (tiles, deletions, opts = {}) => {
-      const { maxGapMs = 5 * 60 * 1000, maxIndexDistance = 200, allowInterveningDeletions = true } = opts;
-
-      const events = [];
-      for (const t of tiles) events.push({ kind: 'tile', by: t.authorId, ts: new Date(t.timestamp).getTime(), ref: t });
-      for (const d of deletions) events.push({ kind: 'del', by: d.authorId, ts: new Date(d.timestamp).getTime(), ref: d });
-      events.sort((a, b) => a.ts - b.ts);
-
-      function hasOtherAuthorInsertBetween(a, b) {
-        const aTs = new Date(a.timestamp).getTime();
-        const bTs = new Date(b.timestamp).getTime();
-        const lo = Math.min(aTs, bTs), hi = Math.max(aTs, bTs);
-        
-        // Get the spatial range of the two tiles
-        const aStart = getFirstIndex(a);
-        const aEnd = getLastIndex(a);
-        const bStart = getFirstIndex(b);
-        const bEnd = getLastIndex(b);
-        const combinedStart = Math.min(aStart, bStart);
-        const combinedEnd = Math.max(aEnd, bEnd);
-        
-        for (const e of events) {
-          if (e.ts <= lo || e.ts >= hi) continue;
-          
-          if (e.kind === 'tile' && e.by !== a.authorId) {
-            // Check if the intervening tile is in the same spatial area
-            const eStart = getFirstIndex(e.ref);
-            const eEnd = getLastIndex(e.ref);
-            
-            // If the intervening tile overlaps significantly with our combined area, consider it interfering
-            const overlap = Math.max(0, Math.min(eEnd, combinedEnd) - Math.max(eStart, combinedStart));
-            const eSize = eEnd - eStart;
-            const overlapRatio = overlap / Math.max(eSize, 1);
-            
-            // Only consider it interfering if it has significant overlap (>50%) with our area
-            if (overlapRatio > 0.5) {
-              return true;
-            }
-          }
-          
-          if (!allowInterveningDeletions && e.kind === 'del') return true;
-        }
-        return false;
-      }
-
-      const merged = [];
-      let cur = null;
-
-      const getFirstIndex = (tile) => (tile.segments[0]?.index ?? 0);
-      const getLastIndex  = (tile) => (tile.segments[tile.segments.length - 1]?.index ?? 0);
-      const getLastTime   = (tile) => new Date(tile.segments[tile.segments.length - 1]?.ts || tile.timestamp).getTime();
-
-      const finalizeTileFromSegments = (authorId, author, startDate, segs) => {
-        const combinedText = segs.map(s => s.text).join('');
-        const countWords = (s) => (String(s).match(/\b\w+\b/g) || []).length;
-
-        let internalChars = 0, externalChars = 0;
-        let internalWords = 0, externalWords = 0;
-        for (const s of segs) {
-          const chars = s.text.length;
-          const words = countWords(s.text);
-          if (s.paste === 'internal') { internalChars += chars; internalWords += words; }
-          else if (s.paste === 'external') { externalChars += chars; externalWords += words; }
-        }
-        const pad = (n) => String(n).padStart(2, '0');
-        const titleFromDate = (d) =>
-          `Contribution — ${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-        return {
-          type: 'INSERT_TILE',
-          title: titleFromDate(startDate),
-          author,
-          authorId,
-          timestamp: startDate.toISOString(),
-          text: combinedText,
-          segments: segs.slice(),
-          stats: {
-            internalWords, externalWords,
-            internalChars, externalChars,
-            totalWords: countWords(combinedText),
-            totalChars: combinedText.length
-          }
-        };
-      };
-
-      const byTimeAsc = [...tiles].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-      for (const tile of byTimeAsc) {
-        if (!cur) { cur = tile; continue; }
-
-        const sameAuthor = cur.authorId === tile.authorId;
-        const gap = new Date(tile.timestamp).getTime() - getLastTime(cur);
-        const closeInTime = gap >= 0 && gap <= maxGapMs;
-        const closeInSpace = Math.abs(getLastIndex(cur) - getFirstIndex(tile)) <= maxIndexDistance;
-        const cleanBetween = !hasOtherAuthorInsertBetween(cur, tile);
-
-        if (sameAuthor && closeInTime && closeInSpace && cleanBetween) {
-          cur.segments.push(...tile.segments);
-          continue;
-        }
-
-        merged.push(finalizeTileFromSegments(cur.authorId, cur.author, new Date(cur.timestamp), cur.segments));
-        cur = tile;
-      }
-      if (cur) merged.push(finalizeTileFromSegments(cur.authorId, cur.author, new Date(cur.timestamp), cur.segments));
-
-      return merged;
-    };
-
-    // Apply the Chrome extension's coalescing algorithm directly to raw tiles
-    const tiles = coalesceInsertTiles(rawTiles, deletions, {
-      maxGapMs: 5 * 60 * 1000,  // 5 minutes
-      maxIndexDistance: 200,     // 200 characters
-      allowInterveningDeletions: true
-    });
+    // Calculate user totals based on Google's tiles
     
-    console.log('[server] Debug - tiles after coalescing:', tiles.length)
-    
-    // Debug: show merging results by author
-    const mergedByAuthor = {}
-    tiles.forEach(tile => {
-      const author = tile.authorId || 'unknown'
-      if (!mergedByAuthor[author]) mergedByAuthor[author] = []
-      mergedByAuthor[author].push(tile)
-    })
-    console.log('[server] Debug - final tiles by author:', Object.keys(mergedByAuthor).map(author => `${author}: ${mergedByAuthor[author].length}`))
-    
-    // Calculate user totals based on final merged tiles (contributions only)
+    // Calculate user totals based on Google's tiles
     const totalsByUser = {}
-    for (const tile of tiles) {
+    for (const tile of flattenedTiles) {
       const userId = tile.authorId
       if (!totalsByUser[userId]) {
         totalsByUser[userId] = {
@@ -1100,14 +1351,14 @@ app.post('/api/replay', async (req, res) => {
     }
     
     // Attach attribution to comments like Chrome extension
-    const commentsWithAttribution = attachAttributionToComments(tiles, comments)
+    const commentsWithAttribution = attachAttributionToComments(flattenedTiles, comments)
     
     const response = {
       ok: true,
-      tiles,
+      tiles: flattenedTiles, // Use flattened tiles including nested ones
       deletions,
       totalsByUser,
-      blocks: tiles, // same as tiles
+      blocks: flattenedTiles, // same as tiles
       finalDocumentText: result.finalText || '',
       comments: commentsWithAttribution,
       file: {
@@ -1182,22 +1433,13 @@ app.get('/oauth/callback', async (req, res) => {
   }
 })
 
-/* ===== Start ===== */
-try {
-  const server = app.listen(PORT, () => {
-    console.log('[boot] Server listening on', PORT)
-  })
-  server.on('error', (err) => {
-    console.error('[boot] listen error:', err && err.code ? err.code : err)
-    process.exit(1)
-  })
-} catch (e) {
-  console.error('[boot] failed to start:', e)
-  process.exit(1)
-}
+// Start server
+app.listen(PORT, () => {
+  console.log(`[boot] Server running on port ${PORT}`)
+  console.log(`[boot] Health check: http://localhost:${PORT}/health`)
+  console.log(`[boot] OAuth authorize: http://localhost:${PORT}/oauth/authorize`)
+})
 
-// Helpful catch-alls so silent exits become visible
+// Error handling
 process.on('unhandledRejection', (r) => console.error('[unhandledRejection]', r))
 process.on('uncaughtException', (e) => console.error('[uncaughtException]', e))
-
-
