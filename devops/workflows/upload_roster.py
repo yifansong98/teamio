@@ -19,7 +19,7 @@ def upload_roster():
     # --- Firebase Initialization ---
     try:
         # IMPORTANT: Replace with the actual path to your service account key file
-        cred = credentials.Certificate("../FIREBASE_SERVICE_CREDENTIALS.json")
+        cred = credentials.Certificate("../../teamio-backend/FIREBASE_SERVICE_CREDENTIALS.json")
         firebase_admin.initialize_app(cred, {
             # IMPORTANT: Replace with your Firebase database URL
             'databaseURL': 'https://teamio-test-default-rtdb.firebaseio.com'

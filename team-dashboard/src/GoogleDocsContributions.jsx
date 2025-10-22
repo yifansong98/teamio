@@ -5,10 +5,15 @@ const GoogleDocsContributions = ({ teamId, documentId }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedByKey, setExpandedByKey] = useState({});
+  const [showTypedByKey, setShowTypedByKey] = useState({});
   const [copiedId, setCopiedId] = useState(null);
 
   const toggleExpanded = (tileKey) => {
     setExpandedByKey(prev => ({ ...prev, [tileKey]: !prev[tileKey] }));
+  };
+
+  const toggleShowTyped = (tileKey) => {
+    setShowTypedByKey(prev => ({ ...prev, [tileKey]: !prev[tileKey] }));
   };
 
   const formatDate = (timestamp) => {
@@ -128,6 +133,8 @@ const GoogleDocsContributions = ({ teamId, documentId }) => {
           .replace(/\s{2,}/g, ' ')
           .trim();
         const hasText = cleanedText.length > 0;
+        const hasTypedHistory = Array.isArray(tile.typedHistory?.frames) && tile.typedHistory.frames.length > 0;
+        const showTyped = !!showTypedByKey[tileKey] && hasTypedHistory;
         const wordCount = tile.wordCount || 0;
         const charCount = tile.charCount || 0;
         const titleHasUtc = typeof tile.title === 'string' && /Contribution\s+—\s+\d{4}-\d{2}-\d{2}/.test(tile.title);
@@ -191,6 +198,15 @@ const GoogleDocsContributions = ({ teamId, documentId }) => {
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 bg-gray-50">
                     <h4 className="font-medium text-gray-800">Contribution Text</h4>
                     <div className="flex items-center gap-2">
+                      {hasTypedHistory && (
+                        <button
+                          onClick={() => toggleShowTyped(tileKey)}
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md border ${showTyped ? 'border-blue-300 text-blue-700 bg-blue-50' : 'border-gray-200 text-gray-700 hover:bg-gray-100'}`}
+                          title={showTyped ? 'Show reconstructed text' : 'Show typed history'}
+                        >
+                          {showTyped ? 'Typed: ON' : 'Typed: OFF'}
+                        </button>
+                      )}
                       <button
                         onClick={() => copyToClipboard(tile.text, tile.id || index)}
                         className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs rounded-md border border-gray-200 text-gray-700 hover:bg-gray-100"
@@ -202,7 +218,18 @@ const GoogleDocsContributions = ({ teamId, documentId }) => {
                   </div>
                   <div className="p-4">
                     <div className="prose prose-sm max-w-none">
-                      <pre className="whitespace-pre-wrap text-gray-800 font-mono text-sm leading-relaxed bg-gray-50 rounded-md p-3 border border-gray-100 w-full">{cleanedText}</pre>
+                      {showTyped ? (
+                        <div className="space-y-2">
+                          {tile.typedHistory.frames.map((f, i) => (
+                            <div key={i} className="text-sm">
+                              <div className="text-[11px] text-gray-500 mb-1">{new Date(f.ts).toLocaleString()}</div>
+                              <div className="rounded-md border border-gray-100 bg-gray-50 p-2 leading-relaxed" dangerouslySetInnerHTML={{ __html: f.html }} />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <pre className="whitespace-pre-wrap text-gray-800 font-mono text-sm leading-relaxed bg-gray-50 rounded-md p-3 border border-gray-100 w-full">{cleanedText}</pre>
+                      )}
                     </div>
                   </div>
                   <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">

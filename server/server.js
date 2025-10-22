@@ -337,6 +337,80 @@ function attachAttributionToComments(tiles, comments) {
 /* ===== Routes ===== */
 app.get('/health', (req, res) => res.json({ ok: true }))
 
+app.post('/api/logout', async (req, res) => {
+  let browser
+  let page
+  try {
+    if (!API_TOKEN) return res.status(500).json({ error: 'Server missing API_TOKEN' })
+    const auth = (req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+    if (auth !== API_TOKEN) return res.status(401).json({ error: 'Unauthorized' })
+
+    console.log('[logout] Starting logout process...')
+    
+    browser = await puppeteer.launch({
+      headless: false,  // Make it visible so you can see the logout
+      devtools: false,
+      userDataDir: USER_DATA_DIR,
+      slowMo: 0,
+      args: ['--no-sandbox','--disable-dev-shm-usage','--disable-gpu']
+    })
+
+    page = await browser.newPage()
+    page.setDefaultTimeout(NAV_TIMEOUT)
+
+    // Navigate to Google logout
+    console.log('[logout] Navigating to Google logout...')
+    await page.goto('https://accounts.google.com/Logout', { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT })
+    
+    // Clear cookies and storage
+    console.log('[logout] Clearing cookies and storage...')
+    const cdp = await page.target().createCDPSession()
+    await cdp.send('Network.enable')
+    await cdp.send('Storage.clearCookies')
+    
+    // Clear site data for Google origins
+    const origins = [
+      'https://accounts.google.com',
+      'https://docs.google.com',
+      'https://www.google.com',
+      'https://google.com'
+    ]
+    for (const origin of origins) {
+      try {
+        await cdp.send('Storage.clearDataForOrigin', { origin, storageTypes: 'all' })
+        console.log(`[logout] Cleared data for ${origin}`)
+      } catch (e) {
+        console.log(`[logout] Failed to clear data for ${origin}:`, e.message)
+      }
+    }
+
+    // Keep browser open for a few seconds so you can see the logout
+    console.log('[logout] Keeping browser open for 3 seconds...')
+    await sleep(3000)
+
+    try {
+      await page.close()
+    } catch (e) {
+      console.log('[logout] Page already closed:', e.message)
+    }
+    
+    try {
+      await browser.close()
+    } catch (e) {
+      console.log('[logout] Browser already closed:', e.message)
+    }
+    
+    console.log('[logout] Logout completed successfully')
+    return res.json({ success: true, message: 'Logged out successfully' })
+
+  } catch (err) {
+    console.error('[logout] Error:', err)
+    try { if (page) await page.close() } catch {}
+    try { if (browser) await browser.close() } catch {}
+    return res.status(500).json({ error: err?.message || String(err) })
+  }
+})
+
 app.post('/api/replay', async (req, res) => {
   let browser
   let page

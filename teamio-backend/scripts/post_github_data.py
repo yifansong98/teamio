@@ -144,6 +144,7 @@ def batch_post_to_teams(all_logins):
         updates[sanitized_key] = {
             'login': login,
             'net_id': login, # Placeholder
+            'tool': 'github'  # Mark as GitHub login
         }
 
     if updates:

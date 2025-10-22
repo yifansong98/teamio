@@ -13,7 +13,7 @@ load_dotenv()
 # -------------- SETUP FIREBASE ADMIN SDK --------------
 # IMPORTANT: Update these paths and URLs for your project
 try:
-    cred = credentials.Certificate("../FIREBASE_SERVICE_CREDENTIALS.json")
+    cred = credentials.Certificate("../../teamio-backend/FIREBASE_SERVICE_CREDENTIALS.json")
     firebase_admin.initialize_app(cred, {
         'databaseURL': 'https://teamio-test-default-rtdb.firebaseio.com'
     })

@@ -489,18 +489,38 @@ def post_to_students_and_team(contributions: List[Dict[str, Any]], team_id: str)
 
     # Store all logins in teams/{team_id}/logins for mapping
     logins_ref = db.reference(f"teams/{team_id}/logins")
+    
+    # Clear existing Google Docs logins to avoid accumulating old document data
     existing_logins = logins_ref.get() or {}
+    google_docs_logins = {}
+    other_logins = {}
+    
+    # Separate Google Docs logins from other tool logins (like GitHub)
+    for key, login_data in existing_logins.items():
+        if isinstance(login_data, dict):
+            tool = login_data.get('tool')
+            # Clear Google Docs logins OR old format logins (without tool markers)
+            if tool == 'google_docs' or (tool is None and login_data.get('login') == 'unknown'):
+                google_docs_logins[key] = login_data
+            else:
+                other_logins[key] = login_data
+        else:
+            other_logins[key] = login_data
+    
+    # Create new logins for current document
     logins_updates = {}
     for login in all_logins:
-        if login not in existing_logins:
-            sanitized_key = login.replace('.', '_').replace('$', '_').replace('#', '_').replace('[', '_').replace(']', '_')
-            logins_updates[sanitized_key] = {
-                'login': login,
-                'net_id': login  # Placeholder until mapped
-            }
-    if logins_updates:
-        logins_ref.update(logins_updates)
-        print(f"Updated team {team_id} with {len(logins_updates)} new logins from Google Docs.")
+        sanitized_key = login.replace('.', '_').replace('$', '_').replace('#', '_').replace('[', '_').replace(']', '_')
+        logins_updates[sanitized_key] = {
+            'login': login,
+            'net_id': login,  # Placeholder until mapped
+            'tool': 'google_docs'  # Mark as Google Docs login
+        }
+    
+    # Combine other tool logins with new Google Docs logins
+    all_logins_data = {**other_logins, **logins_updates}
+    logins_ref.set(all_logins_data)
+    print(f"Updated team {team_id} with {len(logins_updates)} Google Docs logins (cleared old Google Docs data).")
 
 def post_docs_to_db(doc_json: Dict[str, Any], team_id: str):
     print(f"Processing Google Docs data for team {team_id}")
