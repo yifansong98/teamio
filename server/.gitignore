@@ -96,3 +96,6 @@ logs
 
 # Chrome profile data
 .chrome-profile/
+
+# DS Store files
+.DS_Store

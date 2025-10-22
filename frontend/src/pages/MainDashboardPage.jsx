@@ -1,0 +1,313 @@
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext"; // Assuming you have an AuthContext to get the authenticated user
+import { useStepsCompletion } from "../contexts/StepsCompletionContext";
+import { IconCheck, IconLock, IconArrowRightOnRectangle } from "../assets/icons"; // Assuming you have these icons defined elsewhere
+
+const MainDashboardPage = () => {
+  const navigate = useNavigate();
+  const { stepsCompletion } = useStepsCompletion();
+  const { user } = useAuth(); // Get the authenticated user from AuthContext
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserInfo = async () => {
+      if (!user || !user.email) {
+        console.error("No authenticated user found");
+        return;
+      }
+      
+      if (localStorage.getItem("userData") && localStorage.getItem("teamData")) {
+
+        setLoading(false);
+        return; // User data already in localStorage
+      }
+
+      try {
+        const response = await fetch(`http://localhost:3000/api/users?email=${user.email}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch user info");
+        }
+
+        const userInfo = await response.json();
+
+        // Store user info in localStorage
+        localStorage.setItem("userData", JSON.stringify(userInfo));
+
+        const teamId = userInfo.team_id;
+        const teamResponse = await fetch(`http://localhost:3000/api/teams/members/?team_id=${teamId}`);
+        if (!teamResponse.ok) {
+          throw new Error("Failed to fetch team members");
+        }
+
+        const teamMembers = await teamResponse.json();
+        localStorage.setItem("teamData", JSON.stringify(teamMembers));
+
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserInfo();
+  }, [user]);
+
+  const handleSignOut = () => {
+    localStorage.clear(); // Clear all stored data
+    navigate("/login"); // Redirect to login page
+  };
+
+  if (loading) {
+    return <p className="text-center text-gray-500">Loading...</p>;
+  }
+
+  return (
+    <div className="p-4 md:p-8">
+      {/* Header */}
+      <div className="flex justify-between items-start mb-8">
+        {/* Centered Content */}
+        <div className="flex-1 flex justify-center items-start">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-gray-800">Hi, {JSON.parse(localStorage.getItem("userData")).full_name ?? "Unknown User"}!</h1>
+            <p className="text-gray-600 mt-2">
+              Follow these steps to analyze and reflect on your team's collaboration.
+            </p>
+          </div>
+        </div>
+
+        {/* Right-Aligned Content */}
+        <div className="text-right">
+          <button
+            onClick={handleSignOut}
+            title="Sign Out"
+            className="mt-2 bg-gray-400 text-white font-bold p-2 rounded-lg hover:bg-gray-500 transition-colors flex items-start justify-center"
+          >
+            <IconArrowRightOnRectangle className="h-6 w-6" />
+          </button>
+        </div>
+      </div>
+
+      {/* Steps */}
+      <div className="max-w-2xl mx-auto space-y-6">
+        {/* Step 1: Link Collaboration Tools */}
+        <div
+          className={`p-6 rounded-lg shadow-md transition-all ${
+            stepsCompletion.step1 ? "bg-green-50" : "bg-white"
+          }`}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  stepsCompletion.step1
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                <span className="font-bold text-lg">1</span>
+              </div>
+              <div className="ml-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Link Collaboration Tools
+                </h2>
+                <p
+                  className={`text-sm ${
+                    stepsCompletion.step1
+                      ? "text-green-700"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {stepsCompletion.step1
+                    ? "Status: Done"
+                    : "Connect your team's tools"}
+                </p>
+              </div>
+            </div>
+            {stepsCompletion.step1 && <IconCheck />}
+          </div>
+          {stepsCompletion.step1 ? (
+            <button
+              onClick={() => navigate("/link-tools")}
+              className="mt-4 text-sm text-blue-600 hover:underline"
+            >
+              View/Edit Links
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate("/link-tools")}
+              className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Start Step 1
+            </button>
+          )}
+        </div>
+
+        {/* Step 1b: Map Logins to UserIDs */}
+        <div
+          className={`p-6 rounded-lg shadow-md transition-all ${
+            !stepsCompletion.step1 ? "opacity-50 cursor-not-allowed" : ""
+          } ${stepsCompletion.step1b ? "bg-green-50" : "bg-white"}`}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  stepsCompletion.step1b
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                <span className="font-bold text-lg">1b</span>
+              </div>
+              <div className="ml-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Map Logins to UserIDs
+                </h2>
+                <p
+                  className={`text-sm ${
+                    stepsCompletion.step1b
+                      ? "text-green-700"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {stepsCompletion.step1b
+                    ? "Status: Done"
+                    : "Ensure contributions are attributed"}
+                </p>
+              </div>
+            </div>
+            {stepsCompletion.step1b && <IconCheck />}
+          </div>
+          {stepsCompletion.step1b ? (
+            <button
+              onClick={() => navigate("/mapping")}
+              className="mt-4 text-sm text-blue-600 hover:underline"
+            >
+              View/Edit Mapping
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate("/mapping")}
+              className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Start Step 1b
+            </button>
+          )}
+        </div>
+
+        {/* Step 2: Annotate Contributions */}
+        <div
+          className={`p-6 rounded-lg shadow-md transition-all ${
+            !stepsCompletion.step1b ? "opacity-50 cursor-not-allowed" : ""
+          } ${stepsCompletion.step2 ? "bg-green-50" : "bg-white"}`}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  stepsCompletion.step2
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                <span className="font-bold text-lg">2</span>
+              </div>
+              <div className="ml-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Annotate Contributions
+                </h2>
+                <p
+                  className={`text-sm ${
+                    stepsCompletion.step2
+                      ? "text-green-700"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {stepsCompletion.step2
+                    ? "Status: Done"
+                    : "Attribute work to team members"}
+                </p>
+              </div>
+            </div>
+            {stepsCompletion.step2 ? <IconCheck /> : !stepsCompletion.step1 && <IconLock />}
+          </div>
+          {stepsCompletion.step1 && !stepsCompletion.step2 && (
+            <button
+              onClick={() => navigate("/annotation")}
+              className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Start Step 2
+            </button>
+          )}
+          {stepsCompletion.step2 && (
+            <button
+              onClick={() => navigate("/annotation")}
+              className="mt-4 text-sm text-blue-600 hover:underline"
+            >
+              View/Edit Annotations
+            </button>
+          )}
+        </div>
+
+        {/* Step 3: Team Reflection */}
+        <div
+          className={`p-6 rounded-lg shadow-md transition-all ${
+            !stepsCompletion.step2 ? "opacity-50 cursor-not-allowed" : ""
+          } ${stepsCompletion.step3 ? "bg-green-50" : "bg-white"}`}
+        >
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <div
+                className={`flex items-center justify-center w-10 h-10 rounded-full ${
+                  stepsCompletion.step3
+                    ? "bg-green-500 text-white"
+                    : "bg-gray-200 text-gray-600"
+                }`}
+              >
+                <span className="font-bold text-lg">3</span>
+              </div>
+              <div className="ml-4">
+                <h2 className="text-xl font-semibold text-gray-800">
+                  Team Reflection
+                </h2>
+                <p
+                  className={`text-sm ${
+                    stepsCompletion.step3
+                      ? "text-green-700"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {stepsCompletion.step3
+                    ? "Status: Done"
+                    : "Review and discuss teamwork patterns"}
+                </p>
+              </div>
+            </div>
+            {stepsCompletion.step3 ? <IconCheck /> : !stepsCompletion.step2 && <IconLock />}
+          </div>
+          {stepsCompletion.step2 && (
+            <button
+              onClick={() => navigate("/reflections")}
+              className="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+            >
+              Start Reflection
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Data Note */}
+      <div className="mt-8 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 rounded-lg max-w-2xl mx-auto">
+        <p className="font-bold">A Note on Your Data</p>
+        <p className="text-sm">
+          This tool is designed for team reflection only. All data is controlled
+          by your team and is not used for formal assessment or grading.
+        </p>
+      </div>
+    </div>
+  );
+};
+
+export default MainDashboardPage;
