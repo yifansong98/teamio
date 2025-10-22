@@ -210,3 +210,19 @@ async def get_revisions_history(team_id: str = Query(...)):
         return JSONResponse(content={"summary": summary, "timeline": timeline})
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
+    
+from typing import Dict
+class Reflection(BaseModel):
+    user_id: str
+    phase: str
+    team_id: str
+    responses: Dict[str, str]
+    timestamp: str
+
+@router.post("/save_reflection")
+async def post_reflection(reflection: Reflection):
+    data = reflection.dict()
+    ref = await run_in_threadpool(db_ref, f"reflections/{data['phase']}/{data['user_id']}")
+    await run_in_threadpool(ref.set, data)
+    print("✅ Received reflection:", data)
+    return {"status": "success", "received": data}
