@@ -19,10 +19,10 @@ async def get_commit_summary(team_id: str = Query(...)):
     # Get mapped users from logins
     logins_ref = await run_in_threadpool(db_ref, f"teams/{team_id}/logins")
     logins_data = await run_in_threadpool(logins_ref.get) or {}
-    mapped_users = {}
-    for login_key, login_info in logins_data.items():
-        if isinstance(login_info, dict) and 'user_id' in login_info:
-            mapped_users[login_info['login']] = login_info['user_id']
+    # mapped_users = {}
+    # for login_key, login_info in logins_data.items():
+    #     if isinstance(login_info, dict) and 'user_id' in login_info:
+    #         mapped_users[login_info['login']] = login_info['user_id']
 
     tasks = []
     for contrib_id in contributions.keys():
@@ -37,8 +37,8 @@ async def get_commit_summary(team_id: str = Query(...)):
     for contrib_data, commit_data in zip(contributions.values(), commit_results):
         if commit_data:
             # Use mapped user_id if available, otherwise fall back to author
-            original_author = contrib_data.get("author", "unknown")
-            author = mapped_users.get(original_author, original_author)
+            author = contrib_data.get("author", "unknown")
+            # author = mapped_users.get(original_author, original_author)
             if author not in summary:
                 summary[author] =  {"commits": 0, "lines": 0}
             summary[author]["commits"] += 1
@@ -73,9 +73,9 @@ async def get_feedback_matrix(team_id: str = Query(...)):
         team_data = await run_in_threadpool(db_ref(f"teams/{team_id}/logins").get) or {}
 
         team_students = {
-            login: info.get("user_id")
+            login: info.get("login")
             for login, info in team_data.items()
-            if info.get("user_id")  # only include if user_id exists
+            if info.get("login")  # only include if user_id exists
         }
         # 2. Prepare async tasks for fetching comments under each PR
         tasks = []
@@ -90,28 +90,25 @@ async def get_feedback_matrix(team_id: str = Query(...)):
 
         # 4. Aggregate feedback counts: giver → receiver → count
         feedback_counts = {}
+        feedback_messages_google_doc = {}
 
         for (pr_id, pr_info), comments in zip(pr_list, comments_results):
             author = pr_info.get("login", "unknown")
             if not comments:
                 continue
-            author_userid = team_students.get(author)
-            if not author_userid:
-                continue
+
             for commenter, comment_entries in comments.items():
                 if commenter.lower() == "copilot":
                     continue
-                commenter_userid = team_students.get(commenter)
-                if not commenter_userid:
-                    continue
+                
 
-                if commenter_userid not in feedback_counts:
-                    feedback_counts[commenter_userid] = {}
+                if commenter not in feedback_counts:
+                    feedback_counts[commenter] = {}
 
-                if author_userid not in feedback_counts[commenter_userid]:
-                    feedback_counts[commenter_userid][author_userid] = 0
+                if author not in feedback_counts[commenter]:
+                    feedback_counts[commenter][author] = 0
 
-                feedback_counts[commenter_userid][author_userid] += len(comment_entries)  # count all comments
+                feedback_counts[commenter][author] += len(comment_entries)  # count all comments
 
         gdoc_comments_ref = await run_in_threadpool(
             db_ref,
@@ -122,24 +119,29 @@ async def get_feedback_matrix(team_id: str = Query(...)):
         for comment_id, comment_info in gdoc_comments.items():
             giver_login = comment_info.get("login")
             receiver_name = comment_info.get("comment_target_author")
-
+            file_info = comment_info.get("file", {})
+            file_name = file_info.get("name", "Unknown Document")
+            text = comment_info.get("text", "")
             if not giver_login or not receiver_name:
                 continue
 
-            giver_userid = team_students.get(giver_login)
-            receiver_userid = team_students.get(receiver_name)
 
-            if not giver_userid or not receiver_userid:
-                continue
+            if giver_login not in feedback_counts:
+                feedback_counts[giver_login] = {}
+            if receiver_name not in feedback_counts[giver_login]:
+                feedback_counts[giver_login][receiver_name] = 0
 
-            if giver_userid not in feedback_counts:
-                feedback_counts[giver_userid] = {}
-            if receiver_userid not in feedback_counts[giver_userid]:
-                feedback_counts[giver_userid][receiver_userid] = 0
+            feedback_counts[giver_login][receiver_name] += 1
 
-            feedback_counts[giver_userid][receiver_userid] += 1
+            feedback_messages_google_doc.setdefault(giver_login , {})
+            feedback_messages_google_doc[giver_login].setdefault(receiver_name, [])
 
-        return JSONResponse(content={"feedback_counts": feedback_counts})
+            feedback_messages_google_doc[giver_login][receiver_name].append({
+                "doc": file_name,
+                "comment": text
+            })
+
+        return JSONResponse(content={"feedback_counts": feedback_counts, "feedback_messages_google_doc": feedback_messages_google_doc})
 
     except Exception as e:
         return JSONResponse(status_code=500, content={"error": str(e)})
@@ -155,10 +157,10 @@ async def get_revisions_history(team_id: str = Query(...)):
         # Get mapped users from logins
         logins_ref = await run_in_threadpool(db_ref, f"teams/{team_id}/logins")
         logins_data = await run_in_threadpool(logins_ref.get) or {}
-        mapped_users = {}
-        for login_key, login_info in logins_data.items():
-            if isinstance(login_info, dict) and 'user_id' in login_info:
-                mapped_users[login_info['login']] = login_info['user_id']
+        # mapped_users = {}
+        # for login_key, login_info in logins_data.items():
+        #     if isinstance(login_info, dict) and 'user_id' in login_info:
+        #         mapped_users[login_info['login']] = login_info['user_id']
 
         # 2. Prepare a list of asynchronous tasks
         tasks = []
@@ -176,8 +178,8 @@ async def get_revisions_history(team_id: str = Query(...)):
         for contrib_data, revision_data in zip(contributions.values(), revision_results):
             if revision_data:
                 # Use mapped user_id if available, otherwise fall back to author
-                original_author = contrib_data.get("author", "unknown")
-                author = mapped_users.get(original_author, original_author)
+                author = contrib_data.get("author", "unknown")
+                # author = mapped_users.get(original_author, original_author)
                 if author not in summary:
                     summary[author] = {"revisions": 0, "word_count": 0}
                 summary[author]['revisions'] += 1

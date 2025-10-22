@@ -214,7 +214,6 @@ const ReflectionsPage = () => {
         }
         if (feedbackRes.ok) {
           setFeedbackData(feedbackData.feedback_counts);
-          setFeedbackGDocData(feedbackData.feedback_counts_gdoc);
           setFeedbackGDocMessagesData(feedbackData.feedback_messages_google_doc);
         } else {
           setError(feedbackData.error || "Failed to fetch feedback data");
@@ -344,7 +343,7 @@ const ReflectionsPage = () => {
                         const giver = ctx.raw.y;
                         const receiver = ctx.raw.x;
 
-                        const gdocCount = feedbackGDocData[giver]?.[receiver] || 0;
+                        const gdocCount = feedbackData[giver]?.[receiver] || 0;
                         
                         let gDocLines = [];
 
@@ -508,7 +507,7 @@ const scatterOptions = useMemo(() => ({
               callback: function(value, index) {
     
                 const rawLabel =  this.getLabelForValue(value)
-                return rawLabel.endsWith('-github') ? rawLabel.replace('-github', '') : '\u00A0';
+                return rawLabel.endsWith('-gdocs') ? rawLabel.replace('-gdocs', '') : '\u00A0';
               },
               font: { size: 14, 
                 lineHeight: 0.8
