@@ -917,6 +917,10 @@ return (
                   await submitAllReflections(responses, "phase_-1");
                   localStorage.removeItem("savedReflections");
                   alert("Reflections submitted successfully ✅");
+                  setStepsCompletion(prev => ({
+                  ...prev,
+                  step3: true,
+                }));
                   setShowDialog(false);
                   navigate("/home"); 
                 } catch (err) {
