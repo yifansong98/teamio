@@ -10,72 +10,157 @@ import "chartjs-adapter-date-fns"; // make sure to install this
 
 ChartJS.register(TimeScale, ChartDataLabels, CategoryScale, ArcElement, Tooltip, Legend, PointElement,LinearScale,Title, MatrixController, MatrixElement);
 
-const WordCountTextArea = ({ maxWords = 200 }) => {
+const submitAllReflections = async (responses, phase) => {
+  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+  const userId = userData.user_id;
+  const teamId = userData.team_id;
 
-  const [text, setText] = useState("");
-  const wordCount = text.split(/\s+/).filter(Boolean).length;
+  if (!userId || !teamId) throw new Error("User or team data missing");
 
-  const handleChange = (e) => {
-    const newText = e.target.value;
-    if (newText.split(/\s+/).filter(Boolean).length <= maxWords) {
-      setText(newText);
-    }
+  const payload = {
+    user_id: userId,
+    team_id: teamId,
+    phase : phase.split('_')[1],
+    timestamp: new Date().toISOString(),
+    responses,
   };
 
-  return (
-    <div>
-      <textarea
-        className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
-        value={text}
-        onChange={handleChange}
-        rows="4"
-      ></textarea>
-      <div className="text-right text-sm text-gray-500 mt-1">
-        {wordCount}/{maxWords} words
-      </div>
-    </div>
-  );
+  const res = await fetch("http://localhost:3000/api/reflections/save_reflection", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json();
+    throw new Error(errorData.message || "Failed to save reflection");
+  }
+
+  return await res.json();
 };
 
+
+  const WordCountTextArea = ({ maxWords = 200, value = "", onChange }) => {
+    const [text, setText] = useState(value);
+    const wordCount = text.split(/\s+/).filter(Boolean).length;
+
+    useEffect(() => {
+      setText(value); 
+    }, [value]);
+
+    const handleChange = (e) => {
+      const newText = e.target.value;
+      if (newText.split(/\s+/).filter(Boolean).length <= maxWords) {
+        setText(newText);
+        onChange?.(newText);
+      }
+    };
+
+    return (
+      <div>
+        <textarea
+          className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-200 focus:border-blue-500 transition"
+          value={text}
+          onChange={handleChange}
+          rows="4"
+        ></textarea>
+        <div className="text-right text-sm text-gray-500 mt-1">
+          {wordCount}/{maxWords} words
+        </div>
+      </div>
+    );
+  };
+
+
+// const FeedbackHeatmap = ({ matrixData, options }) => {
+//         const canvasRef = useRef(null);
+//         const chartRef = useRef(null);
+
+//         useEffect(() => {
+//             if (!canvasRef.current || !matrixData) return;
+//             const ctx = canvasRef.current.getContext("2d");
+
+//             if (chartRef.current) {
+//                 chartRef.current.destroy();
+//             }
+
+//             chartRef.current = new Chart(ctx, {
+//                 type: "matrix",
+//                 data: {
+//                     datasets: [{
+//                         label: "Feedback Matrix",
+//                         data: matrixData,
+//                         backgroundColor: (ctx) => ctx.raw?.backgroundColor || 'rgba(0,0,0,0.05)',
+//                         borderColor: 'white',
+//                         borderWidth: 2,
+//                         hoverBorderColor: '#333',
+//                         width: ({ chart }) => (chart.chartArea || {}).width / chart.scales.x.ticks.length - 1,
+//                         height: ({ chart }) => (chart.chartArea || {}).height / chart.scales.y.ticks.length - 1,
+//                     }],
+//                 },
+//                 options: options,
+//             });
+
+//             return () => {
+//                 chartRef.current?.destroy();
+//             };
+//         }, [matrixData, options]);
+
+//         return (
+//             <div className="relative w-full h-full">
+//                 <canvas ref={canvasRef} />
+//             </div>
+//         );
+// };
+
 const FeedbackHeatmap = ({ matrixData, options }) => {
-        const canvasRef = useRef(null);
-        const chartRef = useRef(null);
+  const canvasRef = useRef(null);
+  const chartRef = useRef(null);
 
-        useEffect(() => {
-            if (!canvasRef.current || !matrixData) return;
-            const ctx = canvasRef.current.getContext("2d");
+  // Only create chart once
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const ctx = canvasRef.current.getContext("2d");
 
-            if (chartRef.current) {
-                chartRef.current.destroy();
-            }
+    if (!chartRef.current) {
+      chartRef.current = new Chart(ctx, {
+        type: "matrix",
+        data: {
+          datasets: [{
+            label: "Feedback Matrix",
+            data: matrixData,
+            backgroundColor: (ctx) => ctx.raw?.backgroundColor || 'rgba(0,0,0,0.05)',
+            borderColor: 'white',
+            borderWidth: 2,
+            hoverBorderColor: '#333',
+            width: ({ chart }) => (chart.chartArea || {}).width / chart.scales.x.ticks.length - 1,
+            height: ({ chart }) => (chart.chartArea || {}).height / chart.scales.y.ticks.length - 1,
+          }],
+        },
+        options: options,
+      });
+    }
 
-            chartRef.current = new Chart(ctx, {
-                type: "matrix",
-                data: {
-                    datasets: [{
-                        label: "Feedback Matrix",
-                        data: matrixData,
-                        backgroundColor: (ctx) => ctx.raw?.backgroundColor || 'rgba(0,0,0,0.05)',
-                        borderColor: 'white',
-                        borderWidth: 2,
-                        hoverBorderColor: '#333',
-                        width: ({ chart }) => (chart.chartArea || {}).width / chart.scales.x.ticks.length - 1,
-                        height: ({ chart }) => (chart.chartArea || {}).height / chart.scales.y.ticks.length - 1,
-                    }],
-                },
-                options: options,
-            });
+    return () => {
+      chartRef.current?.destroy();
+    };
+  }, []); // empty deps → only runs once
 
-            return () => {
-                chartRef.current?.destroy();
-            };
-        }, [matrixData, options]);
+  // Update chart when matrixData or options change
+  useEffect(() => {
+    if (!chartRef.current) return;
 
-        return (
-            <div className="relative w-full h-full">
-                <canvas ref={canvasRef} />
-            </div>
-        );
+    chartRef.current.data.datasets[0].data = matrixData;
+    chartRef.current.options = options;
+
+    chartRef.current.update('none'); // 'none' disables animation & prevents jumping
+  }, [matrixData, options]);
+
+  return (
+    <div className="relative w-full h-full">
+      <canvas ref={canvasRef} />
+    </div>
+  );
 };
 
 const ScatterChart = ({ data, options }) => {
@@ -164,9 +249,29 @@ const ReflectionsPage = () => {
   const [activeTab, setActiveTab] = useState("equitable");
   const [gdocMetric, setGDocMetric] = useState("revisions");   
   const [feedbackData, setFeedbackData] = useState({});
-  const [feedbackGDocData, setFeedbackGDocData] = useState({});
   const [feedbackGDocMessagesData, setFeedbackGDocMessagesData] = useState({});
   const { setStepsCompletion } = useStepsCompletion();
+
+
+  const [responses, setResponses] = useState(() => {
+  return JSON.parse(localStorage.getItem("savedReflections")) || {
+      equitable: "",
+      timeliness: "",
+      support: "",
+      valued: "",
+    };
+  });
+
+  const handleResponseChange = (key, value) => {
+  setResponses(prev => {
+    const updated = { ...prev, [key]: value };
+    localStorage.setItem("savedReflections", JSON.stringify(updated)); // Save locally
+    return updated;
+  });
+  };
+
+// For showing dialog with summary before submission
+  const [showDialog, setShowDialog] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -214,7 +319,6 @@ const ReflectionsPage = () => {
         }
         if (feedbackRes.ok) {
           setFeedbackData(feedbackData.feedback_counts);
-          setFeedbackGDocData(feedbackData.feedback_counts_gdoc);
           setFeedbackGDocMessagesData(feedbackData.feedback_messages_google_doc);
         } else {
           setError(feedbackData.error || "Failed to fetch feedback data");
@@ -344,7 +448,7 @@ const ReflectionsPage = () => {
                         const giver = ctx.raw.y;
                         const receiver = ctx.raw.x;
 
-                        const gdocCount = feedbackGDocData[giver]?.[receiver] || 0;
+                        const gdocCount = feedbackData[giver]?.[receiver] || 0;
                         
                         let gDocLines = [];
 
@@ -442,7 +546,7 @@ const scatterChartData = useMemo(() => {
                     titles: c.titles
                 })),
                 backgroundColor: userColors[entry.author] || "#999999",
-                pointStyle: 'triangle',
+                pointStyle: 'circle',
                 radius: entry.contributions.map(c => gdocSizeScale(c.size)),
             };
         }),
@@ -468,7 +572,7 @@ const scatterOptions = useMemo(() => ({
                 title: (ctx) => ctx[0].raw.y.replace('-gdocs', ''),
                 label: (ctx) => {
                     const size = ctx.raw.v;
-                    const source = ctx.dataset.pointStyle === 'triangle' ? 'Google Docs' : '';
+                    const source = ctx.dataset.pointStyle === 'circle' ? 'Google Docs' : '';
                     return `${source} contribution of size ${size}.`;
                 }
             }
@@ -490,25 +594,27 @@ const scatterOptions = useMemo(() => ({
             time: { unit: "day", displayFormats: { day: 'MMM d' } },
             title: { display: true, text: "Date of Contribution", font: {size: 14} },
             grid: {
-              display: false   // ✅ Hides vertical grid lines
+              display: false   
             }
           },
           y: {
             type: "category",
+            offset: true,
             labels: paddedYAxisLabels,
             title: { display: true, text: "Team Member", font: {size: 14} },
             grid: { 
               drawOnChartArea: true,
               color: (context) => {
-              const rawLabel = context.tick.label; // safer than using paddedYAxisLabels
+              const rawLabel = context.tick.label; 
               return rawLabel === '' ? 'transparent' : '#e5e7eb';
             }
             },
             ticks: {
+              padding: 30,
               callback: function(value, index) {
     
                 const rawLabel =  this.getLabelForValue(value)
-                return rawLabel.endsWith('-github') ? rawLabel.replace('-github', '') : '\u00A0';
+                return rawLabel.endsWith('-gdocs') ? rawLabel.replace('-gdocs', '') : '\u00A0';
               },
               font: { size: 14, 
                 lineHeight: 0.8
@@ -646,12 +752,12 @@ return (
                 Reflection Prompt:
               </label>
               <p className="text-sm text-gray-600 mb-2">
-                Looking back at your team’s work, do you feel contributions were
-                shared fairly? Were there times when some carried more load, or
-                others contributed less? What strategies could help balance
-                contributions?
+                How well you feel that contributions were shared fairly among members? What strategies could your team use in the next phase to ensure contributions are balanced?
               </p>
-              <WordCountTextArea />
+              <WordCountTextArea
+                value={responses.equitable}
+                onChange={(text) => handleResponseChange("equitable", text)}
+              />
             </div>
           </div>
         )}
@@ -675,23 +781,6 @@ return (
               options={scatterOptions}
             />
           </div>
-
-          {}
-          <div className="flex flex-wrap gap-x-6 gap-y-2 mt-4 border-t pt-4 w-full justify-center">
-            <div className="flex items-center space-x-2">
-              <div
-                style={{
-                  width: 0,
-                  height: 0,
-                  borderLeft: '12px solid transparent',
-                  borderRight: '12px solid transparent',
-                  borderTop: '16px solid rgba(0,0,0,0.5)',
-                  transform: 'rotate(180deg)',
-                }}
-              ></div>
-              <span className="text-sm text-gray-600">Google Docs</span>
-            </div>
-          </div>
         </>
       ) : (
         <p className="text-gray-500 text-center">No timeline data available.</p>
@@ -714,8 +803,11 @@ return (
     </div>
     <div className="mt-6">
         <label className="block text-sm font-medium text-gray-700 mb-2">Reflection Prompt:</label>
-        <p className="text-sm text-gray-600 mb-2">How well did you and your team manage deadlines and complete tasks on time? Were there any patterns of last-minute work or early completion? How did this affect the team’s progress and collaboration?</p>
-        <WordCountTextArea />
+        <p className="text-sm text-gray-600 mb-2">How well did your team manage the time for this task? What would you change for the next phase to have a smoother progress?</p>
+        <WordCountTextArea
+                value={responses.timeliness}
+                onChange={(text) => handleResponseChange("timeliness", text)}
+              />
     </div>
   </div>
         )}
@@ -731,7 +823,7 @@ return (
             <p className="text-sm text-gray-600 mb-4">{content[activeTab].description}</p>
             
             <div className="p-6 bg-white rounded-lg shadow-md">
-                        <div style={{ height: '600px' }}>
+                        <div className="w-full h-[600px]">
                             <FeedbackHeatmap
                                 matrixData={matrixData}
                                 options={prettyHeatmapOptions}
@@ -741,11 +833,14 @@ return (
 
             <div className="mt-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Reflection Prompt:
+                Reflection Prompt: 
               </label>
               <p className="text-sm text-gray-600 mb-2">
-              What patterns do you notice in how support is given and received? Is the support reciprocal among team members? Are there individuals who might benefit from more support?              </p>
-              <WordCountTextArea />
+             How well did your team provide support to each other, such as commenting and revising others’ work? What would you improve for the next phase? </p>
+              <WordCountTextArea
+                value={responses.support}
+                onChange={(text) => handleResponseChange("support", text)}
+              />
             </div>
 
           </div>
@@ -767,7 +862,10 @@ return (
               </label>
               <p className="text-sm text-gray-600 mb-2">
                 What patterns do you notice in how support is given and received? Is the support reciprocal among team members? Are there individuals who might benefit from more support? </p>
-              <WordCountTextArea />
+              <WordCountTextArea
+                value={responses.valued}
+                onChange={(text) => handleResponseChange("valued", text)}
+              />
             </div>
             </div>
         )}
@@ -775,11 +873,68 @@ return (
 
       {/* Finish button */}
       <div className="mt-12 text-center">
-        <button className="bg-green-500 text-white font-bold py-2 px-6 rounded-lg hover:bg-green-600 transition-colors">
+        <button
+          className="bg-green-500 text-white font-bold py-2 px-4 rounded hover:bg-green-600 transition-colors"
+          onClick={() => setShowDialog(true)}
+        >
           Finish Reflection
         </button>
       </div>
     </div>
+    {showDialog && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-6 rounded-lg shadow-lg w-11/12 max-w-md">
+          <h2 className="text-lg font-bold mb-4">Almost Done! Review Your Reflection</h2>
+         <div className="mb-4 text-sm space-y-3">
+            <div>
+              <p className="font-semibold">Equitable Contribution:</p>
+              <p className="ml-2 text-gray-700">{responses.equitable || "(empty)"}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Timeliness:</p>
+              <p className="ml-2 text-gray-700">{responses.timeliness || "(empty)"}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Mutual Support:</p>
+              <p className="ml-2 text-gray-700">{responses.support || "(empty)"}</p>
+            </div>
+            <div>
+              <p className="font-semibold">Valued Contributions:</p>
+              <p className="ml-2 text-gray-700">{responses.valued || "(empty)"}</p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              className="bg-gray-300 text-gray-700 py-1 px-3 rounded hover:bg-gray-400"
+              onClick={() => setShowDialog(false)}
+            >
+              Cancel
+            </button>
+            <button
+              className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600"
+              onClick={async () => {
+                try {
+                  await submitAllReflections(responses, "phase_-1");
+                  localStorage.removeItem("savedReflections");
+                  alert("Reflections submitted successfully ✅");
+                  setStepsCompletion(prev => ({
+                  ...prev,
+                  step3: true,
+                }));
+                  setShowDialog(false);
+                  navigate("/home"); 
+                } catch (err) {
+                  console.error(err);
+                  alert("Failed to submit reflections ❌");
+                }
+              }}
+            >
+              Submit
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
     </div>
   );
 };
