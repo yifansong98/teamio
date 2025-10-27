@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useRef} from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { Pie, Scatter } from "react-chartjs-2";
 import { useStepsCompletion } from "../contexts/StepsCompletionContext";
+import { useTeam } from "../contexts/TeamContext";
 import Chart from "chart.js/auto";
 import { MatrixController, MatrixElement } from "chartjs-chart-matrix";
 import ChartDataLabels from 'chartjs-plugin-datalabels';
@@ -10,11 +11,7 @@ import "chartjs-adapter-date-fns"; // make sure to install this
 
 ChartJS.register(TimeScale, ChartDataLabels, CategoryScale, ArcElement, Tooltip, Legend, PointElement,LinearScale,Title, MatrixController, MatrixElement);
 
-const submitAllReflections = async (responses, phase) => {
-  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
-  const userId = userData.user_id;
-  const teamId = userData.team_id;
-
+const submitAllReflections = async (responses, phase, teamId, userId) => {
   if (!userId || !teamId) throw new Error("User or team data missing");
 
   const payload = {
@@ -251,6 +248,7 @@ const ReflectionsPage = () => {
   const [feedbackData, setFeedbackData] = useState({});
   const [feedbackGDocMessagesData, setFeedbackGDocMessagesData] = useState({});
   const { setStepsCompletion } = useStepsCompletion();
+  const { teamId } = useTeam();
 
 
   const [responses, setResponses] = useState(() => {
@@ -275,34 +273,25 @@ const ReflectionsPage = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!teamId) {
+        setLoading(false);
+        return;
+      }
+
       setLoading(true);
 
-      const userData = localStorage.getItem("userData");
-      if (!userData) {
-        setError("User data not found. Please log in again.");
-        setLoading(false);
-        return;
-      }
-
-      const parsedUserData = JSON.parse(userData);
-      const teamId = parsedUserData.team_id;
-
-      const storedTeamData = localStorage.getItem("teamData");
-      if (!storedTeamData) {
-        setError("Team data not found. Please log in again.");
-        setLoading(false);
-        return;
-      }
-
-      const parsedTeamData = JSON.parse(storedTeamData);
-      const userIdToFullName = parsedTeamData.reduce((map, user) => {
-        map[user.user_id] = user.full_name;
-        return map;
-      }, {});
-
-      setUserIdsToFullName(userIdToFullName);
-
       try {
+        // Fetch team members to get user ID to name mapping
+        const teamResponse = await fetch(`http://localhost:3000/api/teams/members/?team_id=${teamId}`);
+        if (teamResponse.ok) {
+          const teamMembers = await teamResponse.json();
+          const userIdToFullName = teamMembers.reduce((map, user) => {
+            map[user.user_id] = user.full_name;
+            return map;
+          }, {});
+          setUserIdsToFullName(userIdToFullName);
+        }
+
         const [revisionRes, feedbackRes] = await Promise.all([
           fetch(`http://localhost:3000/api/reflections/revisions?team_id=${teamId}`),
           fetch(`http://localhost:3000/api/reflections/feedback?team_id=${teamId}`)
@@ -331,7 +320,7 @@ const ReflectionsPage = () => {
     };
 
     fetchData();
-  }, []);
+  }, [teamId]);
 
   const hasGDocPieData = Object.keys(revisionData).length > 0;
   const hasGDocTimelineData =  Array.isArray(timelineGDocData) && timelineGDocData.length > 0;
@@ -505,8 +494,11 @@ const ReflectionsPage = () => {
   };
 
     const paddedYAxisLabels = useMemo(() => 
-                ['', ...allUserIds.flatMap(author => [`${author}-gdocs`]), ''],
-                [allUserIds]
+                ['', ...allUserIds.flatMap(author => {
+                    const displayName = userIdsToFullName ? (userIdsToFullName[author] || author) : author;
+                    return [`${displayName}-gdocs`];
+                }), ''],
+                [allUserIds, userIdsToFullName]
             );
 
 
@@ -536,12 +528,13 @@ const scatterChartData = useMemo(() => {
 
     const datasets = [
         ...timelineGDocData.map((entry) => {
+            const displayName = userIdsToFullName ? (userIdsToFullName[entry.author] || entry.author) : entry.author;
             return {
-                label: entry.author,
+                label: displayName,
                 datalabels: { display: false },
                 data: entry.contributions.map(c => ({
                     x: c.date,
-                    y: `${entry.author}-gdocs`, 
+                    y: `${displayName}-gdocs`, 
                     v: c.size,
                     titles: c.titles
                 })),
@@ -552,7 +545,7 @@ const scatterChartData = useMemo(() => {
         }),
     ];
     return { datasets };
-}, [timelineGDocData, paddedYAxisLabels]);
+}, [timelineGDocData, paddedYAxisLabels, userIdsToFullName]);
 
 const scatterOptions = useMemo(() => ({
       maintainAspectRatio: false,
@@ -914,7 +907,9 @@ return (
               className="bg-green-500 text-white py-1 px-3 rounded hover:bg-green-600"
               onClick={async () => {
                 try {
-                  await submitAllReflections(responses, "phase_-1");
+                  const userData = JSON.parse(localStorage.getItem("userData") || "{}");
+                  const userId = userData.user_id;
+                  await submitAllReflections(responses, "phase_-1", teamId, userId);
                   localStorage.removeItem("savedReflections");
                   alert("Reflections submitted successfully ✅");
                   setStepsCompletion(prev => ({
